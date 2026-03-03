@@ -5,6 +5,7 @@ import App from './App.jsx'
 import {} from "react-dom"
 import Login from './pages/Login.jsx'
 import { createBrowserRouter, RouterProvider} from 'react-router-dom'
+import Test from './pages/Test.jsx'
 
 const routes = [{
   path: "/",
@@ -12,6 +13,9 @@ const routes = [{
 }, {
   path: "/login",
   element: <Login />
+},
+{path: "/test/api",
+  element: <Test />
 }]
 
 const router = createBrowserRouter(routes)
