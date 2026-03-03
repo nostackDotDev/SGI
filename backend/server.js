@@ -4,10 +4,11 @@ const express = require("express");
 const mysql = require("mysql2");
 const cors = require("cors");
 
-const port = 8001;
 const app = express();
 app.use(cors())
 app.use(express.json())
+
+const port =  process.env.PORT || 8001;
 
 const db = mysql.createConnection({
   host: process.env.TIDB_HOST || "localhost",
@@ -79,6 +80,6 @@ app.post("/api/users/login", (req, res) => {
   );
 });
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log("Listening on port", port);
 });
