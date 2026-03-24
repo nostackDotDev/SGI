@@ -8,20 +8,9 @@ const app = express();
 app.use(cors())
 app.use(express.json())
 
-// const port =  process.env.PORT || 8001;
-const port = 3001
+const prisma = require("../lib/prisma")
 
-// const db = mysql.createConnection({
-//   host: process.env.TIDB_HOST || "localhost",
-//   port: process.env.TIDB_PORT || 4000,
-//   user: process.env.TIDB_USER || "root",
-//   password: process.env.TIDB_PASS || "",
-//   database: process.env.TIDB_DB || "sgi",
-//   ssl: {
-//     minVersion: 'TLSv1.2',
-//     rejectUnauthorized: true
-//   }
-// });
+const port = process.env.PORT || 8001;
 
 app.get("/", (req, res) => {
   res.json({
@@ -32,6 +21,14 @@ app.get("/", (req, res) => {
     }
   });
 });
+
+app.get("/users", async (_, res) => {
+  const users = await prisma.user.findMany()
+
+  res.json({
+    data: users
+  })
+})
 
 // app.get("/api/users", (req, res) => {
 //   db.query("SELECT nome, password, nivel FROM users", (err, row) => {
