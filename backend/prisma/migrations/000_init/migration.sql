@@ -1,2 +1,0 @@
--- prisma/migrations/000_ini/migration.sql
--- Baseline migration: do not run, schema already exists

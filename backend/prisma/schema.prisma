@@ -7,9 +7,130 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model user {
+model categorias {
+  id        Int        @id @default(autoincrement())
+  nome      String     @db.VarChar(100)
+  descricao String?    @db.Text
+  criado_em DateTime   @default(now()) @db.Timestamp(0)
+  produtos  produtos[]
+}
+
+model fornecedores {
   id        Int      @id @default(autoincrement())
-  email     String   @unique(map: "email") @db.VarChar(255)
-  password  String   @db.VarChar(255)
-  createdAt DateTime @default(now()) @db.Timestamp(0)
+  nome      String   @db.VarChar(150)
+  telefone  String?  @db.VarChar(20)
+  email     String?  @db.VarChar(100)
+  endereco  String?  @db.Text
+  criado_em DateTime @default(now()) @db.Timestamp(0)
+  itens     itens[]
+}
+
+model itens {
+  id                Int             @id @default(autoincrement())
+  produto_id        Int?
+  codigo_patrimonio String?         @unique(map: "codigo_patrimonio") @db.VarChar(100)
+  numero_serie      String?         @db.VarChar(100)
+  sala_id           Int?
+  estado            itens_estado?   @default(novo)
+  data_aquisicao    DateTime?       @db.Date
+  valor             Decimal?        @db.Decimal(10, 2)
+  fornecedor_id     Int?
+  criado_em         DateTime        @default(now()) @db.Timestamp(0)
+  produtos          produtos?       @relation(fields: [produto_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "itens_ibfk_1")
+  salas             salas?          @relation(fields: [sala_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "itens_ibfk_2")
+  fornecedores      fornecedores?   @relation(fields: [fornecedor_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "itens_ibfk_3")
+  manutencoes       manutencoes[]
+  movimentacoes     movimentacoes[]
+
+  @@index([fornecedor_id], map: "fornecedor_id")
+  @@index([produto_id], map: "produto_id")
+  @@index([sala_id], map: "sala_id")
+}
+
+model log_sistema {
+  id         Int       @id @default(autoincrement())
+  usuario_id Int?
+  acao       String?   @db.VarChar(255)
+  data_acao  DateTime  @default(now()) @db.Timestamp(0)
+  usuarios   usuarios? @relation(fields: [usuario_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "log_sistema_ibfk_1")
+
+  @@index([usuario_id], map: "usuario_id")
+}
+
+model manutencoes {
+  id          Int       @id @default(autoincrement())
+  item_id     Int?
+  descricao   String?   @db.Text
+  data_inicio DateTime? @db.Date
+  data_fim    DateTime? @db.Date
+  custo       Decimal?  @db.Decimal(10, 2)
+  usuario_id  Int?
+  criado_em   DateTime  @default(now()) @db.Timestamp(0)
+  itens       itens?    @relation(fields: [item_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "manutencoes_ibfk_1")
+  usuarios    usuarios? @relation(fields: [usuario_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "manutencoes_ibfk_2")
+
+  @@index([item_id], map: "item_id")
+  @@index([usuario_id], map: "usuario_id")
+}
+
+model movimentacoes {
+  id                Int       @id @default(autoincrement())
+  item_id           Int?
+  sala_origem       Int?
+  sala_destino      Int?
+  usuario_id        Int?
+  data_movimentacao DateTime  @default(now()) @db.Timestamp(0)
+  itens             itens?    @relation(fields: [item_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "movimentacoes_ibfk_1")
+  usuarios          usuarios? @relation(fields: [usuario_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "movimentacoes_ibfk_2")
+
+  @@index([item_id], map: "item_id")
+  @@index([usuario_id], map: "usuario_id")
+}
+
+model produtos {
+  id           Int         @id @default(autoincrement())
+  nome         String      @db.VarChar(150)
+  categoria_id Int?
+  descricao    String?     @db.Text
+  criado_em    DateTime    @default(now()) @db.Timestamp(0)
+  itens        itens[]
+  categorias   categorias? @relation(fields: [categoria_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "produtos_ibfk_1")
+
+  @@index([categoria_id], map: "categoria_id")
+}
+
+model salas {
+  id          Int      @id @default(autoincrement())
+  nome        String   @db.VarChar(100)
+  bloco       String?  @db.VarChar(50)
+  responsavel String?  @db.VarChar(100)
+  criado_em   DateTime @default(now()) @db.Timestamp(0)
+  itens       itens[]
+}
+
+model usuarios {
+  id            Int             @id @default(autoincrement())
+  nome          String          @db.VarChar(100)
+  email         String          @unique(map: "email") @db.VarChar(100)
+  senha         String          @db.VarChar(255)
+  nivel         usuarios_nivel
+  ativo         Boolean?        @default(true)
+  ultimo_login  DateTime?       @db.DateTime(0)
+  criado_em     DateTime        @default(now()) @db.Timestamp(0)
+  log_sistema   log_sistema[]
+  manutencoes   manutencoes[]
+  movimentacoes movimentacoes[]
+}
+
+enum usuarios_nivel {
+  admin
+  normal
+}
+
+enum itens_estado {
+  novo
+  bom
+  usado
+  danificado
+  em_manutencao
 }
