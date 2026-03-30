@@ -10,6 +10,7 @@ import {
   Box,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { Button } from "../ui/button";
 
 
 const navItems = [
@@ -39,11 +40,11 @@ export function Sidebar({ collapsed, onToggle }) {
       <aside
         className={cn(
           "fixed top-0 left-0 z-50 h-full bg-sidebar-background border-r border-sidebar-border transition-all duration-300 ease-in-out text-lg",
-          collapsed ? "-translate-x-full lg:translate-x-0 lg:w-20" : "translate-x-0 w-64"
+          collapsed ? "-translate-x-full lg:translate-x-0 lg:w-18" : "translate-x-0 w-64"
         )}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
+        <div className="h-16 flex items-center justify-start px-4 border-b border-sidebar-border gap-2">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
               <Box className="w-5 h-5 text-primary-foreground" />
@@ -54,17 +55,6 @@ export function Sidebar({ collapsed, onToggle }) {
               </span>
             )}
           </div>
-          <button
-            onClick={onToggle}
-            className="hidden lg:flex h-fit w-fit p-2 cursor-pointer"
-          >
-            <ChevronLeft
-              className={cn(
-                "w-4 h-4 transition-transform duration-300",
-                collapsed && "rotate-180"
-              )}
-            />
-          </button>
         </div>
 
         {/* Navigation */}
