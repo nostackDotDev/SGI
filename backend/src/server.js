@@ -23,60 +23,12 @@ app.get("/", (req, res) => {
 });
 
 app.get("/users", async (_, res) => {
-  const users = await prisma.user.findMany()
+  const users = await prisma.usuarios.findMany()0o
 
   res.json({
     data: users
   })
 })
-
-// app.get("/api/users", (req, res) => {
-//   db.query("SELECT nome, password, nivel FROM users", (err, row) => {
-//     if (err)
-//       return res.status(500).json({
-//         message: "An error occurred",
-//         error: err.message,
-//       });
-//     if (row.length == 0)
-//       return res.status(404).json({
-//         message: "No match found",
-//         data: [],
-//       });
-//     res.json({ message: "Fetched successfully", data: row });
-//   });
-// });
-
-// app.post("/api/users/login", (req, res) => {
-//   const { nome, password } = req.body;
-
-//   if (!nome || !password) {
-//     return res.status(400).json({
-//       message: "Nome and password are required",
-//     });
-//   }
-
-//   db.query(
-//     "SELECT nome, password, nivel FROM users WHERE nome=? AND password=?",
-//     [nome, password],
-//     (err, result) => {
-//       if (err) {
-//         return res.status(500).json({
-//           message: "An error occurred",
-//           error: err.message,
-//         });
-//       }
-
-//       if (result.length === 0) {
-//         return res.status(404).json({
-//           message: "No match found",
-//           data: [],
-//         });
-//       }
-
-//       res.json({ message: "Fetched successfully", data: result });
-//     }
-//   );
-// });
 
 app.listen(port, '0.0.0.0', () => {
   console.log("Listening on port", port);

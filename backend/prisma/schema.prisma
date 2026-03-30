@@ -122,6 +122,7 @@ model usuarios {
   movimentacoes movimentacoes[]
 }
 
+
 enum usuarios_nivel {
   admin
   normal
@@ -134,3 +135,4 @@ enum itens_estado {
   danificado
   em_manutencao
 }
+\
