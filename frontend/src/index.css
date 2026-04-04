@@ -14,9 +14,9 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
 }
 
+html,
 body {
   width: 100dvw;
   height: 100dvh;
@@ -25,4 +25,5 @@ body {
 #root {
   width: 100%;
   height: 100%;
+  overflow-x: hidden;
 }

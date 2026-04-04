@@ -12,9 +12,8 @@ import {
 import { cn } from "../../lib/utils";
 import { Button } from "../ui/button";
 
-
 const navItems = [
-  { icon: LayoutDashboard, label: "Painel", path: "/" },
+  { icon: LayoutDashboard, label: "Início", path: "/" },
   { icon: Package, label: "Inventário", path: "/inventario" },
   { icon: ArrowLeftRight, label: "Movimentações", path: "/movimentacoes" },
   { icon: BarChart3, label: "Relatórios", path: "/relatorios" },
@@ -31,7 +30,7 @@ export function Sidebar({ collapsed, onToggle }) {
       <div
         className={cn(
           "fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm lg:hidden transition-opacity duration-300",
-          collapsed ? "opacity-0 pointer-events-none" : "opacity-100"
+          collapsed ? "opacity-0 pointer-events-none" : "opacity-100",
         )}
         onClick={onToggle}
       />
@@ -39,8 +38,10 @@ export function Sidebar({ collapsed, onToggle }) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-50 h-full bg-sidebar-background border-r border-sidebar-border transition-all duration-300 ease-in-out text-lg",
-          collapsed ? "-translate-x-full lg:translate-x-0 lg:w-18" : "translate-x-0 w-64"
+          "fixed top-0 left-0 z-50 h-full bg-sidebar-background border-r border-sidebar-border transition-all duration-300 ease-in-out",
+          collapsed
+            ? "-translate-x-full lg:translate-x-0 lg:w-18"
+            : "translate-x-0 w-64",
         )}
       >
         {/* Logo */}
@@ -69,14 +70,12 @@ export function Sidebar({ collapsed, onToggle }) {
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all duration-200",
                   isActive
                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
                 )}
+                title={item.label}
               >
                 <item.icon
-                  className={cn(
-                    "w-5 h-5 shrink-0",
-                    isActive && "text-primary"
-                  )}
+                  className={cn("w-5 h-5 shrink-0", isActive && "text-primary")}
                 />
                 {!collapsed && (
                   <span className="animate-slide-in">{item.label}</span>

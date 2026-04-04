@@ -4,17 +4,30 @@ import "./index.css";
 import Login from "./pages/Login.jsx";
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
 import AppLayout from "./components/layout/AppLayout.jsx";
+import Inventory from "./pages/Inventory";
+import Reports from "./pages/Reports";
+import CheckInOut from "./pages/CheckInOut";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <AppLayout>
-      <Outlet />
-    </AppLayout>,
+    element: (
+      <AppLayout>
+        <Outlet />
+      </AppLayout>
+    ),
     children: [
       {
-        path: "/a",
-        element: <p>wasd</p>,
+        path: "/inventario",
+        element: <Inventory />,
+      },
+      {
+        path: "/relatorios",
+        element: <Reports />,
+      },
+      {
+        path: "/movimentacoes",
+        element: <CheckInOut />,
       },
     ],
   },

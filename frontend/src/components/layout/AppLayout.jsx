@@ -14,7 +14,7 @@ export default function AppLayout({ children }) {
       />
       <div
         className={cn(
-          "h-full w-full transition ease-in-out",
+          "h-full flex flex-col flex-1 w-full transition ease-in-out",
           collapsed ? "lg:pl-18" : "lg:pl-64",
         )}
       >
@@ -22,7 +22,9 @@ export default function AppLayout({ children }) {
           collapsed={collapsed}
           onMenuClick={() => setCollapsed(!collapsed)}
         />
-        <main className="h-full overflow-x-auto no-scrollbar">{children}</main>
+        <main className="w-full flex-1 min-h-0 overflow-hidden no-scrollbar">
+          {children}
+        </main>
       </div>
     </div>
   );

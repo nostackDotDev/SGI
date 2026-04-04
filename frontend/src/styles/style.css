@@ -7,3 +7,7 @@
 .no-scrollbar {
   scrollbar-width: none;
 }
+
+.containerHeight {
+  height: calc(100dvh - 56px);
+}
