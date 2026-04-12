@@ -7,9 +7,146 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model user {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique(map: "email") @db.VarChar(255)
-  password  String   @db.VarChar(255)
-  createdAt DateTime @default(now()) @db.Timestamp(0)
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
+model Instituicao {
+  id         Int      @id @default(autoincrement())
+  nome       String
+  descricao  String?
+  endereco   String
+  registrada DateTime @default(now())
+  status     Status   @default(ACTIVE)
+
+  departamentos Departamento[]
+}
+
+model Departamento {
+  id         Int      @id @default(autoincrement())
+  nome       String
+  descricao  String?
+  registrado DateTime @default(now())
+  status     Status   @default(ACTIVE)
+
+  instituicaoId Int
+  instituicao   Instituicao @relation(fields: [instituicaoId], references: [id])
+
+  salas Sala[]
+}
+
+model Sala {
+  id         Int    @id @default(autoincrement())
+  numeroSala String
+  tipoSala   String
+
+  departamentoId Int
+  departamento   Departamento @relation(fields: [departamentoId], references: [id])
+
+  itens Item[]
+}
+
+model Cargo {
+  id         Int     @id @default(autoincrement())
+  nome       String
+  descricao  String?
+  permissoes String?
+
+  utilizadores Utilizador[]
+}
+
+model Utilizador {
+  id        Int     @id @default(autoincrement())
+  nome      String
+  email     String  @unique
+  password  String
+  descricao String?
+
+  cargoId Int
+  cargo   Cargo @relation(fields: [cargoId], references: [id])
+
+  registos Registo[]
+}
+
+model Categoria {
+  id        Int     @id @default(autoincrement())
+  nome      String
+  descricao String?
+
+  subcategorias Subcategoria[]
+  itens         Item[]
+  TipoItem      TipoItem[]
+}
+
+model Subcategoria {
+  id        Int     @id @default(autoincrement())
+  nome      String
+  descricao String?
+
+  categoriaId Int
+  categoria   Categoria @relation(fields: [categoriaId], references: [id])
+
+  tipos TipoItem[]
+  itens Item[]
+}
+
+model TipoItem {
+  id        Int     @id @default(autoincrement())
+  nome      String
+  descricao String?
+
+  categoriaId Int
+  categoria   Categoria @relation(fields: [categoriaId], references: [id])
+
+  subcategoriaId Int
+  subcategoria   Subcategoria @relation(fields: [subcategoriaId], references: [id])
+
+  itens Item[]
+}
+
+model Condicao {
+  id        Int     @id @default(autoincrement())
+  nome      String
+  descricao String?
+
+  itens Item[]
+}
+
+model Item {
+  id         Int      @id @default(autoincrement())
+  nome       String
+  descricao  String?
+  quantidade Int      @default(1)
+  registrado DateTime @default(now())
+  status     Status   @default(ACTIVE)
+
+  categoriaId Int
+  categoria   Categoria @relation(fields: [categoriaId], references: [id])
+
+  subcategoriaId Int
+  subcategoria   Subcategoria @relation(fields: [subcategoriaId], references: [id])
+
+  tipoItemId Int
+  tipoItem   TipoItem @relation(fields: [tipoItemId], references: [id])
+
+  condicaoId Int
+  condicao   Condicao @relation(fields: [condicaoId], references: [id])
+
+  salaId Int?
+  sala   Sala? @relation(fields: [salaId], references: [id])
+
+  registos Registo[]
+}
+
+model Registo {
+  id         Int      @id @default(autoincrement())
+  quantidade Int
+  registrado DateTime @default(now())
+
+  itemId Int
+  item   Item @relation(fields: [itemId], references: [id])
+
+  utilizadorId Int
+  utilizador   Utilizador @relation(fields: [utilizadorId], references: [id])
 }
