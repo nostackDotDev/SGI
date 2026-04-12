@@ -1,14 +1,13 @@
-const prisma = require("../lib/prisma")
+import prisma from "../src/lib/prisma"
 
 async function main() {
     const user = await prisma.user.upsert({
-        where: { email: 'admin@sample.com' },
-        update: {},
         create: {
             email: 'admin@sample.com',
             password: 'adminPassword'
         }
     }); console.log({ user })
+    
 }
 
 main().then(async () => {

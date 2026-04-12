@@ -14,15 +14,6 @@ app.use(express.json())
 app.use("/", public_routes)
 
 
-app.get("/", (req, res) => {
-  /*res.json({
-    message: "Welcome to the API",
-    endpoints: {
-      empty: true
-    }
-  });*/
-  res.send("A rota raiz funciona, sem conteúdo ainda...")
-});
 
 /*app.get("/users", async (_, res) => {
   const users = await prisma.user.findMany()

@@ -7,14 +7,23 @@ const router = express.Router()
 //areas restritas são rotas privadas
 // biblioteca para enciptar a senha: bcrypt
 
+router.get("/", (req, res) => {
+  /*res.json({
+    message: "Welcome to the API",
+    endpoints: {
+      empty: true
+    }
+  });*/
+  res.send("A rota raiz funciona, sem conteúdo ainda...")
+});
 
 //User control
 router.get("/users", async (_, res) => {
-  const users = await prisma.user.findMany()
+  const users = await prisma.utilizador.findMany()
 
-  res.json({
-    data: users
-  })
+  res.json(
+    users
+  )
 })
 
 

@@ -7,130 +7,146 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model categorias {
-  id        Int        @id @default(autoincrement())
-  nome      String     @db.VarChar(100)
-  descricao String?    @db.Text
-  criado_em DateTime   @default(now()) @db.Timestamp(0)
-  produtos  produtos[]
+enum Status {
+  ACTIVE
+  INACTIVE
 }
 
-model fornecedores {
-  id        Int      @id @default(autoincrement())
-  nome      String   @db.VarChar(150)
-  telefone  String?  @db.VarChar(20)
-  email     String?  @db.VarChar(100)
-  endereco  String?  @db.Text
-  criado_em DateTime @default(now()) @db.Timestamp(0)
-  itens     itens[]
+model Instituicao {
+  id         Int      @id @default(autoincrement())
+  nome       String
+  descricao  String?
+  endereco   String
+  registrada DateTime @default(now())
+  status     Status   @default(ACTIVE)
+
+  departamentos Departamento[]
 }
 
-model itens {
-  id                Int             @id @default(autoincrement())
-  produto_id        Int?
-  codigo_patrimonio String?         @unique(map: "codigo_patrimonio") @db.VarChar(100)
-  numero_serie      String?         @db.VarChar(100)
-  sala_id           Int?
-  estado            itens_estado?   @default(novo)
-  data_aquisicao    DateTime?       @db.Date
-  valor             Decimal?        @db.Decimal(10, 2)
-  fornecedor_id     Int?
-  criado_em         DateTime        @default(now()) @db.Timestamp(0)
-  produtos          produtos?       @relation(fields: [produto_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "itens_ibfk_1")
-  salas             salas?          @relation(fields: [sala_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "itens_ibfk_2")
-  fornecedores      fornecedores?   @relation(fields: [fornecedor_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "itens_ibfk_3")
-  manutencoes       manutencoes[]
-  movimentacoes     movimentacoes[]
+model Departamento {
+  id         Int      @id @default(autoincrement())
+  nome       String
+  descricao  String?
+  registrado DateTime @default(now())
+  status     Status   @default(ACTIVE)
 
-  @@index([fornecedor_id], map: "fornecedor_id")
-  @@index([produto_id], map: "produto_id")
-  @@index([sala_id], map: "sala_id")
+  instituicaoId Int
+  instituicao   Instituicao @relation(fields: [instituicaoId], references: [id])
+
+  salas Sala[]
 }
 
-model log_sistema {
-  id         Int       @id @default(autoincrement())
-  usuario_id Int?
-  acao       String?   @db.VarChar(255)
-  data_acao  DateTime  @default(now()) @db.Timestamp(0)
-  usuarios   usuarios? @relation(fields: [usuario_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "log_sistema_ibfk_1")
+model Sala {
+  id         Int    @id @default(autoincrement())
+  numeroSala String
+  tipoSala   String
 
-  @@index([usuario_id], map: "usuario_id")
+  departamentoId Int
+  departamento   Departamento @relation(fields: [departamentoId], references: [id])
+
+  itens Item[]
 }
 
-model manutencoes {
-  id          Int       @id @default(autoincrement())
-  item_id     Int?
-  descricao   String?   @db.Text
-  data_inicio DateTime? @db.Date
-  data_fim    DateTime? @db.Date
-  custo       Decimal?  @db.Decimal(10, 2)
-  usuario_id  Int?
-  criado_em   DateTime  @default(now()) @db.Timestamp(0)
-  itens       itens?    @relation(fields: [item_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "manutencoes_ibfk_1")
-  usuarios    usuarios? @relation(fields: [usuario_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "manutencoes_ibfk_2")
+model Cargo {
+  id         Int     @id @default(autoincrement())
+  nome       String
+  descricao  String?
+  permissoes String?
 
-  @@index([item_id], map: "item_id")
-  @@index([usuario_id], map: "usuario_id")
+  utilizadores Utilizador[]
 }
 
-model movimentacoes {
-  id                Int       @id @default(autoincrement())
-  item_id           Int?
-  sala_origem       Int?
-  sala_destino      Int?
-  usuario_id        Int?
-  data_movimentacao DateTime  @default(now()) @db.Timestamp(0)
-  itens             itens?    @relation(fields: [item_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "movimentacoes_ibfk_1")
-  usuarios          usuarios? @relation(fields: [usuario_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "movimentacoes_ibfk_2")
+model Utilizador {
+  id        Int     @id @default(autoincrement())
+  nome      String
+  email     String  @unique
+  password  String
+  descricao String?
 
-  @@index([item_id], map: "item_id")
-  @@index([usuario_id], map: "usuario_id")
+  cargoId Int
+  cargo   Cargo @relation(fields: [cargoId], references: [id])
+
+  registos Registo[]
 }
 
-model produtos {
-  id           Int         @id @default(autoincrement())
-  nome         String      @db.VarChar(150)
-  categoria_id Int?
-  descricao    String?     @db.Text
-  criado_em    DateTime    @default(now()) @db.Timestamp(0)
-  itens        itens[]
-  categorias   categorias? @relation(fields: [categoria_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "produtos_ibfk_1")
+model Categoria {
+  id        Int     @id @default(autoincrement())
+  nome      String
+  descricao String?
 
-  @@index([categoria_id], map: "categoria_id")
+  subcategorias Subcategoria[]
+  itens         Item[]
+  TipoItem      TipoItem[]
 }
 
-model salas {
-  id          Int      @id @default(autoincrement())
-  nome        String   @db.VarChar(100)
-  bloco       String?  @db.VarChar(50)
-  responsavel String?  @db.VarChar(100)
-  criado_em   DateTime @default(now()) @db.Timestamp(0)
-  itens       itens[]
+model Subcategoria {
+  id        Int     @id @default(autoincrement())
+  nome      String
+  descricao String?
+
+  categoriaId Int
+  categoria   Categoria @relation(fields: [categoriaId], references: [id])
+
+  tipos TipoItem[]
+  itens Item[]
 }
 
-model usuarios {
-  id            Int             @id @default(autoincrement())
-  nome          String          @db.VarChar(100)
-  email         String          @unique(map: "email") @db.VarChar(100)
-  senha         String          @db.VarChar(255)
-  nivel         usuarios_nivel
-  ativo         Boolean?        @default(true)
-  ultimo_login  DateTime?       @db.DateTime(0)
-  criado_em     DateTime        @default(now()) @db.Timestamp(0)
-  log_sistema   log_sistema[]
-  manutencoes   manutencoes[]
-  movimentacoes movimentacoes[]
+model TipoItem {
+  id        Int     @id @default(autoincrement())
+  nome      String
+  descricao String?
+
+  categoriaId Int
+  categoria   Categoria @relation(fields: [categoriaId], references: [id])
+
+  subcategoriaId Int
+  subcategoria   Subcategoria @relation(fields: [subcategoriaId], references: [id])
+
+  itens Item[]
 }
 
-enum usuarios_nivel {
-  admin
-  normal
+model Condicao {
+  id        Int     @id @default(autoincrement())
+  nome      String
+  descricao String?
+
+  itens Item[]
 }
 
-enum itens_estado {
-  novo
-  bom
-  usado
-  danificado
-  em_manutencao
+model Item {
+  id         Int      @id @default(autoincrement())
+  nome       String
+  descricao  String?
+  quantidade Int      @default(1)
+  registrado DateTime @default(now())
+  status     Status   @default(ACTIVE)
+
+  categoriaId Int
+  categoria   Categoria @relation(fields: [categoriaId], references: [id])
+
+  subcategoriaId Int
+  subcategoria   Subcategoria @relation(fields: [subcategoriaId], references: [id])
+
+  tipoItemId Int
+  tipoItem   TipoItem @relation(fields: [tipoItemId], references: [id])
+
+  condicaoId Int
+  condicao   Condicao @relation(fields: [condicaoId], references: [id])
+
+  salaId Int?
+  sala   Sala? @relation(fields: [salaId], references: [id])
+
+  registos Registo[]
+}
+
+model Registo {
+  id         Int      @id @default(autoincrement())
+  quantidade Int
+  registrado DateTime @default(now())
+
+  itemId Int
+  item   Item @relation(fields: [itemId], references: [id])
+
+  utilizadorId Int
+  utilizador   Utilizador @relation(fields: [utilizadorId], references: [id])
 }
