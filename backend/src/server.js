@@ -1,12 +1,11 @@
-/*require("dotenv").config();
-const prisma = require("../lib/prisma");*/
-
+import dotenv from "dotenv"
 import express from "express"
 import cors from "cors"
 import public_routes from "./routes/public.js";
 
 const app = express();
 const port = process.env.PORT || 8001;
+dotenv.config()
 
 //middlewares
 app.use(cors())
@@ -14,17 +13,7 @@ app.use(express.json())
 app.use("/", public_routes)
 
 
-
-/*app.get("/users", async (_, res) => {
-  const users = await prisma.user.findMany()
-
-  res.json({
-    data: users
-  })
-})*/
-
-app.listen(port, '0.0.0.0', () => {
-  //console.log("Listening on port", port);
+app.listen(port, '0.s0.0.0', () => {
   console.log("Afinal funciona..." + " " + port)
 
 });
