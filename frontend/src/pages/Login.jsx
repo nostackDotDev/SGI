@@ -20,24 +20,24 @@ export default function Login() {
   };
 
   return (
-    <main className="w-full h-full flex items-center justify-center bg-linear-to-br from-emerald-300 to-emerald-950">
-      <section className="w-111 max-w-[90vw] max-h-[80vh] min-h-fit rounded-xl card-elevated p-6 overflow-y-auto">
+    <main className="w-full h-full flex items-center justify-center gradient-primary">
+      <section className="w-111 max-w-[90vw] max-h-[94vh] min-h-fit rounded-xl card-elevated p-6 overflow-y-auto">
         <aside className="text-center space-y-1">
-          <i className="block mx-auto w-fit h-fit p-1.5 px-2 rounded-sm bg-emerald-500 text-white">
-          <Boxes className="w-10 h-10" />
+          <i className="block mx-auto w-fit h-fit p-1.5 px-2 rounded-sm bg-success text-muted">
+            <Boxes className="w-10 h-10" />
           </i>
           <h1 className="text-2xl font-bold capitalize">inventário escolar</h1>
-          <p className="text-sm">Faça login para acessar o sistema</p>
+          <p>Faça login para acessar o sistema</p>
         </aside>
         <form
           onSubmit={handleLogin}
-          className="w-full h-fit grid grid-cols-1 grid-rows-[auto] gap-6 mt-6"
+          className="w-full h-fit flex flex-col justify-center gap-6 mt-6 text-lg"
         >
           <div className="h-fit flex items-start justify-center flex-col gap-1">
             <label htmlFor="login-email" className="font-medium">
               E-mail
             </label>
-            <div className="w-full h-fit border border-olive-500 rounded-md grid grid-cols-[auto_1fr]">
+            <div className="w-full h-fit border border-border rounded-md grid grid-cols-[auto_1fr]">
               <i className="w-fit bg-transparent px-2 flex items-center justify-center">
                 <Mail className="w-4 h-4" />
               </i>
@@ -56,7 +56,7 @@ export default function Login() {
             <label htmlFor="login-password" className="font-medium">
               Senha
             </label>
-            <div className="w-full h-fit border border-olive-500 rounded-md grid grid-cols-[auto_1fr_auto]">
+            <div className="w-full h-fit border border-border rounded-md grid grid-cols-[auto_1fr_auto]">
               <i className="w-fit bg-transparent px-2 flex items-center justify-center">
                 <Lock className="w-4 h-4" />
               </i>
@@ -81,30 +81,28 @@ export default function Login() {
               </i>
             </div>
           </div>
-          <div className="h-fit flex items-center justify-between">
-            <div className="flex items-end justify-center gap-1">
+          <div className="h-fit flex items-center justify-end">
+            {/* <div className="flex items-end justify-center gap-1">
               <input
                 type="checkbox"
                 name="remeberUser"
                 id="rememberUser"
-                className="rounded-full text-emerald-500 cursor-pointer"
+                className="rounded-full text-success cursor-pointer"
               />
-              <label htmlFor="rememberUser" className="cursor-pointer">Lembrar-me</label>
-            </div>
-            <span className="text-emerald-400 font-semibold text-shadow-2xs cursor-pointer hover:underline">
+              <label htmlFor="rememberUser" className="cursor-pointer">
+                Lembrar-me
+              </label>
+            </div> */}
+            <span className="text-ring font-semibold text-shadow-2xs cursor-pointer hover:underline">
               Esqueceu a senha?
             </span>
           </div>
           <button
             type="submit"
-            className="capitalize bg-emerald-400 text-white text-xl text-center py-2 rounded-lg font-semibold cursor-pointer scale-95 hover:scale-100 transition-transform ease-out"
+            className="w-full capitalize bg-success text-muted text-xl text-center py-2 rounded-lg font-semibold cursor-pointer scale-95 hover:scale-100 transition-transform ease-in duration-200"
           >
             entrar
           </button>
-          <span className="text-sm text-center">
-            Não tem uma conta?{" "}
-            <a className="text-emerald-400 font-semibold text-shadow-2xs cursor-pointer hover:underline">Cadastre-se</a>
-          </span>
         </form>
       </section>
     </main>
