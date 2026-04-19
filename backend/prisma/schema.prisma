@@ -48,8 +48,8 @@ model Sala {
   tipoSala   String
   deletedAt  DateTime?
 
-  departamentoId Int
-  departamento   Departamento @relation(fields: [departamentoId], references: [id], onDelete: Restrict)
+  departamentoId Int?
+  departamento   Departamento? @relation(fields: [departamentoId], references: [id], onDelete: Restrict)
 
   itens Item[]
 
