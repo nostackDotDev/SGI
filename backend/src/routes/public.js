@@ -5,7 +5,7 @@ import express from "express"
 const router = express.Router()
 
 //areas restritas são rotas privadas
-// biblioteca para enciptar a senha: bcrypt
+// biblioteca para encriptar a senha: bcrypt
 
 router.get("/", (req, res) => {
   /*res.json({
@@ -27,6 +27,8 @@ router.get("/users", async (_, res) => {
 })
 
 
+
+
 router.post("/cadastro", async (req, res) => {
     try {
         const user = req.body
@@ -35,13 +37,18 @@ router.post("/cadastro", async (req, res) => {
         message: "Cadastro recebido!",
         data: user
     })*/
-   await prisma.usuarios.create({
+   await prisma.utilizador.create({
     data: {
-        name: user.name,
+        nome: user.nome,
         email: user.email,
+        password: user.password,
+        descricao: user.descricao,
+        //cargo: user.
+        
     }
    })
-   res.status(201).json(user)        
+   res.status(201).json(user)  
+         
     } catch (error) {
         res.status(500).json ({message: "Erro no server, try again", error: error.message})
     }
