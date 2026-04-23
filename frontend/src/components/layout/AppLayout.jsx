@@ -1,17 +1,18 @@
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { cn } from "@/lib/utils";
 import { useLocation, useNavigate } from "react-router-dom";
+import Loader from "./Loader";
 
 export default function AppLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false);
-  const { pathname } = useLocation();
-  const navigate = useNavigate();
+  // const { pathname } = useLocation();
+  // const navigate = useNavigate();
 
-  useEffect(() => {
-    if (pathname === "/") navigate("/inicio", { replace: true });
-  }, [pathname]);
+  // useEffect(() => {
+  //   if (pathname === "/") navigate("/inicio", { replace: true });
+  // }, [pathname]);
 
   return (
     <div className="flex flex-row items-center justify-start w-screen h-screen overflow-hidden bg-background">
@@ -31,6 +32,7 @@ export default function AppLayout({ children }) {
         />
         <main className="w-full flex-1 min-h-0 overflow-hidden no-scrollbar">
           {children}
+          <Loader />
         </main>
       </div>
     </div>

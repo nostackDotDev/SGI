@@ -1,21 +1,29 @@
-import { StrictMode } from "react";
+import { lazy, StrictMode, Suspense } from "react";
 import { createRoot } from "react-dom/client";
-import "./index.css";
-import Login from "./pages/Login.jsx";
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
+import "./index.css";
 import AppLayout from "./components/layout/AppLayout.jsx";
-import Inventory from "./pages/Inventory";
-import Reports from "./pages/Reports";
-import CheckInOut from "./pages/CheckInOut";
-import Dashboard from "./pages/Dashboard";
-import Users from "./pages/Users";
+
+const Login = lazy(() => import("./pages/Login.jsx"));
+const SignUp = lazy(() => import("./pages/SignUp"));
+const Inventory = lazy(() => import("./pages/Inventory"));
+const Reports = lazy(() => import("./pages/Reports"));
+const CheckInOut = lazy(() => import("./pages/CheckInOut"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Users = lazy(() => import("./pages/Users"));
+const Settings = lazy(() => import("./pages/Settings"));
+
+import { Toaster } from "sonner";
+import Loader from "./components/layout/Loader";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: (
       <AppLayout>
-        <Outlet />
+        <Suspense fallback={<Loader />}>
+          <Outlet />
+        </Suspense>
       </AppLayout>
     ),
     children: [
@@ -24,20 +32,24 @@ const router = createBrowserRouter([
         element: <Dashboard />,
       },
       {
-        path: "/inventario",
+        path: "inventario",
         element: <Inventory />,
       },
       {
-        path: "/relatorios",
+        path: "relatorios",
         element: <Reports />,
       },
       {
-        path: "/movimentacoes",
+        path: "movimentacoes",
         element: <CheckInOut />,
       },
       {
         path: "usuarios",
         element: <Users />,
+      },
+      {
+        path: "configuracoes",
+        element: <Settings />,
       },
     ],
   },
@@ -45,10 +57,15 @@ const router = createBrowserRouter([
     path: "/login",
     element: <Login />,
   },
+  {
+    path: "/signup",
+    element: <SignUp />,
+  },
 ]);
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <RouterProvider router={router} />
+    <Toaster closeButton />
   </StrictMode>,
 );
