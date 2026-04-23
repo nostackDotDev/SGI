@@ -1,10 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { cn } from "@/lib/utils";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function AppLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false);
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (pathname === "/") navigate("/inicio", { replace: true });
+  }, [pathname]);
 
   return (
     <div className="flex flex-row items-center justify-start w-screen h-screen overflow-hidden bg-background">

@@ -7,6 +7,8 @@ import AppLayout from "./components/layout/AppLayout.jsx";
 import Inventory from "./pages/Inventory";
 import Reports from "./pages/Reports";
 import CheckInOut from "./pages/CheckInOut";
+import Dashboard from "./pages/Dashboard";
+import Users from "./pages/Users";
 
 const router = createBrowserRouter([
   {
@@ -18,6 +20,10 @@ const router = createBrowserRouter([
     ),
     children: [
       {
+        path: "inicio",
+        element: <Dashboard />,
+      },
+      {
         path: "/inventario",
         element: <Inventory />,
       },
@@ -28,6 +34,10 @@ const router = createBrowserRouter([
       {
         path: "/movimentacoes",
         element: <CheckInOut />,
+      },
+      {
+        path: "usuarios",
+        element: <Users />,
       },
     ],
   },
