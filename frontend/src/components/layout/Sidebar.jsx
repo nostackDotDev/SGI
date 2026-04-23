@@ -13,7 +13,7 @@ import { cn } from "../../lib/utils";
 import { Button } from "../ui/button";
 
 const navItems = [
-  { icon: LayoutDashboard, label: "Início", path: "/" },
+  { icon: LayoutDashboard, label: "Início", path: "/inicio" },
   { icon: Package, label: "Inventário", path: "/inventario" },
   { icon: ArrowLeftRight, label: "Movimentações", path: "/movimentacoes" },
   { icon: BarChart3, label: "Relatórios", path: "/relatorios" },

@@ -20,7 +20,7 @@ export function InventoryFilters({
   setStatus,
   location,
   setLocation,
-  setPageSize,
+  // setPageSize,
 }) {
   const debounceSetSearch = (value) => {
     const t = setTimeout(() => {
@@ -31,7 +31,7 @@ export function InventoryFilters({
   };
 
   return (
-    <div className="w-full flex flex-col sm:flex-row gap-4 items-start sm:items-end justify-between">
+    <div className="w-full flex flex-col sm:flex-row gap-4 items-start sm:items-end justify-between card-elevated p-6 px-4">
       <div className="flex flex-col sm:flex-row gap-3 flex-1 w-full sm:w-full">
         {/* Pesquisa */}
         <div className="grid gap-2">
@@ -51,7 +51,7 @@ export function InventoryFilters({
         </div>
 
         {/* Filters */}
-        <div className="flex gap-2">
+        <div className="flex gap-4">
           <div className="grid gap-2">
             <Label htmlFor="categoryFilter" className="px-2">
               Categoria
@@ -110,7 +110,7 @@ export function InventoryFilters({
       </div>
 
       {/* Add Button */}
-      <Button onClick={onAddItem} className="w-full sm:w-auto">
+      <Button onClick={onAddItem} className="w-full py-5 sm:w-auto">
         <Plus className="w-4 h-4 mr-2" />
         Novo Item
       </Button>
