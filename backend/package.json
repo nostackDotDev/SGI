@@ -23,6 +23,6 @@
     "prisma": "6.12.0"
   },
   "prisma": {
-    "seed": "node prisma/seed.js"
+    "seed": "node prisma/seeders.js"
   }
 }
