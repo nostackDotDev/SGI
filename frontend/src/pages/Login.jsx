@@ -1,5 +1,6 @@
 import { Boxes, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -7,12 +8,14 @@ export default function Login() {
     password: undefined,
   });
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
     console.log(formData);
-    return;
+
+    navigate("/");
   };
 
   const handleInput = (field, value) => {
@@ -21,7 +24,7 @@ export default function Login() {
 
   return (
     <main className="w-full h-full flex items-center justify-center gradient-primary">
-      <section className="w-111 max-w-[90vw] max-h-[94vh] min-h-fit rounded-xl card-elevated p-6 overflow-y-auto">
+      <section className="w-[60vw] max-w-xl bg-card max-h-[94vh] min-h-fit rounded-xl p-6 overflow-y-auto">
         <aside className="text-center space-y-1">
           <i className="block mx-auto w-fit h-fit p-1.5 px-2 rounded-sm bg-success text-muted">
             <Boxes className="w-10 h-10" />
@@ -37,7 +40,7 @@ export default function Login() {
             <label htmlFor="login-email" className="font-medium">
               E-mail
             </label>
-            <div className="w-full h-fit border border-border rounded-md grid grid-cols-[auto_1fr]">
+            <div className="w-full h-fit border border-accent rounded-md grid grid-cols-[auto_1fr] hover:shadow-xs shadow-muted-foreground/60 focus-within:border-primary transition-colors ease">
               <i className="w-fit bg-transparent px-2 flex items-center justify-center">
                 <Mail className="w-4 h-4" />
               </i>
@@ -56,7 +59,7 @@ export default function Login() {
             <label htmlFor="login-password" className="font-medium">
               Senha
             </label>
-            <div className="w-full h-fit border border-border rounded-md grid grid-cols-[auto_1fr_auto]">
+            <div className="w-full h-fit border border-accent rounded-md grid grid-cols-[auto_1fr_auto] hover:shadow-xs shadow-muted-foreground/60 focus-within:border-primary transition-colors ease">
               <i className="w-fit bg-transparent px-2 flex items-center justify-center">
                 <Lock className="w-4 h-4" />
               </i>
@@ -93,10 +96,17 @@ export default function Login() {
                 Lembrar-me
               </label>
             </div> */}
-            <span className="text-ring font-semibold text-shadow-2xs cursor-pointer hover:underline">
+            <span className="text-ring text-shadow-2xs cursor-pointer hover:underline">
               Esqueceu a senha?
             </span>
           </div>
+          <Link
+            to="/signup"
+            replace
+            className="-mt-5 text-right text-ring text-shadow-2xs cursor-pointer hover:underline"
+          >
+            Não possui uma conta? Criar conta
+          </Link>
           <button
             type="submit"
             className="w-full capitalize bg-success text-muted text-xl text-center py-2 rounded-lg font-semibold cursor-pointer scale-95 hover:scale-100 transition-transform ease-in duration-200"
