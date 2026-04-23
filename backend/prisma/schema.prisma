@@ -23,6 +23,10 @@ model Instituicao {
 
   departamentos Departamento[]
 
+  cargos        Cargo[]
+  utilizadores  Utilizador[]
+  categorias    Categoria[]
+
   @@index([deletedAt])
 }
 
@@ -58,40 +62,52 @@ model Sala {
 
 model Cargo {
   id         Int     @id @default(autoincrement())
-  nome       String  @unique
+  nome       String
   descricao  String?
   permissoes Json?
   deletedAt  DateTime?
 
+  instituicaoId Int
+  instituicao   Instituicao @relation(fields: [instituicaoId], references: [id], onDelete: Restrict)
+
   utilizadores Utilizador[]
 
+  @@unique([nome, instituicaoId]) 
   @@index([deletedAt])
 }
 
 model Utilizador {
   id        Int     @id @default(autoincrement())
   nome      String
-  email     String  @unique
+  email     String
   password  String
   descricao String?
   deletedAt DateTime?
+
+  instituicaoId Int
+  instituicao   Instituicao @relation(fields: [instituicaoId], references: [id], onDelete: Restrict)
 
   cargoId Int
   cargo   Cargo @relation(fields: [cargoId], references: [id], onDelete: Restrict)
 
   registos Registo[]
 
+  @@unique([email, instituicaoId])
   @@index([deletedAt])
 }
 
 model Categoria {
   id        Int     @id @default(autoincrement())
-  nome      String  @unique
+  nome      String
   descricao String?
   deletedAt DateTime?
 
+  instituicaoId Int
+  instituicao   Instituicao @relation(fields: [instituicaoId], references: [id], onDelete: Restrict)
+
   itens Item[]
 
+  @@unique([nome, instituicaoId])
   @@index([deletedAt])
 }
 

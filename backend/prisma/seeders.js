@@ -6,12 +6,13 @@ async function main() {
   // CARGO
   // =========================
   await prisma.cargo.upsert({
-    where: { nome: "admin" },
+    where: { id: "admin" },
     update: {},
     create: {
       nome: "admin",
       descricao: "Administrador do sistema",
       permissoes: PERMISSIONS.ADMIN,
+      instituicaoId
     },
   });
 

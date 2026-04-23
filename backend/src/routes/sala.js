@@ -4,33 +4,32 @@ import prisma from "../lib/prisma.js";
 const router = express.Router();
 
 router.get("/", async (req, res) => {
-  const salas = await prisma.sala.findMany();
-
-  res.json({
-    message: "Sala routes are working!",
-    data: salas,
+  const salas = await prisma.sala.findMany({
+    where: { deletedAt: null },
+    include: { departamento: true, itens: true },
   });
+
+  res.json({ data: salas, error: null, message: "Sala routes are working!" });
 });
 
 router.get("/:id", async (req, res) => {
   const sala = await prisma.sala.findUnique({
     where: { id: parseInt(req.params.id) },
+    include: { departamento: true, itens: true },
   });
 
-  if (!sala) {
-    return res.status(404).json({ error: "Sala not found", data: null });
+  if (!sala || sala.deletedAt) {
+    return res.status(404).json({ data: null, error: "Sala not found" });
   }
 
-  res.json({ message: "", data: sala });
+  res.json({ data: sala, error: null });
 });
 
 router.post("/create", async (req, res) => {
   const { numeroSala, tipoSala, departamentoId } = req.body;
 
   if (!numeroSala || !departamentoId) {
-    return res
-      .status(400)
-      .json({ error: "Nome e departamento são obrigatórios" });
+    return res.status(400).json({ data: null, error: "Número e departamento são obrigatórios" });
   }
 
   const departamento = await prisma.departamento.findUnique({
@@ -38,11 +37,11 @@ router.post("/create", async (req, res) => {
   });
 
   if (!departamento) {
-    return res.status(404).json({ error: "Departamento not found" });
+    return res.status(404).json({ data: null, error: "Departamento not found" });
   }
 
   try {
-    const newDepartamento = await prisma.sala.create({
+    const newSala = await prisma.sala.create({
       data: {
         numeroSala,
         tipoSala: tipoSala || "",
@@ -50,11 +49,9 @@ router.post("/create", async (req, res) => {
       },
     });
 
-    res.status(201).json(newDepartamento);
+    res.status(201).json({ data: newSala, error: null });
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Failed to create sala", error: error.message });
+    res.status(500).json({ data: null, error: error.message });
   }
 });
 
@@ -65,31 +62,55 @@ router.put("/update/:id", async (req, res) => {
     where: { id: parseInt(req.params.id) },
   });
 
-  if (!sala) {
-    return res.status(404).json({ error: "Sala not found", data: null });
+  if (!sala || sala.deletedAt) {
+    return res.status(404).json({ data: null, error: "Sala not found" });
   }
 
-  const departamento = await prisma.departamento.findUnique({
-    where: { id: departamentoId },
-  });
+  const departamento = departamentoId
+    ? await prisma.departamento.findUnique({
+        where: { id: departamentoId },
+      })
+    : null;
 
-  if (!departamento) {
-    return res
-      .status(404)
-      .json({ error: "Departamento not found", data: null });
+  if (departamentoId && !departamento) {
+    return res.status(404).json({ data: null, error: "Departamento not found" });
   }
 
-  const newDepartamento = await prisma.sala.update({
-    where: { id: sala.id },
-    data: {
-      numeroSala: numeroSala || sala.numeroSala,
-      tipoSala: tipoSala || sala.tipoSala,
-      departamentoId: departamentoId || sala.departamentoId,
-      status: status || sala.status,
-    },
+  try {
+    const newSala = await prisma.sala.update({
+      where: { id: sala.id },
+      data: {
+        numeroSala: numeroSala || sala.numeroSala,
+        tipoSala: tipoSala || sala.tipoSala,
+        departamentoId: departamentoId || sala.departamentoId,
+      },
+    });
+
+    res.json({ data: newSala, error: null });
+  } catch (error) {
+    res.status(500).json({ data: null, error: error.message });
+  }
+});
+
+router.delete("/:id", async (req, res) => {
+  const sala = await prisma.sala.findUnique({
+    where: { id: parseInt(req.params.id) },
   });
 
-  res.json(newDepartamento);
+  if (!sala || sala.deletedAt) {
+    return res.status(404).json({ data: null, error: "Sala not found" });
+  }
+
+  try {
+    const deletedSala = await prisma.sala.update({
+      where: { id: sala.id },
+      data: { deletedAt: new Date() },
+    });
+
+    res.json({ data: deletedSala, error: null });
+  } catch (error) {
+    res.status(500).json({ data: null, error: error.message });
+  }
 });
 
 export default router;

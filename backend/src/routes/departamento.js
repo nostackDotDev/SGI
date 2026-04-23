@@ -4,35 +4,32 @@ import prisma from "../lib/prisma.js";
 const router = express.Router();
 
 router.get("/", async (req, res) => {
-  const departamentos = await prisma.departamento.findMany();
-
-  res.json({
-    message: "Departamento routes are working!",
-    data: departamentos,
+  const departamentos = await prisma.departamento.findMany({
+    where: { deletedAt: null },
+    include: { instituicao: true, salas: true },
   });
+
+  res.json({ data: departamentos, error: null, message: "Departamento routes are working!" });
 });
 
 router.get("/:id", async (req, res) => {
   const departamento = await prisma.departamento.findUnique({
     where: { id: parseInt(req.params.id) },
+    include: { instituicao: true, salas: true },
   });
 
-  if (!departamento) {
-    return res
-      .status(404)
-      .json({ error: "Departamento not found", data: null });
+  if (!departamento || departamento.deletedAt) {
+    return res.status(404).json({ data: null, error: "Departamento not found" });
   }
 
-  res.json({ message: "", data: departamento });
+  res.json({ data: departamento, error: null });
 });
 
 router.post("/create", async (req, res) => {
   const { nome, descricao, instituicaoId } = req.body;
 
   if (!nome || !instituicaoId) {
-    return res
-      .status(400)
-      .json({ error: "Nome e instituição são obrigatórias" });
+    return res.status(400).json({ data: null, error: "Nome e instituição são obrigatórias" });
   }
 
   const instituicao = await prisma.instituicao.findUnique({
@@ -40,7 +37,7 @@ router.post("/create", async (req, res) => {
   });
 
   if (!instituicao) {
-    return res.status(404).json({ error: "Instituição not found" });
+    return res.status(404).json({ data: null, error: "Instituição not found" });
   }
 
   try {
@@ -52,11 +49,9 @@ router.post("/create", async (req, res) => {
       },
     });
 
-    res.status(201).json(newDepartamento);
+    res.status(201).json({ data: newDepartamento, error: null });
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Failed to create departamento", error: error.message });
+    res.status(500).json({ data: null, error: error.message });
   }
 });
 
@@ -67,10 +62,8 @@ router.put("/update/:id", async (req, res) => {
     where: { id: parseInt(req.params.id) },
   });
 
-  if (!departamento) {
-    return res
-      .status(404)
-      .json({ error: "Departamento not found", data: null });
+  if (!departamento || departamento.deletedAt) {
+    return res.status(404).json({ data: null, error: "Departamento not found" });
   }
 
   const instituicao = instituicaoId
@@ -79,21 +72,46 @@ router.put("/update/:id", async (req, res) => {
       })
     : null;
 
-  if (!instituicao && instituicaoId) {
-    return res.status(404).json({ error: "Instituição not found", data: null });
+  if (instituicaoId && !instituicao) {
+    return res.status(404).json({ data: null, error: "Instituição not found" });
   }
 
-  const newDepartamento = await prisma.departamento.update({
-    where: { id: departamento.id },
-    data: {
-      nome: nome || departamento.nome,
-      descricao: descricao || departamento.descricao,
-      instituicaoId: instituicaoId || departamento.instituicaoId,
-      status: status || departamento.status,
-    },
+  try {
+    const newDepartamento = await prisma.departamento.update({
+      where: { id: departamento.id },
+      data: {
+        nome: nome || departamento.nome,
+        descricao: descricao || departamento.descricao,
+        instituicaoId: instituicaoId || departamento.instituicaoId,
+        status: status || departamento.status,
+      },
+    });
+
+    res.json({ data: newDepartamento, error: null });
+  } catch (error) {
+    res.status(500).json({ data: null, error: error.message });
+  }
+});
+
+router.delete("/:id", async (req, res) => {
+  const departamento = await prisma.departamento.findUnique({
+    where: { id: parseInt(req.params.id) },
   });
 
-  res.json(newDepartamento);
+  if (!departamento || departamento.deletedAt) {
+    return res.status(404).json({ data: null, error: "Departamento not found" });
+  }
+
+  try {
+    const deletedDepartamento = await prisma.departamento.update({
+      where: { id: departamento.id },
+      data: { deletedAt: new Date() },
+    });
+
+    res.json({ data: deletedDepartamento, error: null });
+  } catch (error) {
+    res.status(500).json({ data: null, error: error.message });
+  }
 });
 
 export default router;

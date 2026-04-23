@@ -4,66 +4,112 @@ import prisma from "../lib/prisma.js";
 const router = express.Router();
 
 router.get("/", async (req, res) => {
-  const categorias = await prisma.categoria.findMany();
+  const instituicaoId = parseInt(req.headers["x-instituicao-id"]);
 
-  res.json({ message: "Categoria routes are working!", data: categorias });
+  const categorias = await prisma.categoria.findMany({
+    where: { instituicaoId, deletedAt: null },
+  });
+
+  res.json({ data: categorias, error: null });
 });
 
 router.get("/:id", async (req, res) => {
-  const categoria = await prisma.categoria.findUnique({
-    where: { id: parseInt(req.params.id) },
+  const instituicaoId = parseInt(req.headers["x-instituicao-id"]);
+
+  const categoria = await prisma.categoria.findFirst({
+    where: {
+      id: parseInt(req.params.id),
+      instituicaoId,
+      deletedAt: null,
+    },
   });
 
   if (!categoria) {
-    return res.status(404).json({ error: "Categoria not found" });
+    return res.status(404).json({ data: null, error: "Categoria not found" });
   }
 
-  res.json({ message: "", data: categoria });
+  res.json({ data: categoria, error: null });
 });
 
 router.post("/create", async (req, res) => {
+  const instituicaoId = parseInt(req.headers["x-instituicao-id"]);
   const { nome, descricao } = req.body;
 
   if (!nome) {
-    return res.status(400).json({ error: "Nome é obrigatório" });
+    return res.status(400).json({ data: null, error: "Nome é obrigatório" });
   }
 
   try {
     const newCategoria = await prisma.categoria.create({
       data: {
-        nome: nome || "",
+        nome,
         descricao: descricao || "",
+        instituicaoId,
       },
     });
 
-    res.status(201).json(newCategoria);
+    res.status(201).json({ data: newCategoria, error: null });
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Failed to create categoria", error: error.message });
+    res.status(500).json({ data: null, error: error.message });
   }
 });
 
 router.put("/update/:id", async (req, res) => {
+  const instituicaoId = parseInt(req.headers["x-instituicao-id"]);
   const { nome, descricao } = req.body;
 
-  const categoria = await prisma.categoria.findUnique({
-    where: { id: parseInt(req.params.id) },
-  });
-
-  if (!categoria) {
-    return res.status(404).json({ error: "Categoria not found" });
-  }
-
-  const nweCategoria = await prisma.categoria.update({
-    where: { id: categoria.id },
-    data: {
-      nome: nome || categoria.nome,
-      descricao: descricao || categoria.descricao,
+  const categoria = await prisma.categoria.findFirst({
+    where: {
+      id: parseInt(req.params.id),
+      instituicaoId,
+      deletedAt: null,
     },
   });
 
-  res.json({ message: "Categoria updated successfully", data: nweCategoria });
+  if (!categoria) {
+    return res.status(404).json({ data: null, error: "Categoria not found" });
+  }
+
+  try {
+    const updated = await prisma.categoria.update({
+      where: { id: categoria.id },
+      data: {
+        nome: nome ?? categoria.nome,
+        descricao: descricao ?? categoria.descricao,
+      },
+    });
+
+    res.json({ data: updated, error: null });
+  } catch (error) {
+    res.status(500).json({ data: null, error: error.message });
+  }
+});
+
+router.delete("/:id", async (req, res) => {
+  const instituicaoId = parseInt(req.headers["x-instituicao-id"]);
+
+  const categoria = await prisma.categoria.findFirst({
+    where: {
+      id: parseInt(req.params.id),
+      instituicaoId,
+      deletedAt: null,
+    },
+  });
+
+  if (!categoria) {
+    return res.status(404).json({ data: null, error: "Categoria not found" });
+  }
+
+  try {
+    const deletedCategoria = await prisma.categoria.update({
+      where: { id: categoria.id },
+      data: { deletedAt: new Date() },
+    });
+
+    res.json({ data: deletedCategoria, error: null });
+  } catch (error) {
+    res.status(500).json({ data: null, error: error.message });
+  }
 });
 
 export default router;

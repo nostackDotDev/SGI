@@ -9,6 +9,8 @@ import instituicao_routes from "./routes/instituicao.js";
 import sala_routes from "./routes/sala.js";
 import item_routes from "./routes/item.js";
 import registo_routes from "./routes/registo.js";
+import utilizador_routes from "./routes/utilizador.js";
+import condicao_routes from "./routes/condicao.js";
 
 const app = express();
 const port = process.env.PORT || 8001;
@@ -25,6 +27,8 @@ app.use("/instituicao", instituicao_routes);
 app.use("/sala", sala_routes);
 app.use("/item", item_routes);
 app.use("/registo", registo_routes);
+app.use("/utilizador", utilizador_routes);
+app.use("/condicao", condicao_routes);
 
 app.listen(port, "0.0.0.0", () => {
   console.log("Afinal funciona..." + " " + port);
