@@ -24,7 +24,7 @@ export default function Login() {
 
   return (
     <main className="w-full h-full flex items-center justify-center gradient-primary">
-      <section className="w-[60vw] max-w-xl bg-card max-h-[94vh] min-h-fit rounded-xl p-6 overflow-y-auto">
+      <section className="w-[90vw] max-w-xl bg-card max-h-[94vh] min-h-fit rounded-xl p-6 overflow-y-auto">
         <aside className="text-center space-y-1">
           <i className="block mx-auto w-fit h-fit p-1.5 px-2 rounded-sm bg-success text-muted">
             <Boxes className="w-10 h-10" />

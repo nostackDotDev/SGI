@@ -52,7 +52,7 @@ export default function Users() {
         </p>
       </div>
 
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6 overflow-hidden">
         {/* Filters */}
         <div className="card-elevated flex flex-col sm:flex-row gap-4 p-5">
           <div className="relative flex-1">
