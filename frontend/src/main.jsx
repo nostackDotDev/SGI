@@ -15,57 +15,64 @@ const Settings = lazy(() => import("./pages/Settings.jsx"));
 
 import { Toaster } from "sonner";
 import Loader from "./components/layout/Loader.jsx";
+import { AuthProvider } from "./core/contexts/AuthContext";
+import PublicRoutes from "./components/auth/PublicRoutes.jsx";
+import ProtectedRoutes from "./components/auth/ProtectedRoutes.jsx";
 
 const router = createBrowserRouter([
   {
-    path: "/",
-    element: (
-      <AppLayout>
-        <Suspense fallback={<Loader />}>
-          <Outlet />
-        </Suspense>
-      </AppLayout>
-    ),
+    element: <ProtectedRoutes />, // 🔐 ALL PRIVATE ROUTES
     children: [
       {
-        path: "inicio",
-        element: <Dashboard />,
-      },
-      {
-        path: "inventario",
-        element: <Inventory />,
-      },
-      {
-        path: "relatorios",
-        element: <Reports />,
-      },
-      {
-        path: "movimentacoes",
-        element: <CheckInOut />,
-      },
-      {
-        path: "usuarios",
-        element: <Users />,
-      },
-      {
-        path: "configuracoes",
-        element: <Settings />,
+        path: "/",
+        element: (
+          <AppLayout>
+            <Suspense fallback={<Loader />}>
+              <Outlet />
+            </Suspense>
+          </AppLayout>
+        ),
+        children: [
+          { path: "inicio", element: <Dashboard /> },
+          { path: "inventario", element: <Inventory /> },
+          { path: "relatorios", element: <Reports /> },
+          { path: "movimentacoes", element: <CheckInOut /> },
+          { path: "usuarios", element: <Users /> },
+          { path: "configuracoes", element: <Settings /> },
+        ],
       },
     ],
   },
+
   {
-    path: "/login",
-    element: <Login />,
-  },
-  {
-    path: "/signup",
-    element: <SignUp />,
+    element: <PublicRoutes />, // 🌐 ONLY LOGIN/SIGNUP
+    path: "/",
+    children: [
+      {
+        path: "/login",
+        element: (
+          <Suspense fallback={<Loader />}>
+            <Login />
+          </Suspense>
+        ),
+      },
+      {
+        path: "/signup",
+        element: (
+          <Suspense fallback={<Loader />}>
+            <SignUp />
+          </Suspense>
+        ),
+      },
+    ],
   },
 ]);
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
     <Toaster closeButton />
   </StrictMode>,
 );

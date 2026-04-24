@@ -1,3 +1,4 @@
+import { useAuth } from "@/core/contexts/AuthContext";
 import { request } from "@/lib/request";
 import { Boxes, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import React, { useState } from "react";
@@ -10,12 +11,21 @@ export default function Login() {
   });
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const navigate = useNavigate();
+  const { refreshAuth } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    console.log(formData);
 
-    navigate("/");
+    try {
+      await request("/auth/login", "POST", {
+        data: formData,
+      });
+
+      await refreshAuth(); // fetch user from cookie
+      navigate("/");
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleInput = (field, value) => {

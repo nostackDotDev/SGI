@@ -18,8 +18,13 @@ import {
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/core/contexts/AuthContext";
 
 export function Header({ onMenuClick, collapsed }) {
+  const { logout } = useAuth();
+  const handleLogout = async () => {
+    await logout();
+  };
   return (
     <header className="h-16 bg-card border-b border-border px-4 lg:px-4 lg:pl-2 flex items-center justify-between sticky top-0 z-30">
       {/* Left side */}
@@ -87,7 +92,10 @@ export function Header({ onMenuClick, collapsed }) {
               Configurações
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer text-destructive hover:bg-destructive/90 hover:text-muted">
+            <DropdownMenuItem
+              className="cursor-pointer text-destructive hover:bg-destructive/90 hover:text-muted"
+              onClick={handleLogout}
+            >
               <LogOut className="w-4 h-4 mr-2" />
               Sair
             </DropdownMenuItem>
