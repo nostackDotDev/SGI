@@ -1,81 +1,48 @@
-import { PERMISSIONS } from "../src/constants/tables.js";
-import prisma from "../src/lib/prisma.js";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 async function main() {
-  // =========================
-  // CARGO
-  // =========================
-  await prisma.cargo.upsert({
-    where: { id: "admin" },
-    update: {},
-    create: {
-      nome: "admin",
-      descricao: "Administrador do sistema",
-      permissoes: PERMISSIONS.ADMIN,
-      instituicaoId
-    },
-  });
+  console.log("Seeding base...");
 
-  await prisma.cargo.upsert({
-    where: { nome: "user" },
-    update: {},
-    create: {
-      nome: "user",
-      descricao: "Utilizador padrão",
-      permissoes: PERMISSIONS.USER,
-    },
-  });
+  // -----------------------------
+  // 1. PERMISSÕES
+  // -----------------------------
+  const permissoes = [
+    "CREATE_ITEM",
+    "READ_ITEM",
+    "UPDATE_ITEM",
+    "DELETE_ITEM",
+    "MANAGE_USERS",
+    "MANAGE_CARGOS",
+    "MANAGE_CATEGORIAS",
+    "MANAGE_SALAS",
+  ];
 
-  // =========================
-  // CONDICAO
-  // =========================
-  await prisma.condicao.upsert({
-    where: { nome: "bom" },
-    update: {},
-    create: {
-      nome: "bom",
-      descricao: "Em bom estado de utilização",
-    },
-  });
+  for (const nome of permissoes) {
+    await prisma.permissao.upsert({
+      where: { nome },
+      update: {},
+      create: { nome },
+    });
+  }
 
-  await prisma.condicao.upsert({
-    where: { nome: "manutencao" },
-    update: {},
-    create: {
-      nome: "manutencao",
-      descricao: "Em manutenção",
-    },
-  });
+  // -----------------------------
+  // 2. CONDIÇÕES
+  // -----------------------------
+  const condicoes = ["Boa", "Em manutenção", "Emprestado"];
 
-  await prisma.condicao.upsert({
-    where: { nome: "emprestado" },
-    update: {},
-    create: {
-      nome: "emprestado",
-      descricao: "Emprestado a utilizador",
-    },
-  });
+  for (const nome of condicoes) {
+    await prisma.condicao.upsert({
+      where: { nome },
+      update: {},
+      create: { nome },
+    });
+  }
 
-  // =========================
-  // CATEGORIA
-  // =========================
-  await prisma.categoria.upsert({
-    where: { nome: "DEFAULT" },
-    update: {},
-    create: {
-      nome: "DEFAULT",
-      descricao: "Categoria padrão",
-    },
-  });
-
-  console.log("Seed concluído com sucesso");
+  console.log("Seed concluído");
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+  .catch(console.error)
+  .finally(() => prisma.$disconnect());

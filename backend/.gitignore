@@ -4,3 +4,5 @@ node_modules
 
 backend/prisma/*.txt
 /src/generated/prisma
+
+*.session.sql
