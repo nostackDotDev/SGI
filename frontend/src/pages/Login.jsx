@@ -1,18 +1,18 @@
+import { request } from "@/lib/request";
 import { Boxes, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 export default function Login() {
   const [formData, setFormData] = useState({
-    email: undefined,
-    password: undefined,
+    email: "",
+    password: "",
   });
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
     console.log(formData);
 
     navigate("/");
@@ -50,7 +50,7 @@ export default function Login() {
                 name="email"
                 placeholder="seu@email.com"
                 className="p-2 focus:outline-0"
-                value={formData.email ?? ""}
+                value={formData.email}
                 onChange={(e) => handleInput("email", e.target.value)}
               />
             </div>
