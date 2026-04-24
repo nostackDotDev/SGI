@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import UsersTable from "@/components/users/usersTable";
+import UsersTable from "@/components/users/UsersTable.jsx";
 import { Search } from "lucide-react";
 
 import { useState } from "react";
