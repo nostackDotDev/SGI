@@ -1,25 +1,22 @@
-import prisma from "../lib/prisma";
+import { softDeleteWithReassign } from "../lib/softDeleteHelper";
 
-export class CategoriaService {
-  static async softDelete(id: number) {
-    return prisma.$transaction(async (tx) => {
-      // 1. Reassign dependent items
-      await tx.item.updateMany({
-        where: { categoriaId: id },
-        data: { categoriaId: 1 },
-      });
+// export class CategoriaService {
+//   static async softDelete(id: number) {
+//     return prisma.$transaction(async (tx) => {
+//       // 1. Reassign dependent items
+//       await tx.item.updateMany({
+//         where: { categoriaId: id },
+//         data: { categoriaId: 1 },
+//       });
 
-      // 2. Soft delete categoria
-      return tx.categoria.update({
-        where: { id },
-        data: { deletedAt: new Date() },
-      });
-    });
-  }
-}
-
-/* 
-import { softDeleteWithReassign } from "./softDelete.helper";
+//       // 2. Soft delete categoria
+//       return tx.categoria.update({
+//         where: { id },
+//         data: { deletedAt: new Date() },
+//       });
+//     });
+//   }
+// }
 
 export class CategoriaService {
   static async softDelete(id: number) {
@@ -38,4 +35,3 @@ export class CategoriaService {
     });
   }
 }
-*/
