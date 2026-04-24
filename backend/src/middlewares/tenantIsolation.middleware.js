@@ -1,10 +1,4 @@
-import { request, response } from "express";
-
-export function tenantIsolation(
-  req: request,
-  res: response,
-  next: NextFunction,
-) {
+export function tenantIsolation(req, res, next) {
   const user = req.user;
 
   if (!user?.instituicaoId) {

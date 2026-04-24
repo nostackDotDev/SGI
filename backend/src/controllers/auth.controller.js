@@ -1,7 +1,6 @@
-import type { Request, Response } from "express";
-import { login, signup } from "../services/auth.service.ts";
+import { login, signup } from "../services/auth.service.js";
 
-export async function signupController(req: Request, res: Response) {
+export async function signupController(req, res) {
   try {
     const result = await signup(req.body);
 
@@ -19,7 +18,7 @@ export async function signupController(req: Request, res: Response) {
   }
 }
 
-export async function loginController(req: Request, res: Response) {
+export async function loginController(req, res) {
   try {
     const { email, password } = req.body;
 
