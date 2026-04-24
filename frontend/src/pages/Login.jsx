@@ -2,7 +2,6 @@ import { request } from "@/lib/request";
 import { Boxes, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -16,17 +15,6 @@ export default function Login() {
     e.preventDefault();
     console.log(formData);
 
-    const res = await request("/auth/login", "post", {
-      data: formData,
-    });
-
-    if (!res || res.error) {
-      return;
-    }
-    toast.error(res?.error || "Ocorreu um erro ao fazer login");
-
-    console.log(res);
-
     navigate("/");
   };
 
@@ -36,7 +24,7 @@ export default function Login() {
 
   return (
     <main className="w-full h-full flex items-center justify-center gradient-primary">
-      <section className="w-[90vw] max-w-xl bg-card max-h-[94vh] min-h-fit rounded-xl p-6 overflow-y-auto">
+      <section className="w-[60vw] max-w-xl bg-card max-h-[94vh] min-h-fit rounded-xl p-6 overflow-y-auto">
         <aside className="text-center space-y-1">
           <i className="block mx-auto w-fit h-fit p-1.5 px-2 rounded-sm bg-success text-muted">
             <Boxes className="w-10 h-10" />

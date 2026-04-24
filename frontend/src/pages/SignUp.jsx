@@ -204,7 +204,7 @@ export default function SignUp() {
               </div>
             </div>
           </div>
-          <div className="flex flex-wrap gap-1 items-center justify-between">
+          <div className="flex items-center justify-between">
             <Link
               to="/login"
               replace
@@ -214,7 +214,7 @@ export default function SignUp() {
             </Link>
             <button
               type="submit"
-              className="flex-1 sm:grow-0 w-fit px-20 capitalize bg-success text-muted text-xl text-center py-2 rounded-lg font-semibold cursor-pointer scale-95 hover:scale-100 transition-transform ease-in duration-200"
+              className="w-fit px-20  capitalize bg-success text-muted text-xl text-center py-2 rounded-lg font-semibold cursor-pointer scale-95 hover:scale-100 transition-transform ease-in duration-200"
             >
               Cadastrar
             </button>

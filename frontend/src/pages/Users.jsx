@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import UsersTable from "@/components/users/usersTable";
+import UsersTable from "@/components/users/usersTable.jsx";
 import { Search } from "lucide-react";
 
 import { useState } from "react";
@@ -52,7 +52,7 @@ export default function Users() {
         </p>
       </div>
 
-      <div className="flex flex-col gap-6 overflow-hidden">
+      <div className="flex flex-col gap-6">
         {/* Filters */}
         <div className="card-elevated flex flex-col sm:flex-row gap-4 p-5">
           <div className="relative flex-1">

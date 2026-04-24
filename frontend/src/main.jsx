@@ -5,16 +5,16 @@ import "./index.css";
 import AppLayout from "./components/layout/AppLayout.jsx";
 
 const Login = lazy(() => import("./pages/Login.jsx"));
-const SignUp = lazy(() => import("./pages/SignUp"));
-const Inventory = lazy(() => import("./pages/Inventory"));
-const Reports = lazy(() => import("./pages/Reports"));
-const CheckInOut = lazy(() => import("./pages/CheckInOut"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Users = lazy(() => import("./pages/Users"));
-const Settings = lazy(() => import("./pages/Settings"));
+const SignUp = lazy(() => import("./pages/SignUp.jsx"));
+const Inventory = lazy(() => import("./pages/Inventory.jsx"));
+const Reports = lazy(() => import("./pages/Reports.jsx"));
+const CheckInOut = lazy(() => import("./pages/CheckInOut.jsx"));
+const Dashboard = lazy(() => import("./pages/Dashboard.jsx"));
+const Users = lazy(() => import("./pages/Users.jsx"));
+const Settings = lazy(() => import("./pages/Settings.jsx"));
 
 import { Toaster } from "sonner";
-import Loader from "./components/layout/Loader";
+import Loader from "./components/layout/Loader.jsx";
 
 const router = createBrowserRouter([
   {

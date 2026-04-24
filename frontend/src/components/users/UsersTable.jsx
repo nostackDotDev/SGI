@@ -103,7 +103,7 @@ export default function UsersTable({ data, levelFilter, pageSize, filter }) {
   }, [filters, data]);
 
   return (
-    <div className="w-full h-full flex-1 overflow-hidden flex flex-col bg-card rounded-xl border border-border">
+    <div className="w-full h-full flex-1 overflow-hidden flex flex-col bg-card rounded-xl border border-border ">
       <div className="flex-1 min-h-0 overflow-auto relative no-scrollbar flex flex-col">
         <table className="w-full table-fixed min-w-3xl text-sm">
           <colgroup>
