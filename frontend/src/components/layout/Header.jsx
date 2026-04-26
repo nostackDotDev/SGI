@@ -108,7 +108,10 @@ export function Header({ onMenuClick, collapsed }) {
               Configurações
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer text-destructive hover:bg-destructive/90 hover:text-muted">
+            <DropdownMenuItem
+              className="cursor-pointer text-destructive hover:bg-destructive/90 hover:text-muted"
+              onClick={handleLogout}
+            >
               <LogOut className="w-4 h-4 mr-2" />
               Sair
             </DropdownMenuItem>

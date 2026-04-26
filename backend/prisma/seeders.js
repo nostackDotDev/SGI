@@ -1,81 +1,93 @@
-import { PERMISSIONS } from "../src/constants/tables.js";
-import prisma from "../src/lib/prisma.js";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 async function main() {
-  // =========================
-  // CARGO
-  // =========================
-  await prisma.cargo.upsert({
-    where: { id: "admin" },
-    update: {},
-    create: {
-      nome: "admin",
-      descricao: "Administrador do sistema",
-      permissoes: PERMISSIONS.ADMIN,
-      instituicaoId
-    },
-  });
+  console.log("Seeding base...");
 
-  await prisma.cargo.upsert({
-    where: { nome: "user" },
-    update: {},
-    create: {
-      nome: "user",
-      descricao: "Utilizador padrão",
-      permissoes: PERMISSIONS.USER,
-    },
-  });
+  // -----------------------------
+  // 1. PERMISSÕES
+  // -----------------------------
+  const permissoes = [
+    // Items
+    "ITEM_READ",
+    "ITEM_CREATE",
+    "ITEM_UPDATE",
+    "ITEM_DELETE",
 
-  // =========================
-  // CONDICAO
-  // =========================
-  await prisma.condicao.upsert({
-    where: { nome: "bom" },
-    update: {},
-    create: {
-      nome: "bom",
-      descricao: "Em bom estado de utilização",
-    },
-  });
+    // Users
+    "USER_READ",
+    "USER_CREATE",
+    "USER_UPDATE",
+    "USER_DELETE",
 
-  await prisma.condicao.upsert({
-    where: { nome: "manutencao" },
-    update: {},
-    create: {
-      nome: "manutencao",
-      descricao: "Em manutenção",
-    },
-  });
+    // Cargos
+    "CARGO_READ",
+    "CARGO_CREATE",
+    "CARGO_UPDATE",
+    "CARGO_DELETE",
 
-  await prisma.condicao.upsert({
-    where: { nome: "emprestado" },
-    update: {},
-    create: {
-      nome: "emprestado",
-      descricao: "Emprestado a utilizador",
-    },
-  });
+    // Categorias
+    "CATEGORIA_READ",
+    "CATEGORIA_CREATE",
+    "CATEGORIA_UPDATE",
+    "CATEGORIA_DELETE",
 
-  // =========================
-  // CATEGORIA
-  // =========================
-  await prisma.categoria.upsert({
-    where: { nome: "DEFAULT" },
-    update: {},
-    create: {
-      nome: "DEFAULT",
-      descricao: "Categoria padrão",
-    },
-  });
+    // Salas
+    "SALA_READ",
+    "SALA_CREATE",
+    "SALA_UPDATE",
+    "SALA_DELETE",
 
-  console.log("Seed concluído com sucesso");
+    // Departamentos
+    "DEPARTAMENTO_READ",
+    "DEPARTAMENTO_CREATE",
+    "DEPARTAMENTO_UPDATE",
+    "DEPARTAMENTO_DELETE",
+
+    // Instituicoes
+    "INSTITUICAO_READ",
+    "INSTITUICAO_CREATE",
+    "INSTITUICAO_UPDATE",
+    "INSTITUICAO_DELETE",
+
+    // Condicoes
+    "CONDICAO_READ",
+    "CONDICAO_CREATE",
+    "CONDICAO_UPDATE",
+    "CONDICAO_DELETE",
+
+    // Registos
+    "REGISTO_READ",
+    "REGISTO_CREATE",
+    "REGISTO_UPDATE",
+    "REGISTO_DELETE",
+  ];
+
+  for (const nome of permissoes) {
+    await prisma.permissao.upsert({
+      where: { nome },
+      update: {},
+      create: { nome },
+    });
+  }
+
+  // -----------------------------
+  // 2. CONDIÇÕES
+  // -----------------------------
+  const condicoes = ["Disponível", "Em manutenção", "Emprestado"];
+
+  for (const nome of condicoes) {
+    await prisma.condicao.upsert({
+      where: { nome },
+      update: {},
+      create: { nome },
+    });
+  }
+
+  console.log("Seed concluído");
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+  .catch(console.error)
+  .finally(() => prisma.$disconnect());

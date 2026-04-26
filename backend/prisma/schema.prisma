@@ -7,22 +7,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Status {
-  ACTIVE
-  INACTIVE
-}
-
 model Instituicao {
-  id         Int      @id @default(autoincrement())
-  nome       String
-  descricao  String?
-  endereco   String
-  registrada DateTime @default(now())
-  status     Status   @default(ACTIVE)
-  deletedAt  DateTime?
+  id        Int     @id @default(autoincrement())
+  nome      String
+  descricao String?
+  endereco  String
+
+  nif      String? @unique
+  email    String? @unique
+  telefone String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   departamentos Departamento[]
-
   cargos        Cargo[]
   utilizadores  Utilizador[]
   categorias    Categoria[]
@@ -31,12 +30,13 @@ model Instituicao {
 }
 
 model Departamento {
-  id         Int      @id @default(autoincrement())
-  nome       String
-  descricao  String?
-  registrado DateTime @default(now())
-  status     Status   @default(ACTIVE)
-  deletedAt  DateTime?
+  id        Int     @id @default(autoincrement())
+  nome      String
+  descricao String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   instituicaoId Int
   instituicao   Instituicao @relation(fields: [instituicaoId], references: [id], onDelete: Restrict)
@@ -50,7 +50,10 @@ model Sala {
   id         Int    @id @default(autoincrement())
   numeroSala String
   tipoSala   String
-  deletedAt  DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   departamentoId Int?
   departamento   Departamento? @relation(fields: [departamentoId], references: [id], onDelete: Restrict)
@@ -61,27 +64,33 @@ model Sala {
 }
 
 model Cargo {
-  id         Int     @id @default(autoincrement())
-  nome       String
-  descricao  String?
-  permissoes Json?
-  deletedAt  DateTime?
+  id        Int     @id @default(autoincrement())
+  nome      String
+  descricao String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   instituicaoId Int
   instituicao   Instituicao @relation(fields: [instituicaoId], references: [id], onDelete: Restrict)
 
   utilizadores Utilizador[]
+  permissoes   CargoPermissao[]
 
-  @@unique([nome, instituicaoId]) 
+  @@unique([nome, instituicaoId])
   @@index([deletedAt])
 }
 
 model Utilizador {
   id        Int     @id @default(autoincrement())
   nome      String
-  email     String
+  email     String  @unique
   password  String
   descricao String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   instituicaoId Int
@@ -90,16 +99,49 @@ model Utilizador {
   cargoId Int
   cargo   Cargo @relation(fields: [cargoId], references: [id], onDelete: Restrict)
 
-  registos Registo[]
+  registos   Registo[]
+  permissoes UtilizadorPermissao[]
 
-  @@unique([email, instituicaoId])
   @@index([deletedAt])
+}
+
+model Permissao {
+  id        Int     @id @default(autoincrement())
+  nome      String  @unique
+  descricao String?
+
+  cargos       CargoPermissao[]
+  utilizadores UtilizadorPermissao[]
+}
+
+model CargoPermissao {
+  cargoId     Int
+  permissaoId Int
+
+  cargo     Cargo     @relation(fields: [cargoId], references: [id], onDelete: Restrict)
+  permissao Permissao @relation(fields: [permissaoId], references: [id], onDelete: Restrict)
+
+  @@id([cargoId, permissaoId])
+}
+
+model UtilizadorPermissao {
+  utilizadorId Int
+  permissaoId  Int
+  permitido    Boolean @default(true)
+
+  utilizador Utilizador @relation(fields: [utilizadorId], references: [id], onDelete: Restrict)
+  permissao  Permissao  @relation(fields: [permissaoId], references: [id], onDelete: Restrict)
+
+  @@id([utilizadorId, permissaoId])
 }
 
 model Categoria {
   id        Int     @id @default(autoincrement())
   nome      String
   descricao String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   instituicaoId Int
@@ -115,6 +157,9 @@ model Condicao {
   id        Int     @id @default(autoincrement())
   nome      String  @unique
   descricao String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   itens Item[]
@@ -123,23 +168,21 @@ model Condicao {
 }
 
 model Item {
-  id         Int      @id @default(autoincrement())
+  id         Int     @id @default(autoincrement())
   nome       String
   descricao  String?
-  quantidade Int      @default(1)
-  registrado DateTime @default(now())
-  status     Status   @default(ACTIVE)
-  deletedAt  DateTime?
+  quantidade Int     @default(1)
 
-  // Categoria: automática via trigger
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
   categoriaId Int?
   categoria   Categoria? @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
 
-  // Condição: obrigatória (integridade forte)
   condicaoId Int
   condicao   Condicao @relation(fields: [condicaoId], references: [id], onDelete: Restrict)
 
-  // Sala: automática via trigger
   salaId Int?
   sala   Sala? @relation(fields: [salaId], references: [id], onDelete: SetNull)
 
@@ -151,10 +194,12 @@ model Item {
 }
 
 model Registo {
-  id         Int      @id @default(autoincrement())
+  id         Int @id @default(autoincrement())
   quantidade Int
-  registrado DateTime @default(now())
-  deletedAt  DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   itemId Int
   item   Item @relation(fields: [itemId], references: [id], onDelete: Restrict)
@@ -163,4 +208,6 @@ model Registo {
   utilizador   Utilizador @relation(fields: [utilizadorId], references: [id], onDelete: Restrict)
 
   @@index([deletedAt])
+  @@index([itemId, createdAt])
+  @@index([utilizadorId, createdAt])
 }
