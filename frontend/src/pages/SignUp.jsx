@@ -1,3 +1,4 @@
+import { request } from "@/lib/request";
 import {
   Boxes,
   Building2,
@@ -10,7 +11,7 @@ import {
   User2Icon,
 } from "lucide-react";
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 export default function SignUp() {
@@ -24,7 +25,9 @@ export default function SignUp() {
   });
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const navigate = useNavigate();
+
+  const handleSubmit = (e) => {
     e.preventDefault();
     console.log(formData);
 
@@ -35,9 +38,32 @@ export default function SignUp() {
       return;
     }
 
-    // const res = await request("/", "GET");
-
-    return;
+    request(
+      "/auth/signup",
+      "POST",
+      {
+        data: {
+          instituicao: {
+            nome: formData.institutionName,
+            endereco: formData.institutionAddress,
+          },
+          user: {
+            nome: formData.institutionName,
+            email: formData.userEmail,
+            password: formData.userPassword,
+          },
+        },
+      },
+      (res) => {
+        console.log(res);
+        if (res && !res.error) {
+          navigate("/login");
+        }
+      },
+      (err) => {
+        console.error(err);
+      },
+    );
   };
 
   const handleInput = (field, value) => {

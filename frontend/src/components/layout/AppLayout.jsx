@@ -4,18 +4,24 @@ import { Header } from "./Header";
 import { cn } from "@/lib/utils";
 import { useLocation, useNavigate } from "react-router-dom";
 import Loader from "./Loader";
+import { useAuth } from "@/core/contexts/AuthContext";
 
 export default function AppLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false);
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const { refreshAuth } = useAuth();
 
   useEffect(() => {
     if (pathname === "/") navigate("/inicio", { replace: true });
   }, [pathname]);
 
+  useEffect(() => {
+    refreshAuth();
+  }, [pathname]);
+
   return (
-    <div className="flex flex-row items-center justify-start w-screen h-screen overflow-hidden bg-background">
+    <div className="flex flex-row items-center justify-start w-screen h-screen overflow-hidden bg-backgro yyund">
       <Sidebar
         collapsed={collapsed}
         onToggle={() => setCollapsed(!collapsed)}
