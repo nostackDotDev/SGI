@@ -1,0 +1,61 @@
+name: Run Database Migrations
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "backend/prisma/**"
+      - "backend/package.json"
+      - "backend/package-lock.json"
+      - ".github/workflows/migrate.yml"
+
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "backend/prisma/**"
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Test database connection
+        run: npm run db:test
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Run database migrations
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Run database seed (optional)
+        run: npx prisma db seed
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        continue-on-error: true
+
+      - name: Verify migration status
+        run: npx prisma migrate status
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
