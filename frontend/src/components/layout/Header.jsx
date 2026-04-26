@@ -21,10 +21,21 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/core/contexts/AuthContext";
 
 export function Header({ onMenuClick, collapsed }) {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
+
   const handleLogout = async () => {
     await logout();
   };
+
+  const initials = user?.nome
+    ? user.nome
+        .split(" ")
+        .map((item) => item[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+    : "US";
+
   return (
     <header className="h-16 bg-card border-b border-border px-4 lg:px-4 lg:pl-2 flex items-center justify-between sticky top-0 z-30">
       {/* Left side */}
@@ -68,18 +79,20 @@ export function Header({ onMenuClick, collapsed }) {
               className="gap-2 pl-2 pr-3 py-6 cursor-pointer"
             >
               <Avatar className="w-8 h-8">
-                <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin" />
-                <AvatarFallback>AD</AvatarFallback>
+                <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svgseeadminadadsdadasnjd1111111111111111111" />
+                <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
-              <span className="hidden sm:inline-block font-medium">Admin</span>
+              <span className="hidden sm:inline-block font-medium">
+                {user?.nome ?? "Usuário"}
+              </span>
               <ChevronDown className="w-4 h-4 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <div className="px-3 py-2">
-              <p className="font-medium">Administrador</p>
+              <p className="font-medium">{user?.cargo ?? "Cargo"}</p>
               <p className="text-sm text-muted-foreground">
-                admin@stockpro.com
+                {user?.email ?? ""}
               </p>
             </div>
             <DropdownMenuSeparator />
@@ -87,7 +100,10 @@ export function Header({ onMenuClick, collapsed }) {
               <User className="w-4 h-4 mr-2" />
               Perfil
             </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer">
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => (window.location.href = "/settings")}
+            >
               <Settings className="w-4 h-4 mr-2" />
               Configurações
             </DropdownMenuItem>

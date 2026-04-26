@@ -1,10 +1,26 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { request } from "@/lib/request";
+import {
+  checkPermission,
+  getPermissionLabel,
+  mapPermissionLabels,
+} from "@/lib/authContext";
+
+type Institution = {
+  nome: string;
+  endereco: string;
+  descricao: string | null;
+};
 
 type User = {
-  id: string;
+  nome: string;
   email: string;
-  tenantId: string; // important for isolation
+  cargo: string;
+  instituicao?: Institution | null;
+  // Add other fields if available in full response
+  id?: string;
+  descricao?: string;
+  permissoes?: string[];
 };
 
 type AuthContextType = {
@@ -13,39 +29,72 @@ type AuthContextType = {
   isAuthenticated: boolean;
   refreshAuth: () => Promise<void>;
   logout: () => Promise<void>;
+  setUser: (user: User | null) => void;
+  hasPermission: (permission: string) => boolean;
+  getPermissionLabel: (permission: string) => string;
+  mapPermissionLabels: (
+    permissions: string[],
+  ) => Array<{ key: string; label: string }>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(() => {
+    // Load user from localStorage on mount
+    const storedUser = localStorage.getItem("user");
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+  const [loading, setLoading] = useState(!user); // If no user in storage, start loading
 
-  const refreshAuth = async () => {
-    try {
-      const res = await request("/auth/me", "get");
-      // backend reads cookie and returns user
-      setUser(res.user);
-    } catch {
-      setUser(null);
-    } finally {
-      setLoading(false);
+  const setUserAndStore = (user: User | null) => {
+    setUser(user);
+    if (user) {
+      localStorage.setItem("user", JSON.stringify(user));
+    } else {
+      localStorage.removeItem("user");
     }
   };
 
-  const logout = async () => {
-    try {
-      await request("/auth/logout", "post");
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setUser(null);
-      window.location.href = "/login"; // hard redirect avoids stale state
-    }
+  const refreshAuth = () => {
+    return new Promise<void>((resolve) => {
+      request(
+        "/auth/me",
+        "GET",
+        {},
+        () => resolve(),
+        () => {
+          setUserAndStore(null);
+          resolve();
+        },
+      );
+      setTimeout(() => resolve(), 100); // fallback
+    });
+  };
+
+  const logout = () => {
+    return new Promise<void>((resolve) => {
+      request(
+        "/auth/logout",
+        "POST",
+        {},
+        () => {
+          setUserAndStore(null);
+          window.location.href = "/login";
+          resolve();
+        },
+        (err) => {
+          console.error(err);
+          setUserAndStore(null);
+          window.location.href = "/login";
+          resolve();
+        },
+      );
+    });
   };
 
   useEffect(() => {
-    refreshAuth();
+    refreshAuth().then(() => setLoading(false));
   }, []);
 
   return (
@@ -56,6 +105,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: !!user,
         refreshAuth,
         logout,
+        setUser: setUserAndStore,
+        hasPermission: (permission: string) =>
+          checkPermission(user?.permissoes, permission),
+        getPermissionLabel,
+        mapPermissionLabels,
       }}
     >
       {children}

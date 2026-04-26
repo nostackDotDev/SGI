@@ -27,7 +27,7 @@ export default function SignUp() {
 
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     console.log(formData);
 
@@ -38,30 +38,32 @@ export default function SignUp() {
       return;
     }
 
-    const res = await request("/auth/signup", "POST", {
-      data: {
-        instituicao: {
-          nome: formData.institutionName,
-          endereco: formData.institutionAddress,
-        },
-        user: {
-          nome: formData.institutionName,
-          email: formData.userEmail,
-          password: formData.userPassword,
+    request(
+      "/auth/signup",
+      "POST",
+      {
+        data: {
+          instituicao: {
+            nome: formData.institutionName,
+            endereco: formData.institutionAddress,
+          },
+          user: {
+            nome: formData.institutionName,
+            email: formData.userEmail,
+            password: formData.userPassword,
+          },
         },
       },
-    });
-
-    console.log(res);
-
-    if (!res || res.error) {
-      console.error(res.error);
-    }
-
-    if (res && !res.error) {
-      navigate("/login");
-    }
-    return;
+      (res) => {
+        console.log(res);
+        if (res && !res.error) {
+          navigate("/login");
+        }
+      },
+      (err) => {
+        console.error(err);
+      },
+    );
   };
 
   const handleInput = (field, value) => {

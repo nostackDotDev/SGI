@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { InventoryFilters } from "@/components/inventory/InventoryFilters";
-import { StoreItemDialog } from "@/components/inventory/StoreItemDialog";
+import { CreateItemDialog } from "@/components/inventory/CreateItemDialog";
 import { ItemDetailDialog } from "@/components/inventory/ItemDetailDialog";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
 import PageContainer from "@/components/layout/PageContainer";
+// import { EditItemDialog } from "@/components/inventory/EditItemDialog";
 
 const mockItems = [
   {
@@ -130,6 +131,7 @@ const mockItems = [
 
 export default function Inventory() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  // const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -181,24 +183,29 @@ export default function Inventory() {
         }}
         onEditItem={(item) => {
           setSelectedItem(item);
-          setAddDialogOpen(true);
+          // setEditDialogOpen(true);
         }}
       />
 
       {/* Modais */}
-      <StoreItemDialog
+      <CreateItemDialog
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
+        condicoes={[]}
+      />
+      {/* <EditItemDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
         initialItem={selectedItem}
         setSelectedItem={setSelectedItem}
-      />
+      /> */}
       <ItemDetailDialog
         open={detailDialogOpen}
         onOpenChange={setDetailDialogOpen}
         item={selectedItem}
         onEdit={() => {
           setDetailDialogOpen(false);
-          setAddDialogOpen(true);
+          // setEditDialogOpen(true);
         }}
       />
     </PageContainer>
