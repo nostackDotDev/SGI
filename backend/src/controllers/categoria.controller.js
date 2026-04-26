@@ -10,6 +10,12 @@ export async function deleteCategoria(req, res) {
       message: "Categoria deleted successfully",
     });
   } catch (err) {
+    // Check if it's a validation error (trying to delete default categoria)
+    if (err.message.includes("Default Categoria cannot be deleted")) {
+      return res.status(400).json({
+        error: err.message,
+      });
+    }
     return res.status(500).json({
       error: err.message,
     });

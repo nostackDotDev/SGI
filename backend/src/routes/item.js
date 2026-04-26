@@ -1,5 +1,6 @@
 import express from "express";
 import prisma from "../lib/prisma.js";
+import { ItemService } from "../services/item.service.ts";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { tenantIsolation } from "../middlewares/tenantIsolation.middleware.js";
 import { requirePermission } from "../middlewares/permissions.middleware.js";
@@ -80,20 +81,18 @@ router.post(
     }
 
     try {
-      const newItem = await prisma.item.create({
-        data: {
-          nome,
-          descricao: descricao || "",
-          categoriaId: Number(categoriaId),
-          condicaoId: Number(condicaoId),
-          salaId: Number(salaId),
-          quantidade: Number(quantidade) || 1,
-        },
+      const newItem = await ItemService.createItem({
+        nome,
+        descricao,
+        quantidade,
+        categoriaId,
+        condicaoId,
+        salaId,
       });
 
       res.status(201).json({ data: newItem, error: null });
     } catch (error) {
-      res.status(500).json({ data: null, error: error.message });
+      res.status(400).json({ data: null, error: error.message });
     }
   },
 );
@@ -169,22 +168,18 @@ router.put(
     }
 
     try {
-      const newItem = await prisma.item.update({
-        where: { id: item.id },
-        data: {
-          nome: nome || item.nome,
-          descricao: descricao !== undefined ? descricao : item.descricao,
-          categoriaId: categoriaId || item.categoriaId,
-          condicaoId: condicaoId || item.condicaoId,
-          salaId: salaId || item.salaId,
-          quantidade: quantidade || item.quantidade,
-          status: status || item.status,
-        },
+      const newItem = await ItemService.updateItem(item.id, {
+        nome,
+        descricao,
+        quantidade,
+        categoriaId,
+        condicaoId,
+        salaId,
       });
 
       res.json({ data: newItem, error: null });
     } catch (error) {
-      res.status(500).json({ data: null, error: error.message });
+      res.status(400).json({ data: null, error: error.message });
     }
   },
 );
