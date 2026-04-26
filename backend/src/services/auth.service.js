@@ -2,18 +2,7 @@ import prisma from "../lib/prisma.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-export async function signup(data: {
-  instituicao: {
-    nome: string;
-    endereco: string;
-    descricao?: string;
-  };
-  user: {
-    nome: string;
-    email: string;
-    password: string;
-  };
-}) {
+export async function signup(data) {
   const hashedPassword = await bcrypt.hash(data.user.password, 10);
 
   return await prisma.$transaction(async (tx) => {
@@ -95,7 +84,7 @@ export async function signup(data: {
   });
 }
 
-export async function login(email: string, password: string) {
+export async function login(email, password) {
   const user = await prisma.utilizador.findUnique({
     where: { email },
     include: {
@@ -112,7 +101,7 @@ export async function login(email: string, password: string) {
   // 2. verify password
   const isValid = await bcrypt.compare(password, user.password);
 
-  if (!isValid) {
+  if (!isValid || !process.env.JWT_SECRET) {
     return null;
   }
 
@@ -123,8 +112,8 @@ export async function login(email: string, password: string) {
       instituicaoId: user.instituicaoId,
       cargoId: user.cargoId,
     },
-    process.env.JWT_SECRET!,
-    { expiresIn: "1h" },
+    process.env.JWT_SECRET,
+    { expiresIn: "1d" },
   );
 
   return {

@@ -1,105 +1,144 @@
 import express from "express";
 import prisma from "../lib/prisma.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
+import { requirePermission } from "../middlewares/permissions.middleware.js";
+import { PERMISSIONS } from "../constants/permissions.constants.js";
 
 const router = express.Router();
 
-router.get("/", async (req, res) => {
-  const condicoes = await prisma.condicao.findMany({
-    where: { deletedAt: null },
-    include: { itens: true },
-  });
+router.use(authMiddleware);
 
-  res.json({ data: condicoes, error: null });
-});
+router.get(
+  "/",
+  requirePermission(PERMISSIONS.CONDICAO_READ),
+  async (req, res) => {
+    const condicoes = await prisma.condicao.findMany({
+      where: { deletedAt: null },
+      include: { itens: true },
+    });
 
-router.get("/:id", async (req, res) => {
-  const condicao = await prisma.condicao.findFirst({
-    where: {
-      id: parseInt(req.params.id),
-      deletedAt: null,
-    },
-    include: { itens: true },
-  });
+    const safeConditions = condicoes.map((c) => ({
+      id: c.id,
+      nome: c.nome,
+      descricao: c.descricao ?? "",
+    }));
 
-  if (!condicao) {
-    return res.status(404).json({ data: null, error: "Condicao not found" });
-  }
+    res.json({ data: safeConditions, error: null });
+  },
+);
 
-  res.json({ data: condicao, error: null });
-});
+router.get(
+  "/:id",
+  requirePermission(PERMISSIONS.CONDICAO_READ),
+  async (req, res) => {
+    const condicao = await prisma.condicao.findFirst({
+      where: {
+        id: parseInt(req.params.id),
+        deletedAt: null,
+      },
+      include: { itens: true },
+    });
 
-router.post("/create", async (req, res) => {
-  const { nome, descricao } = req.body;
+    if (!condicao) {
+      return res.status(404).json({ data: null, error: "Condicao not found" });
+    }
 
-  if (!nome) {
-    return res.status(400).json({ data: null, error: "Nome é obrigatório" });
-  }
+    res.json({ data: condicao, error: null });
+  },
+);
 
-  try {
-    const newCondicao = await prisma.condicao.create({
-      data: {
-        nome,
-        descricao: descricao || "",
+router.post(
+  "/create",
+  requirePermission(PERMISSIONS.CONDICAO_CREATE),
+  async (req, res) => {
+    const { nome, descricao } = req.body;
+
+    if (!nome) {
+      return res.status(400).json({ data: null, error: "Nome é obrigatório" });
+    }
+
+    try {
+      const newCondicao = await prisma.condicao.create({
+        data: {
+          nome,
+          descricao: descricao || "",
+        },
+      });
+
+      res.status(201).json({ data: newCondicao, error: null });
+    } catch (error) {
+      res.status(500).json({ data: null, error: error.message });
+    }
+  },
+);
+
+router.put(
+  "/update/:id",
+  requirePermission(PERMISSIONS.CONDICAO_UPDATE),
+  async (req, res) => {
+    const { nome, descricao } = req.body;
+
+    if (!nome && !descricao) {
+      return res.status(400).json({
+        message: "Nenhum campo para atualizar fornecido",
+        data: null,
+        error: "At least one field must be provided for update",
+      });
+    }
+
+    const condicao = await prisma.condicao.findFirst({
+      where: {
+        id: parseInt(req.params.id),
+        deletedAt: null,
       },
     });
 
-    res.status(201).json({ data: newCondicao, error: null });
-  } catch (error) {
-    res.status(500).json({ data: null, error: error.message });
-  }
-});
+    if (!condicao) {
+      return res.status(404).json({ data: null, error: "Condicao not found" });
+    }
 
-router.put("/update/:id", async (req, res) => {
-  const { nome, descricao } = req.body;
+    try {
+      const updated = await prisma.condicao.update({
+        where: { id: condicao.id },
+        data: {
+          nome: nome ?? condicao.nome,
+          descricao: descricao ?? condicao.descricao,
+        },
+      });
 
-  const condicao = await prisma.condicao.findFirst({
-    where: {
-      id: parseInt(req.params.id),
-      deletedAt: null,
-    },
-  });
+      res.json({ data: updated, error: null });
+    } catch (error) {
+      res.status(500).json({ data: null, error: error.message });
+    }
+  },
+);
 
-  if (!condicao) {
-    return res.status(404).json({ data: null, error: "Condicao not found" });
-  }
-
-  try {
-    const updated = await prisma.condicao.update({
-      where: { id: condicao.id },
-      data: {
-        nome: nome ?? condicao.nome,
-        descricao: descricao ?? condicao.descricao,
+router.delete(
+  "/:id",
+  requirePermission(PERMISSIONS.CONDICAO_DELETE),
+  async (req, res) => {
+    const condicao = await prisma.condicao.findFirst({
+      where: {
+        id: parseInt(req.params.id),
+        deletedAt: null,
       },
     });
 
-    res.json({ data: updated, error: null });
-  } catch (error) {
-    res.status(500).json({ data: null, error: error.message });
-  }
-});
+    if (!condicao) {
+      return res.status(404).json({ data: null, error: "Condicao not found" });
+    }
 
-router.delete("/:id", async (req, res) => {
-  const condicao = await prisma.condicao.findFirst({
-    where: {
-      id: parseInt(req.params.id),
-      deletedAt: null,
-    },
-  });
+    try {
+      const deletedCondicao = await prisma.condicao.update({
+        where: { id: condicao.id },
+        data: { deletedAt: new Date() },
+      });
 
-  if (!condicao) {
-    return res.status(404).json({ data: null, error: "Condicao not found" });
-  }
-
-  try {
-    const deletedCondicao = await prisma.condicao.update({
-      where: { id: condicao.id },
-      data: { deletedAt: new Date() },
-    });
-
-    res.json({ data: deletedCondicao, error: null });
-  } catch (error) {
-    res.status(500).json({ data: null, error: error.message });
-  }
-});
+      res.json({ data: deletedCondicao, error: null });
+    } catch (error) {
+      res.status(500).json({ data: null, error: error.message });
+    }
+  },
+);
 
 export default router;

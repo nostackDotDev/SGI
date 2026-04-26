@@ -8,13 +8,17 @@ datasource db {
 }
 
 model Instituicao {
-  id        Int      @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   nome      String
   descricao String?
   endereco  String
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  nif      String? @unique
+  email    String? @unique
+  telefone String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   departamentos Departamento[]
@@ -26,12 +30,12 @@ model Instituicao {
 }
 
 model Departamento {
-  id        Int      @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   nome      String
   descricao String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   instituicaoId Int
@@ -47,8 +51,8 @@ model Sala {
   numeroSala String
   tipoSala   String
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   departamentoId Int?
@@ -64,8 +68,8 @@ model Cargo {
   nome      String
   descricao String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   instituicaoId Int
@@ -85,8 +89,8 @@ model Utilizador {
   password  String
   descricao String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   instituicaoId Int
@@ -95,15 +99,15 @@ model Utilizador {
   cargoId Int
   cargo   Cargo @relation(fields: [cargoId], references: [id], onDelete: Restrict)
 
-  registos    Registo[]
-  permissoes  UtilizadorPermissao[]
+  registos   Registo[]
+  permissoes UtilizadorPermissao[]
 
   @@index([deletedAt])
 }
 
 model Permissao {
-  id   Int    @id @default(autoincrement())
-  nome String @unique
+  id        Int     @id @default(autoincrement())
+  nome      String  @unique
   descricao String?
 
   cargos       CargoPermissao[]
@@ -136,8 +140,8 @@ model Categoria {
   nome      String
   descricao String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   instituicaoId Int
@@ -154,8 +158,8 @@ model Condicao {
   nome      String  @unique
   descricao String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   itens Item[]
@@ -164,13 +168,13 @@ model Condicao {
 }
 
 model Item {
-  id         Int      @id @default(autoincrement())
+  id         Int     @id @default(autoincrement())
   nome       String
   descricao  String?
-  quantidade Int      @default(1)
+  quantidade Int     @default(1)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   categoriaId Int?
@@ -190,11 +194,11 @@ model Item {
 }
 
 model Registo {
-  id         Int      @id @default(autoincrement())
+  id         Int @id @default(autoincrement())
   quantidade Int
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   itemId Int

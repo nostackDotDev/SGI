@@ -65,3 +65,6 @@ backend/logs/
 
 frontend/.eslintcache
 frontend/.stylelintcache
+
+# 
+sgi_local.session.sql
