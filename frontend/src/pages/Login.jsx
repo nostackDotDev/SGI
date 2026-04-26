@@ -1,6 +1,6 @@
 import { useAuth } from "@/core/contexts/AuthContext";
 import { request } from "@/lib/request";
-import { Boxes, Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { Boxes, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -10,22 +10,32 @@ export default function Login() {
     password: "",
   });
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
   const navigate = useNavigate();
-  const { refreshAuth } = useAuth();
+  const { setUser } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
 
-    try {
-      await request("/auth/login", "POST", {
+    request(
+      "/auth/login",
+      "POST",
+      {
         data: formData,
-      });
-
-      await refreshAuth(); // fetch user from cookie
-      navigate("/");
-    } catch (err) {
-      console.error(err);
-    }
+      },
+      (res) => {
+        const user = { ...res.data.user, instituicao: res.data.instituicao };
+        setUser(user);
+        setIsLoading(false);
+        navigate("/");
+      },
+      (err) => {
+        console.error(err);
+        setIsLoading(false);
+      },
+    );
   };
 
   const handleInput = (field, value) => {
@@ -58,6 +68,7 @@ export default function Login() {
                 type="email"
                 id="login-email"
                 name="email"
+                required
                 placeholder="seu@email.com"
                 className="p-2 focus:outline-0"
                 value={formData.email}
@@ -77,6 +88,7 @@ export default function Login() {
                 type={isPasswordVisible ? "text" : "password"}
                 id="login-password"
                 name="password"
+                required
                 placeholder="****"
                 className="p-2 focus:outline-0"
                 value={formData.password ?? ""}
@@ -119,8 +131,12 @@ export default function Login() {
           </Link>
           <button
             type="submit"
-            className="w-full capitalize bg-success text-muted text-xl text-center py-2 rounded-lg font-semibold cursor-pointer scale-95 hover:scale-100 transition-transform ease-in duration-200"
+            disabled={isLoading}
+            className="w-full capitalize bg-success text-muted text-xl text-center py-2 rounded-lg font-semibold cursor-pointer scale-95 hover:scale-100 transition-transform ease-in duration-200 flex items-center justify-center gap-2 disabled:opacity-65 disabled:cursor-not-allowed"
           >
+            {isLoading && (
+              <Loader2 className="w-6 h-6 text-white animate-spin" />
+            )}
             entrar
           </button>
         </form>

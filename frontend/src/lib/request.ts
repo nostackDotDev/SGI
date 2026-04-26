@@ -21,37 +21,68 @@ export interface RequestOptions<T = any> extends Omit<
   withCredentials?: boolean;
 }
 
-export async function request<T = any>(
+export function request<T = any>(
   path: string,
   method: Method,
   options: RequestOptions = {},
-): Promise<T> {
-  try {
-    const response = await axiosInstance.request<T>({
+  onSuccess?: (data: T) => void,
+  onError?: (error: any) => void,
+): void {
+  axiosInstance
+    .request<T>({
       url: path,
       method,
       baseURL: options.baseURL ?? API_BASE_URL,
       ...options,
+    })
+    .then((response) => {
+      if (onSuccess) onSuccess(response.data);
+    })
+    .catch((error) => {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          // Token invalid, clear localStorage (router will handle redirect if on protected route)
+          localStorage.removeItem("user");
+        }
+        if (onError) onError(error.response?.data ?? error.message);
+      } else {
+        if (onError) onError(error);
+      }
     });
-
-    return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      throw error.response?.data ?? error.message;
-    }
-    throw error;
-  }
 }
 
 export const api = {
-  get: <T = any>(path: string, options?: RequestOptions<T>) =>
-    request<T>(path, "GET", options),
-  post: <T = any>(path: string, data?: unknown, options?: RequestOptions<T>) =>
-    request<T>(path, "POST", { data, ...options }),
-  put: <T = any>(path: string, data?: unknown, options?: RequestOptions<T>) =>
-    request<T>(path, "PUT", { data, ...options }),
-  patch: <T = any>(path: string, data?: unknown, options?: RequestOptions<T>) =>
-    request<T>(path, "PATCH", { data, ...options }),
-  delete: <T = any>(path: string, options?: RequestOptions<T>) =>
-    request<T>(path, "DELETE", options),
+  get: <T = any>(
+    path: string,
+    options?: RequestOptions<T>,
+    onSuccess?: (data: T) => void,
+    onError?: (error: any) => void,
+  ) => request<T>(path, "GET", options, onSuccess, onError),
+  post: <T = any>(
+    path: string,
+    data?: unknown,
+    options?: RequestOptions<T>,
+    onSuccess?: (data: T) => void,
+    onError?: (error: any) => void,
+  ) => request<T>(path, "POST", { data, ...options }, onSuccess, onError),
+  put: <T = any>(
+    path: string,
+    data?: unknown,
+    options?: RequestOptions<T>,
+    onSuccess?: (data: T) => void,
+    onError?: (error: any) => void,
+  ) => request<T>(path, "PUT", { data, ...options }, onSuccess, onError),
+  patch: <T = any>(
+    path: string,
+    data?: unknown,
+    options?: RequestOptions<T>,
+    onSuccess?: (data: T) => void,
+    onError?: (error: any) => void,
+  ) => request<T>(path, "PATCH", { data, ...options }, onSuccess, onError),
+  delete: <T = any>(
+    path: string,
+    options?: RequestOptions<T>,
+    onSuccess?: (data: T) => void,
+    onError?: (error: any) => void,
+  ) => request<T>(path, "DELETE", options, onSuccess, onError),
 };
