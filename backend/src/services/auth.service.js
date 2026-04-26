@@ -113,7 +113,7 @@ export async function login(email, password) {
       cargoId: user.cargoId,
     },
     process.env.JWT_SECRET,
-    { expiresIn: "1h" },
+    { expiresIn: "1d" },
   );
 
   return {

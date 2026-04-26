@@ -1,12 +1,14 @@
 import express from "express";
 import prisma from "../lib/prisma.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
+import { tenantIsolation } from "../middlewares/tenantIsolation.middleware.js";
 import { requirePermission } from "../middlewares/permissions.middleware.js";
 import { PERMISSIONS } from "../constants/permissions.constants.js";
 
 const router = express.Router();
 
 router.use(authMiddleware);
+router.use(tenantIsolation);
 
 router.get(
   "/",
@@ -18,7 +20,17 @@ router.get(
     });
 
     res.json({
-      data: departamentos,
+      data: departamentos.map((departamento) => ({
+        id: departamento.id,
+        nome: departamento.nome,
+        descricao: departamento.descricao,
+        updatedAt: departamento.updatedAt,
+        salas: departamento.salas.map((sala) => ({
+          id: sala.id,
+          nome: sala.numeroSala,
+          tipo: sala.tipoSala,
+        })),
+      })),
       error: null,
       message: "Departamento routes are working!",
     });
@@ -40,7 +52,20 @@ router.get(
         .json({ data: null, error: "Departamento not found" });
     }
 
-    res.json({ data: departamento, error: null });
+    res.json({
+      data: {
+        id: departamento.id,
+        nome: departamento.nome,
+        descricao: departamento.descricao,
+        updatedAt: departamento.updatedAt,
+        salas: departamento.salas.map((sala) => ({
+          id: sala.id,
+          nome: sala.numeroSala,
+          tipo: sala.tipoSala,
+        })),
+      },
+      error: null,
+    });
   },
 );
 
@@ -48,7 +73,8 @@ router.post(
   "/create",
   requirePermission(PERMISSIONS.DEPARTAMENTO_CREATE),
   async (req, res) => {
-    const { nome, descricao, instituicaoId } = req.body;
+    const instituicaoId = req.tenantId;
+    const { nome, descricao } = req.body;
 
     if (!nome || !instituicaoId) {
       return res
@@ -86,7 +112,8 @@ router.put(
   "/update/:id",
   requirePermission(PERMISSIONS.DEPARTAMENTO_UPDATE),
   async (req, res) => {
-    const { nome, descricao, instituicaoId, status } = req.body;
+    const instituicaoId = req.tenantId;
+    const { nome, descricao, status } = req.body;
 
     if (!nome && !descricao && !instituicaoId && !status) {
       return res.status(400).json({
@@ -124,12 +151,22 @@ router.put(
         data: {
           nome: nome || departamento.nome,
           descricao: descricao || departamento.descricao,
-          instituicaoId: instituicaoId || departamento.instituicaoId,
-          status: status || departamento.status,
         },
       });
 
-      res.json({ data: newDepartamento, error: null });
+      res.json({
+        data: {
+          nome: newDepartamento.nome,
+          descricao: newDepartamento.descricao,
+          updatedAt: newDepartamento.updatedAt,
+          salas: newDepartamento.salas.map((sala) => ({
+            id: sala.id,
+            nome: sala.numeroSala,
+            tipo: sala.tipoSala,
+          })),
+        },
+        error: null,
+      });
     } catch (error) {
       res.status(500).json({ data: null, error: error.message });
     }

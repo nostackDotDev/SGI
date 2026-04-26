@@ -20,6 +20,12 @@ export function authMiddleware(req, res, next) {
     };
     next();
   } catch {
+    // Clear invalid token
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
     return res.status(401).json({
       message: "Unauthorized",
       data: null,

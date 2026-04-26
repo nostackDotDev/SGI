@@ -8,7 +8,7 @@ import categoria_routes from "./routes/categoria.js";
 import cargo_routes from "./routes/cargo.js";
 import departamento_routes from "./routes/departamento.js";
 import instituicao_routes from "./routes/instituicao.js";
-import sala_routes from "./routes/sala.js";
+import localizacao_routes from "./routes/localizacao.js";
 import item_routes from "./routes/item.js";
 import registo_routes from "./routes/registo.js";
 import utilizador_routes from "./routes/utilizador.js";
@@ -19,7 +19,7 @@ const app = express();
 const port = process.env.PORT || 8001;
 dotenv.config();
 
-const allowedOrigins = [process.env.FRONTEND_URL || "http://localhost:5173"];
+const allowedOrigins = [process.env.FRONTEND_URL];
 
 const corsOptions = {
   origin: (origin, callback) => {
@@ -47,7 +47,7 @@ app.use("/categoria", categoria_routes);
 app.use("/cargo", cargo_routes);
 app.use("/departamento", departamento_routes);
 app.use("/instituicao", instituicao_routes);
-app.use("/sala", sala_routes);
+app.use("/localizacao", localizacao_routes);
 app.use("/item", item_routes);
 app.use("/registo", registo_routes);
 app.use("/utilizador", utilizador_routes);

@@ -84,10 +84,10 @@ router.post(
         data: {
           nome,
           descricao: descricao || "",
-          categoriaId,
-          condicaoId,
-          salaId,
-          quantidade,
+          categoriaId: Number(categoriaId),
+          condicaoId: Number(condicaoId),
+          salaId: Number(salaId),
+          quantidade: Number(quantidade) || 1,
         },
       });
 

@@ -75,7 +75,7 @@ async function main() {
   // -----------------------------
   // 2. CONDIÇÕES
   // -----------------------------
-  const condicoes = ["Boa", "Em manutenção", "Emprestado"];
+  const condicoes = ["Disponível", "Em manutenção", "Emprestado"];
 
   for (const nome of condicoes) {
     await prisma.condicao.upsert({

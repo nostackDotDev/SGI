@@ -14,7 +14,23 @@ router.get("/", requirePermission(PERMISSIONS.SALA_READ), async (req, res) => {
     include: { departamento: true, itens: true },
   });
 
-  res.json({ data: salas, error: null, message: "Sala routes are working!" });
+  const safeSalas = salas.map((sala) => ({
+    id: sala.id,
+    nome: sala.numeroSala,
+    tipo: sala.tipoSala,
+    departamento: sala.departamento?.nome ?? "Sem departamento",
+    updatedAt: sala.updatedAt,
+    itens: sala.itens.map((item) => ({
+      id: item.id,
+      nomeItem: item.nome,
+    })),
+  }));
+
+  res.json({
+    data: safeSalas,
+    error: null,
+    message: "Sala routes are working!",
+  });
 });
 
 router.get(
@@ -30,7 +46,19 @@ router.get(
       return res.status(404).json({ data: null, error: "Sala not found" });
     }
 
-    res.json({ data: sala, error: null });
+    const safeSala = {
+      id: sala.id,
+      nome: sala.numeroSala,
+      tipo: sala.tipoSala,
+      departamento: sala.departamento?.nome ?? "",
+      updatedAt: sala.updatedAt,
+      itens: sala.itens.map((item) => ({
+        id: item.id,
+        nomeItem: item.nome,
+      })),
+    };
+
+    res.json({ data: safeSala, error: null });
   },
 );
 
@@ -40,14 +68,14 @@ router.post(
   async (req, res) => {
     const { numeroSala, tipoSala, departamentoId } = req.body;
 
-    if (!numeroSala || !departamentoId) {
+    if (!numeroSala || !departamentoId || isNaN(parseInt(departamentoId))) {
       return res
         .status(400)
         .json({ data: null, error: "Número e departamento são obrigatórios" });
     }
 
     const departamento = await prisma.departamento.findUnique({
-      where: { id: departamentoId },
+      where: { id: parseInt(departamentoId) },
     });
 
     if (!departamento) {
@@ -61,7 +89,7 @@ router.post(
         data: {
           numeroSala,
           tipoSala: tipoSala || "",
-          departamentoId,
+          departamentoId: parseInt(departamentoId),
         },
       });
 
@@ -76,9 +104,12 @@ router.put(
   "/update/:id",
   requirePermission(PERMISSIONS.SALA_UPDATE),
   async (req, res) => {
-    const { numeroSala, tipoSala, departamentoId, status } = req.body;
+    const { numeroSala, tipoSala, departamentoId } = req.body;
 
-    if (!numeroSala && !tipoSala && !departamentoId && !status) {
+    if (
+      (!numeroSala && !tipoSala && !departamentoId) ||
+      isNaN(parseInt(departamentoId))
+    ) {
       return res.status(400).json({
         message: "Nenhum campo para atualizar fornecido",
         data: null,
@@ -96,7 +127,7 @@ router.put(
 
     const departamento = departamentoId
       ? await prisma.departamento.findUnique({
-          where: { id: departamentoId },
+          where: { id: parseInt(departamentoId) },
         })
       : null;
 
@@ -112,11 +143,13 @@ router.put(
         data: {
           numeroSala: numeroSala || sala.numeroSala,
           tipoSala: tipoSala || sala.tipoSala,
-          departamentoId: departamentoId || sala.departamentoId,
+          departamentoId: departamentoId
+            ? parseInt(departamentoId)
+            : sala.departamentoId,
         },
       });
 
-      res.json({ data: newSala, error: null });
+      res.json({ data: { ...newSala }, error: null });
     } catch (error) {
       res.status(500).json({ data: null, error: error.message });
     }

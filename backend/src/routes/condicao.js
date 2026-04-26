@@ -17,7 +17,13 @@ router.get(
       include: { itens: true },
     });
 
-    res.json({ data: condicoes, error: null });
+    const safeConditions = condicoes.map((c) => ({
+      id: c.id,
+      nome: c.nome,
+      descricao: c.descricao ?? "",
+    }));
+
+    res.json({ data: safeConditions, error: null });
   },
 );
 
