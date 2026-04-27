@@ -102,7 +102,7 @@ export function Header({ onMenuClick, collapsed }) {
             </DropdownMenuItem>
             <DropdownMenuItem
               className="cursor-pointer"
-              onClick={() => (window.location.href = "/settings")}
+              onClick={() => (window.location.href = "/configuracoes")}
             >
               <Settings className="w-4 h-4 mr-2" />
               Configurações

@@ -3,12 +3,15 @@ import { request } from "@/lib/request";
 import { Boxes, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+
+const initialData = {
+  email: "",
+  password: "",
+};
 
 export default function Login() {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState(initialData);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -26,13 +29,30 @@ export default function Login() {
         data: formData,
       },
       (res) => {
-        const user = { ...res.data.user, instituicao: res.data.instituicao };
-        setUser(user);
-        setIsLoading(false);
-        navigate("/");
+        if (res && !res.error) {
+          const user = { ...res.data.user, instituicao: res.data.instituicao };
+          setUser(user);
+          setIsLoading(false);
+          setFormData(initialData);
+          navigate("/");
+          toast.success(res.message ?? "Login realizado com sucesso!", {
+            id: "fetch-toast",
+            position: "bottom-right",
+          });
+          return;
+        }
+        toast.error(res.message || "Ocorreu um erro ao criar a conta", {
+          id: "fetch-toast",
+          position: "bottom-right",
+        });
+        return;
       },
       (err) => {
         console.error(err);
+        toast.error(err?.message || "Ocorreu um erro ao criar a conta", {
+          id: "fetch-toast",
+          position: "bottom-right",
+        });
         setIsLoading(false);
       },
     );
@@ -70,7 +90,7 @@ export default function Login() {
                 name="email"
                 required
                 placeholder="seu@email.com"
-                className="p-2 focus:outline-0"
+                className="p-2 focus:outline-0 rounded-r-md"
                 value={formData.email}
                 onChange={(e) => handleInput("email", e.target.value)}
               />
@@ -80,7 +100,7 @@ export default function Login() {
             <label htmlFor="login-password" className="font-medium">
               Senha
             </label>
-            <div className="w-full h-fit border border-accent rounded-md grid grid-cols-[auto_1fr_auto] hover:shadow-xs shadow-muted-foreground/60 focus-within:border-primary transition-colors ease">
+            <div className="w-full h-fit border border-accent rounded-md grid grid-cols-[auto_1fr_auto] hover:shadow-xs shadow-muted-foreground/60 focus-within:border-primary transition-colors ease relative">
               <i className="w-fit bg-transparent px-2 flex items-center justify-center">
                 <Lock className="w-4 h-4" />
               </i>
@@ -90,13 +110,13 @@ export default function Login() {
                 name="password"
                 required
                 placeholder="****"
-                className="p-2 focus:outline-0"
+                className="p-2 focus:outline-0 rounded-r-md"
                 value={formData.password ?? ""}
                 onChange={(e) => handleInput("password", e.target.value)}
               />
               <i
                 onClick={() => setIsPasswordVisible((e) => !e)}
-                className="w-fit bg-transparent pr-2 flex items-center justify-center cursor-pointer"
+                className="absolute top-3 right-2 w-fit bg-transparent pr-2 flex items-center justify-center cursor-pointer"
               >
                 {isPasswordVisible ? (
                   <EyeOff className="w-4 h-4" />

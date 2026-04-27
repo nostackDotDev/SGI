@@ -25,7 +25,10 @@ model Instituicao {
   cargos        Cargo[]
   utilizadores  Utilizador[]
   categorias    Categoria[]
+  salas         Sala[]
+  registos      Registo[]
 
+  @@unique([nome, telefone])
   @@index([deletedAt])
 }
 
@@ -43,6 +46,7 @@ model Departamento {
 
   salas Sala[]
 
+  @@unique([nome, instituicaoId])
   @@index([deletedAt])
 }
 
@@ -58,8 +62,13 @@ model Sala {
   departamentoId Int?
   departamento   Departamento? @relation(fields: [departamentoId], references: [id], onDelete: Restrict)
 
+  instituicaoId Int?
+  instituicao   Instituicao? @relation(fields: [instituicaoId], references: [id], onDelete: Restrict)
+
   itens Item[]
 
+  @@unique([numeroSala, departamentoId])
+  @@unique([numeroSala, tipoSala, departamentoId])
   @@index([deletedAt])
 }
 
@@ -102,6 +111,7 @@ model Utilizador {
   registos   Registo[]
   permissoes UtilizadorPermissao[]
 
+  @@unique([nome, instituicaoId])
   @@index([deletedAt])
 }
 
@@ -177,6 +187,8 @@ model Item {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  serialNumber String? @unique
+
   categoriaId Int?
   categoria   Categoria? @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
 
@@ -188,6 +200,7 @@ model Item {
 
   registos Registo[]
 
+  @@unique([nome, serialNumber, salaId])
   @@index([deletedAt])
   @@index([categoriaId])
   @@index([salaId])
@@ -204,8 +217,10 @@ model Registo {
   itemId Int
   item   Item @relation(fields: [itemId], references: [id], onDelete: Restrict)
 
-  utilizadorId Int
-  utilizador   Utilizador @relation(fields: [utilizadorId], references: [id], onDelete: Restrict)
+  utilizadorId  Int
+  utilizador    Utilizador  @relation(fields: [utilizadorId], references: [id], onDelete: Restrict)
+  instituicaoId Int
+  instituicao   Instituicao @relation(fields: [instituicaoId], references: [id], onDelete: Restrict)
 
   @@index([deletedAt])
   @@index([itemId, createdAt])

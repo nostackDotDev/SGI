@@ -22,6 +22,7 @@ export class ItemService {
     nome: string;
     descricao?: string;
     quantidade?: number;
+    serialNumber?: string;
     categoriaId: number;
     condicaoId: number;
     salaId: number;
@@ -36,6 +37,7 @@ export class ItemService {
         categoriaId: Number(data.categoriaId),
         condicaoId: Number(data.condicaoId),
         salaId: Number(data.salaId),
+        serialNumber: data.serialNumber || null,
       },
     });
   }
@@ -52,6 +54,7 @@ export class ItemService {
       categoriaId?: number;
       condicaoId?: number;
       salaId?: number;
+      serialNumber?: string;
     },
   ) {
     this.validateItemData(data);
@@ -67,7 +70,8 @@ export class ItemService {
     if (data.condicaoId !== undefined)
       updateData.condicaoId = Number(data.condicaoId);
     if (data.salaId !== undefined) updateData.salaId = Number(data.salaId);
-
+    if (data.serialNumber !== undefined)
+      updateData.serialNumber = data.serialNumber || null;
     return prisma.item.update({
       where: { id: itemId },
       data: updateData,

@@ -14,7 +14,7 @@ router.use(tenantIsolation);
 router.get("/", requirePermission(PERMISSIONS.ITEM_READ), async (req, res) => {
   const instituicaoId = req.tenantId;
 
-  const itens = await prisma.item.findMany({
+  const items = await prisma.item.findMany({
     where: {
       deletedAt: null,
       categoria: { instituicaoId },
@@ -26,7 +26,28 @@ router.get("/", requirePermission(PERMISSIONS.ITEM_READ), async (req, res) => {
     },
   });
 
-  res.json({ data: itens, error: null });
+  res.json({
+    data: items.map((item) => ({
+      id: item.id,
+      nome: item.nome,
+      descricao: item.descricao ?? "",
+      category: {
+        value: item.categoria.id,
+        label: item.categoria.nome ?? "",
+      },
+      status: {
+        value: item.condicao.id,
+        label: item.condicao.nome ?? "",
+      },
+      location: {
+        value: item.sala.id,
+        label: item.sala.numeroSala ?? "",
+      },
+      quantity: item.quantidade,
+      serialNumber: item.serialNumber ?? "",
+    })),
+    error: null,
+  });
 });
 router.get(
   "/:id",
@@ -45,7 +66,28 @@ router.get(
       return res.status(404).json({ data: null, error: "Item not found" });
     }
 
-    res.json({ data: item, error: null });
+    res.json({
+      data: {
+        id: item.id,
+        nome: item.nome,
+        descricao: item.descricao ?? "",
+        category: {
+          value: item.categoria.id,
+          label: item.categoria.nome ?? "",
+        },
+        status: {
+          value: item.condicao.id,
+          label: item.condicao.nome ?? "",
+        },
+        location: {
+          value: item.sala.id,
+          label: item.sala.numeroSala ?? "",
+        },
+        quantity: item.quantidade,
+        serialNumber: item.serialNumber ?? "",
+      },
+      error: null,
+    });
   },
 );
 
@@ -53,31 +95,52 @@ router.post(
   "/create",
   requirePermission(PERMISSIONS.ITEM_CREATE),
   async (req, res) => {
-    const { nome, descricao, quantidade, categoriaId, condicaoId, salaId } =
-      req.body;
+    const {
+      nome,
+      descricao,
+      quantidade,
+      serialNumber,
+      categoriaId,
+      condicaoId,
+      salaId,
+    } = req.body;
 
-    if (!nome || !categoriaId || !condicaoId || !salaId) {
+    if (
+      !nome ||
+      !categoriaId ||
+      isNaN(parseInt(categoriaId)) ||
+      !condicaoId ||
+      isNaN(parseInt(condicaoId)) ||
+      !salaId ||
+      isNaN(parseInt(salaId)) ||
+      !serialNumber
+    ) {
       return res
         .status(400)
         .json({ data: null, error: "Todos os campos são obrigatórios" });
     }
 
     const categoria = await prisma.categoria.findUnique({
-      where: { id: categoriaId },
+      where: { id: parseInt(categoriaId) },
     });
 
     const condicao = await prisma.condicao.findUnique({
-      where: { id: condicaoId },
+      where: { id: parseInt(condicaoId) },
     });
 
     const sala = await prisma.sala.findUnique({
-      where: { id: salaId },
+      where: { id: parseInt(salaId) },
     });
 
     if (!categoria || !condicao || !sala) {
-      return res
-        .status(404)
-        .json({ data: null, error: "Um dos itens não foi encontrado" });
+      return res.status(404).json({
+        data: null,
+        error:
+          "Um dos itens não foi encontrado: " +
+          (categoria ? "" : "Categoria") +
+          (condicao ? "" : "Condição") +
+          (sala ? "" : "Sala"),
+      });
     }
 
     try {
@@ -85,6 +148,7 @@ router.post(
         nome,
         descricao,
         quantidade,
+        serialNumber,
         categoriaId,
         condicaoId,
         salaId,
@@ -105,31 +169,31 @@ router.put(
       nome,
       descricao,
       quantidade,
-      status,
+      serialNumber,
       categoriaId,
       condicaoId,
       salaId,
     } = req.body;
 
+    const item = await prisma.item.findUnique({
+      where: { id: parseInt(req.params.id) },
+    });
+
     if (
-      !nome &&
-      !descricao &&
-      !quantidade &&
-      !status &&
-      !categoriaId &&
-      !condicaoId &&
-      !salaId
+      (!nome || String(nome) === String(item.nome)) &&
+      (!descricao || String(descricao) === String(item.descricao)) &&
+      (!quantidade || String(quantidade) === String(item.quantidade)) &&
+      (!serialNumber || String(serialNumber) === String(item.serialNumber)) &&
+      (!categoriaId || String(categoriaId) === String(item.categoriaId)) &&
+      (!condicaoId || String(condicaoId) === String(item.condicaoId)) &&
+      (!salaId || String(salaId) === String(item.salaId))
     ) {
       return res.status(400).json({
-        message: "Nenhum campo para atualizar fornecido",
+        message: "Nada para atualizar",
         data: null,
         error: "At least one field must be provided for update",
       });
     }
-
-    const item = await prisma.item.findUnique({
-      where: { id: parseInt(req.params.id) },
-    });
 
     if (!item || item.deletedAt) {
       return res.status(404).json({ data: null, error: "Item not found" });
@@ -137,34 +201,36 @@ router.put(
 
     const categoria = categoriaId
       ? await prisma.categoria.findUnique({
-          where: { id: categoriaId },
+          where: { id: parseInt(categoriaId) },
         })
       : null;
 
     const condicao = condicaoId
       ? await prisma.condicao.findUnique({
-          where: { id: condicaoId },
+          where: { id: parseInt(condicaoId) },
         })
       : null;
 
     const sala = salaId
       ? await prisma.sala.findUnique({
-          where: { id: salaId },
+          where: { id: parseInt(salaId) },
         })
       : null;
 
     if (categoriaId && !categoria) {
       return res
         .status(404)
-        .json({ data: null, error: "Categoria não encontrada" });
+        .json({ data: null, message: "Categoria não encontrada" });
     }
     if (condicaoId && !condicao) {
       return res
         .status(404)
-        .json({ data: null, error: "Condição não encontrada" });
+        .json({ data: null, message: "Condição não encontrada" });
     }
     if (salaId && !sala) {
-      return res.status(404).json({ data: null, error: "Sala não encontrada" });
+      return res
+        .status(404)
+        .json({ data: null, message: "Sala não encontrada" });
     }
 
     try {
@@ -172,6 +238,7 @@ router.put(
         nome,
         descricao,
         quantidade,
+        serialNumber,
         categoriaId,
         condicaoId,
         salaId,

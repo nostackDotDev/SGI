@@ -25,7 +25,7 @@ router.get("/", requirePermission(PERMISSIONS.CARGO_READ), async (req, res) => {
     id: c.id,
     nome: c.nome,
     descricao: c.descricao ?? "",
-    permissions: c.permissoes.map((cp) => cp.permissao.nome),
+    permissoes: c.permissoes.map((cp) => cp.permissao.nome),
   }));
 
   res.json({ data: safeCargos, error: null });
@@ -61,7 +61,7 @@ router.get(
         nome: cargo.nome,
         descricao: cargo.descricao ?? "",
         createdAt: cargo.createdAt,
-        permissions: cargo.permissoes.map((cp) => cp.permissao.nome),
+        permissoes: cargo.permissoes.map((cp) => cp.permissao.nome),
       },
       error: null,
     });
@@ -75,19 +75,50 @@ router.post(
     const instituicaoId = req.tenantId;
     const { nome, permissoes, descricao } = req.body;
 
-    if (!nome || !permissoes) {
-      return res
-        .status(400)
-        .json({ data: null, error: "Nome e permissões são obrigatórias" });
+    const permissionNames = Array.isArray(permissoes)
+      ? [
+          ...new Set(
+            permissoes.map((name) => String(name).trim()).filter(Boolean),
+          ),
+        ]
+      : [];
+
+    if (!nome || !permissionNames.length) {
+      return res.status(400).json({
+        data: null,
+        error: "Nome e permissões são obrigatórias",
+      });
     }
 
     try {
+      const foundPermissions = await prisma.permissao.findMany({
+        where: { nome: { in: permissionNames } },
+      });
+
+      const foundNames = foundPermissions.map((permission) => permission.nome);
+      const missingPermissions = permissionNames.filter(
+        (permission) => !foundNames.includes(permission),
+      );
+
+      if (missingPermissions.length) {
+        return res.status(400).json({
+          data: null,
+          error: `Permissão(s) inválida(s): ${missingPermissions.join(", ")}`,
+        });
+      }
+
       const newCargo = await prisma.cargo.create({
         data: {
           nome,
           descricao: descricao || "",
-          permissoes,
           instituicaoId,
+          permissoes: {
+            create: foundPermissions.map((permission) => ({
+              permissao: {
+                connect: { id: permission.id },
+              },
+            })),
+          },
         },
       });
 
@@ -103,9 +134,9 @@ router.put(
   requirePermission(PERMISSIONS.CARGO_UPDATE),
   async (req, res) => {
     const instituicaoId = req.tenantId;
-    const { nome, descricao } = req.body;
+    const { nome, descricao, permissoes } = req.body;
 
-    if (!nome && !descricao) {
+    if (!nome && !descricao && permissoes === undefined) {
       return res.status(400).json({
         message: "Nenhum campo para atualizar fornecido",
         data: null,
@@ -126,6 +157,75 @@ router.put(
     }
 
     try {
+      if (permissoes !== undefined) {
+        const permissionNames = Array.isArray(permissoes)
+          ? [
+              ...new Set(
+                permissoes.map((name) => String(name).trim()).filter(Boolean),
+              ),
+            ]
+          : [];
+
+        const foundPermissions = await prisma.permissao.findMany({
+          where: { nome: { in: permissionNames } },
+        });
+
+        const foundNames = foundPermissions.map(
+          (permission) => permission.nome,
+        );
+        const missingPermissions = permissionNames.filter(
+          (permission) => !foundNames.includes(permission),
+        );
+
+        if (missingPermissions.length) {
+          return res.status(400).json({
+            data: null,
+            error: `Permissão(s) inválida(s): ${missingPermissions.join(", ")}`,
+          });
+        }
+
+        const currentCargoPermissions = await prisma.cargoPermissao.findMany({
+          where: { cargoId: cargo.id },
+        });
+
+        const permissionsToRemove = currentCargoPermissions.filter(
+          (item) =>
+            !foundPermissions.some(
+              (permission) => permission.id === item.permissaoId,
+            ),
+        );
+
+        const permissionsToAdd = foundPermissions.filter(
+          (permission) =>
+            !currentCargoPermissions.some(
+              (current) => current.permissaoId === permission.id,
+            ),
+        );
+
+        if (permissionsToRemove.length) {
+          await prisma.cargoPermissao.deleteMany({
+            where: {
+              cargoId: cargo.id,
+              permissaoId: {
+                in: permissionsToRemove.map(
+                  (permission) => permission.permissaoId,
+                ),
+              },
+            },
+          });
+        }
+
+        if (permissionsToAdd.length) {
+          await prisma.cargoPermissao.createMany({
+            data: permissionsToAdd.map((permission) => ({
+              cargoId: cargo.id,
+              permissaoId: permission.id,
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
       const updated = await prisma.cargo.update({
         where: { id: cargo.id },
         data: {

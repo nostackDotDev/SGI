@@ -9,38 +9,44 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CreateUserDialog } from "@/components/users/CreateUserDialog";
 import UsersTable from "@/components/users/UsersTable.jsx";
-import { Search } from "lucide-react";
+import { request } from "@/lib/request";
+import { Plus, Search } from "lucide-react";
 
-import { useState } from "react";
-
-const utilizadores = [
-  {
-    id: 1,
-    name: "Edward Perry",
-    level: "admin",
-    permissions: ["Full Access", "User Management", "System Settings"],
-    createdAt: "07-16-2025",
-  },
-  {
-    id: 2,
-    name: "Josephine Drake",
-    level: "user",
-    createdAt: "07-16-2025",
-    permissions: ["View Articles", "Create Articles"],
-  },
-  {
-    id: 3,
-    name: "Cody Phillips",
-    level: "user",
-    createdAt: "7-16-2025",
-    permissions: ["View Articles"],
-  },
-];
+import { useEffect, useState } from "react";
 
 export default function Users() {
   const [searchTerm, setSearchTerm] = useState("");
   const [levelFilter, setLevelFilter] = useState("all");
+
+  const [users, setUsers] = useState([]);
+  const [cargos, setCargos] = useState([]);
+
+  const [addUserOpen, setAddUserOpen] = useState(false);
+
+  useEffect(() => {
+    request(
+      "/utilizador",
+      "GET",
+      {},
+      (data) => setUsers(data.data || []),
+      (err) => {
+        setUsers([]);
+        console.error(err);
+      },
+    );
+    request(
+      "/cargo",
+      "GET",
+      {},
+      (data) => setCargos(data.data || []),
+      (err) => {
+        setCargos([]);
+        console.error(err);
+      },
+    );
+  }, []);
 
   return (
     <PageContainer className="grid grid-rows-[auto_1fr] gap-6">
@@ -74,19 +80,33 @@ export default function Users() {
               <SelectItem value="user">Usuário padrão</SelectItem>
             </SelectContent>
           </Select>
+          <Button
+            className="w-full py-5 sm:w-auto"
+            onClick={() => setAddUserOpen(true)}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Utilizador
+          </Button>
         </div>
 
         {/* Table */}
         <UsersTable
-          data={utilizadores}
+          data={users}
           levelFilter={levelFilter}
           pageSize={20}
           filter={{
             searchTerm: searchTerm,
             level: levelFilter,
           }}
+          cargos={cargos}
         />
       </div>
+
+      <CreateUserDialog
+        open={addUserOpen}
+        onOpenChange={setAddUserOpen}
+        cargos={cargos}
+      />
     </PageContainer>
   );
 }

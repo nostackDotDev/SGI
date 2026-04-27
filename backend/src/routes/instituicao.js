@@ -2,18 +2,20 @@ import express from "express";
 import prisma from "../lib/prisma.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { requirePermission } from "../middlewares/permissions.middleware.js";
+import { tenantIsolation } from "../middlewares/tenantIsolation.middleware.js";
 import { PERMISSIONS } from "../constants/permissions.constants.js";
 
 const router = express.Router();
 
 router.use(authMiddleware);
+router.use(tenantIsolation);
 
 router.get(
   "/",
   requirePermission(PERMISSIONS.INSTITUICAO_READ),
   async (req, res) => {
-    const instituicoes = await prisma.instituicao.findMany({
-      where: { deletedAt: null },
+    const instituicao = await prisma.instituicao.findUnique({
+      where: { id: req.tenantId },
       include: {
         departamentos: true,
         cargos: true,
@@ -22,7 +24,7 @@ router.get(
       },
     });
 
-    res.json({ data: instituicoes, error: null });
+    res.json({ data: instituicao, error: null });
   },
 );
 
@@ -30,6 +32,10 @@ router.get(
   "/:id",
   requirePermission(PERMISSIONS.INSTITUICAO_READ),
   async (req, res) => {
+    if (parseInt(req.params.id) !== req.tenantId) {
+      return res.status(403).json({ data: null, error: "Access denied" });
+    }
+
     const instituicao = await prisma.instituicao.findUnique({
       where: { id: parseInt(req.params.id) },
       include: {
@@ -54,25 +60,12 @@ router.post(
   "/create",
   requirePermission(PERMISSIONS.INSTITUICAO_CREATE),
   async (req, res) => {
-    const { nome, descricao, endereco, status } = req.body;
-
-    if (!nome) {
-      return res.status(400).json({ data: null, error: "Nome é obrigatório" });
-    }
-
-    try {
-      const newInstituicao = await prisma.instituicao.create({
-        data: {
-          nome,
-          descricao: descricao || "",
-          endereco: endereco || "",
-        },
+    return res
+      .status(403)
+      .json({
+        data: null,
+        error: "Institution creation is not allowed via this endpoint",
       });
-
-      res.status(201).json({ data: newInstituicao, error: null });
-    } catch (error) {
-      res.status(500).json({ data: null, error: error.message });
-    }
   },
 );
 
@@ -80,6 +73,10 @@ router.put(
   "/update/:id",
   requirePermission(PERMISSIONS.INSTITUICAO_UPDATE),
   async (req, res) => {
+    if (parseInt(req.params.id) !== req.tenantId) {
+      return res.status(403).json({ data: null, error: "Access denied" });
+    }
+
     const { nome, descricao, endereco, status } = req.body;
 
     if (!nome && !descricao && !endereco && !status) {
@@ -122,6 +119,10 @@ router.delete(
   "/:id",
   requirePermission(PERMISSIONS.INSTITUICAO_DELETE),
   async (req, res) => {
+    if (parseInt(req.params.id) !== req.tenantId) {
+      return res.status(403).json({ data: null, error: "Access denied" });
+    }
+
     const instituicao = await prisma.instituicao.findUnique({
       where: { id: parseInt(req.params.id) },
     });

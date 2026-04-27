@@ -19,23 +19,38 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
 import { request } from "@/lib/request";
+import { toast } from "sonner";
 
 const initialFormData = {
+  id: undefined,
   nome: "",
   descricao: "",
-  serialNumber: "",
-  quantidade: undefined,
+  category: {
+    value: undefined,
+    label: "",
+  },
   categoriaId: undefined,
+  status: {
+    value: undefined,
+    label: "",
+  },
   condicaoId: undefined,
+  location: {
+    value: undefined,
+    label: "",
+  },
   salaId: undefined,
+  quantity: undefined,
+  serialNumber: "",
 };
 
-export function CreateItemDialog({
+export function EditItemDialog({
   open,
   onOpenChange,
   categorias,
   status,
   localizacoes,
+  item,
 }) {
   const [formData, setFormData] = useState(initialFormData);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,12 +58,19 @@ export function CreateItemDialog({
 
   useEffect(() => {
     const f = () => {
-      if (open) {
+      if (open && item) {
+        setFormData({
+          ...item,
+          categoriaId: item.category.value,
+          condicaoId: item.status.value,
+          salaId: item.location.value,
+        });
+      } else {
         setFormData(initialFormData);
       }
     };
     f();
-  }, [open]);
+  }, [open, item]);
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -59,23 +81,44 @@ export function CreateItemDialog({
     setIsLoading(true);
 
     request(
-      "/item/create",
-      "POST",
+      `/item/update/${item.id}`,
+      "PUT",
       {
-        data: formData,
+        data: {
+          id: item.id,
+          nome: formData.nome,
+          descricao: formData.descricao,
+          serialNumber: formData.serialNumber,
+          quantidade: formData.quantidade,
+          categoriaId: formData.categoriaId,
+          condicaoId: formData.condicaoId,
+          salaId: formData.salaId,
+        },
       },
       (res) => {
         console.log(res);
         if (!res || res.error) {
-          console.log("Failed to create new item:", res.error);
+          console.log("Failed to update item:", res.error);
           setIsLoading(false);
+          toast.warning(res.message ?? "Falha ao atualizar o item!", {
+            id: "fetch-toast",
+            position: "bottom-right",
+          });
           return;
         }
+        toast.success(res.message ?? "Item atualizado com sucesso!", {
+          id: "fetch-toast",
+          position: "bottom-right",
+        });
         resetForm();
         setIsLoading(false);
       },
       (err) => {
-        console.error("Error creating new item:", err?.message ?? err);
+        console.error("Error updating item:", err?.message ?? err);
+        toast.error(err?.message ?? "Falha ao atualizar o item!", {
+          id: "fetch-toast",
+          position: "bottom-right",
+        });
         setIsLoading(false);
       },
     );
@@ -86,14 +129,14 @@ export function CreateItemDialog({
     onOpenChange(false);
   };
 
+  if (!item) return null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-125 max-h-7/9 overflow-y-auto no-scrollbar">
         <DialogHeader className="">
-          <DialogTitle>Novo Item</DialogTitle>
-          <DialogDescription>
-            Preencha as informações do novo item
-          </DialogDescription>
+          <DialogTitle>Editar Item</DialogTitle>
+          <DialogDescription>Edite as informações do item</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
@@ -129,7 +172,7 @@ export function CreateItemDialog({
               <div className="grid gap-2">
                 <Label htmlFor="category">Categoria</Label>
                 <Select
-                  value={formData.categoriaId ?? ""}
+                  value={String(formData.categoriaId ?? "")}
                   required
                   onValueChange={(value) =>
                     handleInputChange("categoriaId", value)
@@ -159,7 +202,7 @@ export function CreateItemDialog({
               <div className="grid gap-2">
                 <Label htmlFor="location">Status</Label>
                 <Select
-                  value={formData.condicaoId ?? ""}
+                  value={String(formData.condicaoId ?? "")}
                   onValueChange={(value) =>
                     handleInputChange("condicaoId", value)
                   }
@@ -209,7 +252,7 @@ export function CreateItemDialog({
                   type="number"
                   min="1"
                   placeholder="0"
-                  value={formData.quantidade ?? ""}
+                  value={formData.quantity ?? ""}
                   onChange={(v) =>
                     handleInputChange("quantidade", v.currentTarget.value)
                   }
@@ -219,7 +262,7 @@ export function CreateItemDialog({
             <div className="grid gap-2">
               <Label htmlFor="location">Localização</Label>
               <Select
-                value={formData.salaId ?? ""}
+                value={String(formData.salaId ?? "")}
                 onValueChange={(value) => handleInputChange("salaId", value)}
               >
                 <SelectTrigger className="w-full">
@@ -249,7 +292,7 @@ export function CreateItemDialog({
               Cancelar
             </Button>
             <Button type="submit" disabled={isLoading} className="">
-              Adicionar Item
+              Atualizar Item
             </Button>
           </DialogFooter>
         </form>

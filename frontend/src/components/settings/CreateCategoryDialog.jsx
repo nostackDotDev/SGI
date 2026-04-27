@@ -22,12 +22,11 @@ import { request } from "@/lib/request";
 import { Loader2 } from "lucide-react";
 
 const initialFormData = {
-  numeroSala: "",
-  tipoSala: "",
-  departamentoId: undefined,
+  nome: "",
+  descricao: "",
 };
 
-export function CreateLocationDialog({ open, onOpenChange, departaments }) {
+export function CreateCategoryDialog({ open, onOpenChange }) {
   const [formData, setFormData] = useState(initialFormData);
   const [isLoading, setIsLoading] = useState(false);
   // const [canSubmit, setCanSubmit] = useState(false)
@@ -50,7 +49,7 @@ export function CreateLocationDialog({ open, onOpenChange, departaments }) {
     setIsLoading(true);
 
     request(
-      "/localizacao/create",
+      "/categoria/create",
       "POST",
       {
         data: formData,
@@ -58,7 +57,7 @@ export function CreateLocationDialog({ open, onOpenChange, departaments }) {
       (res) => {
         console.log(res);
         if (!res || res.error) {
-          console.log("Failed to create new location:", res.error);
+          console.log("Failed to create new category:", res.error);
           setIsLoading(false);
           return;
         }
@@ -66,7 +65,7 @@ export function CreateLocationDialog({ open, onOpenChange, departaments }) {
         setIsLoading(false);
       },
       (err) => {
-        console.error("Error creating new location:", err?.message ?? err);
+        console.error("Error creating new category:", err?.message ?? err);
         setIsLoading(false);
       },
     );
@@ -81,69 +80,39 @@ export function CreateLocationDialog({ open, onOpenChange, departaments }) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-125 max-h-7/9 overflow-y-auto no-scrollbar">
         <DialogHeader className="">
-          <DialogTitle>Nova Localização</DialogTitle>
+          <DialogTitle>Novo Categoria</DialogTitle>
           <DialogDescription>
-            Preencha as informações da nova localização
+            Preencha as informações da nova categoria
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Nome da Localização</Label>
+              <Label htmlFor="name">Nome</Label>
               <Input
                 id="name"
-                placeholder="Ex: Sala 101"
-                value={formData.numeroSala}
+                placeholder="Ex: Eletrônicos"
+                value={formData.nome}
                 onChange={(v) =>
-                  handleInputChange("numeroSala", v.currentTarget.value)
+                  handleInputChange("nome", v.currentTarget.value)
                 }
                 required
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="locatioonType">Tipo</Label>
-                <Input
-                  id="locationType"
-                  type="text"
-                  placeholder="Laboratório"
-                  defaultValue={formData.tipoSala ?? ""}
-                  onChange={(v) =>
-                    handleInputChange("tipoSala", v.currentTarget.value)
-                  }
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="category">Departamento</Label>
-                <Select
-                  value={formData.departamentoId ?? ""}
-                  required
-                  onValueChange={(value) =>
-                    handleInputChange("departamentoId", value)
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecionar" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departaments.length ? (
-                      departaments.map((d, i) => (
-                        <SelectItem key={i} value={String(d.id)}>
-                          {d.nome}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <>
-                        <SelectItem key={0} value={undefined}>
-                          Falha ao carregar
-                        </SelectItem>
-                      </>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="grid gap-2">
+              <Label htmlFor="description">Descrição</Label>
+              <Textarea
+                id="description"
+                placeholder="Informações adicionais sobre a categoria"
+                rows={3}
+                value={formData.descricao}
+                onChange={(v) =>
+                  handleInputChange("descricao", v.currentTarget.value)
+                }
+                className="h-13 resize-none"
+              />
             </div>
           </div>
 
@@ -156,7 +125,7 @@ export function CreateLocationDialog({ open, onOpenChange, departaments }) {
               disabled={isLoading}
               className="flex items-center justify-center gap-2"
             >
-              Adicionar Localização{" "}
+              Adicionar Categoria{" "}
               {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
             </Button>
           </DialogFooter>

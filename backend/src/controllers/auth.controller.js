@@ -41,6 +41,7 @@ export async function loginController(req, res) {
     });
 
     return res.json({
+      message: "Login realizado com sucesso",
       data: {
         user: result.user,
         instituicao: result.instituicao,

@@ -34,6 +34,7 @@ router.get("/", requirePermission(PERMISSIONS.USER_READ), async (req, res) => {
       descricao: u.descricao ?? "",
       instituicao: u.instituicao.nome,
       cargo: u.cargo.nome,
+      updatedAt: u.updatedAt,
       permissions: Array.from(await getUserPermissions(u.id)),
     })),
   );
@@ -79,6 +80,7 @@ router.get(
         descricao: utilizador.descricao ?? "",
         instituicao: utilizador.instituicao.nome,
         cargo: utilizador.cargo.nome,
+        updatedAt: utilizador.updatedAt,
         permissions: Array.from(permissions),
       },
       error: null,
@@ -100,7 +102,7 @@ router.post(
     }
 
     const cargo = await prisma.cargo.findFirst({
-      where: { id: cargoId, instituicaoId },
+      where: { id: parseInt(cargoId), instituicaoId },
     });
 
     if (!cargo) {
@@ -113,7 +115,7 @@ router.post(
           nome,
           email,
           password,
-          cargoId,
+          cargoId: parseInt(cargoId),
           instituicaoId,
           descricao: descricao || "",
         },
@@ -172,7 +174,7 @@ router.put(
 
     const cargo = cargoId
       ? await prisma.cargo.findFirst({
-          where: { id: cargoId, instituicaoId },
+          where: { id: parseInt(cargoId), instituicaoId },
         })
       : null;
 
@@ -192,7 +194,7 @@ router.put(
           nome: nome ?? utilizador.nome,
           email: email ?? utilizador.email,
           password: password ?? utilizador.password,
-          cargoId: cargoId ?? utilizador.cargoId,
+          cargoId: parseInt(cargoId) ?? utilizador.cargoId,
           descricao: descricao ?? utilizador.descricao,
         },
       });

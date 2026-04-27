@@ -14,8 +14,9 @@ router.get(
   "/",
   requirePermission(PERMISSIONS.DEPARTAMENTO_READ),
   async (req, res) => {
+    const instituicaoId = req.tenantId;
     const departamentos = await prisma.departamento.findMany({
-      where: { deletedAt: null },
+      where: { deletedAt: null, instituicaoId: instituicaoId },
       include: { instituicao: true, salas: true },
     });
 

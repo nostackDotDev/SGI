@@ -4,6 +4,7 @@ import {
   Building2,
   Eye,
   EyeOff,
+  Loader2,
   LocationEdit,
   Lock,
   Mail,
@@ -14,21 +15,25 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+const initialData = {
+  institutionName: undefined,
+  institutionAddress: undefined,
+  userName: undefined,
+  userEmail: undefined,
+  userPassword: undefined,
+  userPasswordCheck: undefined,
+};
+
 export default function SignUp() {
-  const [formData, setFormData] = useState({
-    institutionName: undefined,
-    institutionAddress: undefined,
-    userName: undefined,
-    userEmail: undefined,
-    userPassword: undefined,
-    userPasswordCheck: undefined,
-  });
+  const [formData, setFormData] = useState(initialData);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setIsLoading(true);
     console.log(formData);
 
     if (formData.userPassword !== formData.userPasswordCheck) {
@@ -48,7 +53,7 @@ export default function SignUp() {
             endereco: formData.institutionAddress,
           },
           user: {
-            nome: formData.institutionName,
+            nome: formData.userName,
             email: formData.userEmail,
             password: formData.userPassword,
           },
@@ -56,12 +61,27 @@ export default function SignUp() {
       },
       (res) => {
         console.log(res);
+        setIsLoading(false);
         if (res && !res.error) {
           navigate("/login");
+          toast.success(res.message || "Conta criada com sucesso!", {
+            id: "fetch-toast",
+            position: "bottom-right",
+          });
+          return;
         }
+        toast.error(res?.message || "Ocorreu um erro ao criar a conta", {
+          id: "fetch-toast",
+          position: "bottom-right",
+        });
       },
       (err) => {
         console.error(err);
+        setIsLoading(false);
+        toast.error(err?.message || "Ocorreu um erro ao criar a conta", {
+          id: "fetch-toast",
+          position: "bottom-right",
+        });
       },
     );
   };
@@ -240,9 +260,11 @@ export default function SignUp() {
             </Link>
             <button
               type="submit"
-              className="w-fit px-20  capitalize bg-success text-muted text-xl text-center py-2 rounded-lg font-semibold cursor-pointer scale-95 hover:scale-100 transition-transform ease-in duration-200"
+              disabled={isLoading}
+              className="w-fit px-20 flex items-center justify-center gap-2 capitalize bg-success text-muted text-xl text-center py-2 rounded-lg font-semibold cursor-pointer scale-95 hover:scale-100 transition-transform ease-in duration-200"
             >
-              Cadastrar
+              Cadastrar{" "}
+              {isLoading && <Loader2 className="w-5 h-5 animate-spin" />}
             </button>
           </div>
         </form>

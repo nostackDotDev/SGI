@@ -1,8 +1,10 @@
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import {
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   Eye,
   Pencil,
   Search,
@@ -12,20 +14,19 @@ import {
   UserRoundX,
 } from "lucide-react";
 import { Button } from "../ui/button";
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Collapsible, CollapsibleContent } from "../ui/collapsible";
+import { groupPermissionsByFeature } from "@/lib/authContext";
 
-const levelConfig = {
-  admin: {
-    label: "Administrador",
-    className: "bg-primary/10 text-primary border-primary/20",
-  },
-  user: {
-    label: "Usuário padrão",
-    className: "bg-sidebar-accent border-destructive/20",
-  },
-};
+export default function UsersTable({
+  data,
+  levelFilter,
+  pageSize,
+  filter,
+  cargos,
+}) {
+  const [expandedRow, setExpandedRow] = useState(null);
 
-export default function UsersTable({ data, levelFilter, pageSize, filter }) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = pageSize ?? 20;
   const [filteredData, setFilteredData] = useState([]);
@@ -40,7 +41,7 @@ export default function UsersTable({ data, levelFilter, pageSize, filter }) {
   const totalPages = Math.ceil(filteredData?.length / itemsPerPage);
 
   const filtered = data.filter((u) => {
-    const matchesSearch = u.name
+    const matchesSearch = u.nome
       .toLowerCase()
       .includes(filter.searchTerm.toLowerCase().trim());
     const matchesType =
@@ -74,7 +75,7 @@ export default function UsersTable({ data, levelFilter, pageSize, filter }) {
   const filters = useMemo(() => {
     return [
       (entry) =>
-        entry.name
+        entry.nome
           .toLowerCase()
           .includes(filter.searchTerm.toLowerCase().trim()),
       (entry) =>
@@ -107,81 +108,120 @@ export default function UsersTable({ data, levelFilter, pageSize, filter }) {
       <div className="flex-1 min-h-0 overflow-auto relative no-scrollbar flex flex-col">
         <table className="w-full table-fixed min-w-3xl text-sm">
           <colgroup>
-            <col className="w-auto" />
             <col className="w-50" />
             <col className="w-auto" />
+            <col className="w-40" />
             <col className="w-auto" />
+            <col className="w-50" />
             <col className="w-28" />
           </colgroup>
           <thead className="sticky top-0 z-10 text-lg bg-card font-semibold text-center">
             <tr className="bg-secondary/50 capitalize">
-              <td className="py-2 px-4 text-left">nome</td>
-              <td className="py-2">nível de Acesso</td>
+              <td className="py-2 px-4 text-center">Última atualização</td>
+              <td className="py-2 text-left">Nome</td>
+              <td className="py-2">Cargo</td>
+              <td className="py-2">Endereço de e-mail</td>
               <td className="py-2">Permissões</td>
-              <td className="py-2">data de criação</td>
-              <td className="py-2">ações</td>
+              <td className="py-2">Ações</td>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {paginatedItems.map((item, index) => (
-              <tr
-                key={index}
-                className="animate-fade-in text-center hover:bg-accent/20 even:bg-accent/10"
-                style={{ animationDelay: `${index * 30}ms` }}
-              >
-                <td className="text-left text-muted-foreground py-3 px-4">
-                  {item.name}
-                </td>
-                <td className="py-3">
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "font-medium p-3",
-                      levelConfig[item.level].className,
-                    )}
+            {paginatedItems.map((item, index) => {
+              const isOpen = expandedRow === index;
+
+              return (
+                <React.Fragment key={index}>
+                  {/* MAIN ROW */}
+                  <tr
+                    key={`collapsible-header-${index}`}
+                    className="animate-fade-in text-center hover:bg-accent/20 even:bg-accent/10"
+                    style={{ animationDelay: `${index * 30}ms` }}
                   >
-                    {levelConfig[item.level].label}
-                  </Badge>
-                </td>
-                <td className="font-semibold py-3">
-                  {!item.permissions.length
-                    ? "Nenhuma permissão"
-                    : item.permissions.join(", ")}
-                </td>
-                <td className="text-muted-foreground py-3">{item.createdAt}</td>
-                <td className="py-2 px-3 text-center">
-                  <div className="flex items-center justify-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => {
-                        console.log("View pressed");
-                        // onViewItem?.(item);
-                      }}
+                    <td className="text-center text-muted-foreground py-3 px-4">
+                      {formatDate(item.updatedAt)}
+                    </td>
+
+                    <td className="text-left py-3">{item.nome}</td>
+
+                    <td className="py-3">
+                      <Badge
+                        variant="outline"
+                        className={cn("font-medium p-3")}
+                      >
+                        {item.cargo}
+                      </Badge>
+                    </td>
+
+                    <td className="text-muted-foreground py-3">{item.email}</td>
+
+                    {/* CLICKABLE PERMISSIONS */}
+                    <td
+                      className="font-semibold py-3 cursor-pointer hover:text-primary"
+                      onClick={() => setExpandedRow(isOpen ? null : index)}
                     >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      //   onClick={() => onEditItem?.(item)}
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                      //   onClick={() => onDeleteItem?.(item)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                      <div className="flex items-center justify-center gap-2">
+                        Ver permissões
+                        {isOpen ? (
+                          <ChevronUp className="w-4 h-4" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4" />
+                        )}
+                      </div>
+                    </td>
+
+                    <td className="py-2 px-3 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  {/* COLLAPSIBLE ROW */}
+                  <tr
+                    key={`collapsible-content-${index}`}
+                    className="bg-accent/10"
+                  >
+                    <td colSpan={6} className="p-0 border-none">
+                      <Collapsible open={isOpen}>
+                        <CollapsibleContent className="px-4 py-3 overflow-hidden flex items-center justify-center gap-2">
+                          {cargos[index]?.permissoes?.length ? (
+                            groupPermissionsByFeature(
+                              cargos[index].permissoes,
+                            ).map((group, i) => (
+                              <div key={i} className="flex gap-1">
+                                <span className="font-bold text-sm text-primary">
+                                  {group.displayFeature}:
+                                </span>
+                                <span className="text-sm text-muted-foreground">
+                                  {group.accessLevel}
+                                  {i === cargos[index].permissoes?.length - 1
+                                    ? ""
+                                    : ","}{" "}
+                                </span>
+                              </div>
+                            ))
+                          ) : (
+                            <span className="text-center text-muted-foreground mx-auto block">
+                              Nenhuma permissão atribuída a este cargo
+                            </span>
+                          )}
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </td>
+                  </tr>
+                </React.Fragment>
+              );
+            })}
           </tbody>
         </table>
         {!data?.length && (

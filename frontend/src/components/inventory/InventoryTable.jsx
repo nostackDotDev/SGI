@@ -22,17 +22,14 @@ import {
 import { cn } from "@/lib/utils";
 
 const statusConfig = {
-  disponivel: {
-    label: "Disponível",
+  1: {
     className: "bg-success/10 text-success border-success/20",
   },
-  emprestado: {
-    label: "Emprestado",
-    className: "bg-warning/10 text-warning border-warning/20",
-  },
-  manutencao: {
-    label: "Manutenção",
+  2: {
     className: "bg-destructive/10 text-destructive border-destructive/20",
+  },
+  3: {
+    className: "bg-warning/10 text-warning border-warning/20",
   },
 };
 
@@ -97,27 +94,30 @@ export function InventoryTable({
   const filters = useMemo(() => {
     return [
       (entry) =>
-        entry.name
+        entry.nome
           .toLowerCase()
+          .trim()
           .includes(filter.searchTerm.toLowerCase().trim()) ||
         entry.serialNumber
           .toLowerCase()
+          .trim()
           .includes(filter.searchTerm.toLowerCase().trim()),
       (entry) =>
         filter.category === "all"
           ? entry
-          : entry.category.value === filter.category,
+          : String(entry.category.value) === filter.category,
       (entry) =>
-        filter.status === "all" ? entry : entry.status === filter.status,
+        filter.status === "all"
+          ? entry
+          : String(entry.status.value) === filter.status,
       (entry) =>
         filter.location === "all"
           ? entry
-          : entry.location.value === filter.location,
+          : String(entry.location.value) === filter.location,
     ];
   }, [filter]);
 
   useEffect(() => {
-    // const data = mockItems.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
     const f = () => setFilteredData(mockItems);
     f();
   }, [mockItems]);
@@ -168,7 +168,6 @@ export function InventoryTable({
               <td className="py-2 font-semibold truncate text-center">
                 Localização
               </td>
-              {/* <td className="py-2 font-semibold text-right">Qtd.</td> */}
               <td className="py-2 font-semibold text-center">Ações</td>
             </tr>
           </thead>
@@ -191,7 +190,7 @@ export function InventoryTable({
                 </td>
                 <td className="py-2">
                   <div>
-                    <p className="font-medium truncate">{item.name}</p>
+                    <p className="font-medium truncate">{item.nome}</p>
                     <p className="text-xs text-muted-foreground">
                       {item.serialNumber}
                     </p>
@@ -205,16 +204,15 @@ export function InventoryTable({
                     variant="outline"
                     className={cn(
                       "font-medium",
-                      statusConfig[item.status].className,
+                      statusConfig[item.status.value]?.className,
                     )}
                   >
-                    {statusConfig[item.status].label}
+                    {item.status.label}
                   </Badge>
                 </td>
                 <td className="py-2 text-muted-foreground text-center">
                   {item.location.label}
                 </td>
-                {/* <td className="py-2 text-right font-medium">{item.quantity}</td> */}
                 <td className="py-2 pl-2 text-center">
                   <div className="flex items-center justify-center gap-1">
                     <Button

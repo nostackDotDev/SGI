@@ -18,7 +18,18 @@ export async function signup(data) {
     });
 
     // -----------------------------
-    // 2. Categoria default (POR INSTITUIÇÃO)
+    // 2. Departamento default (POR INSTITUIÇÃO)
+    // -----------------------------
+    const departamento = await tx.departamento.create({
+      data: {
+        nome: "Default",
+        descricao: "Departamento padrão",
+        instituicaoId: instituicao.id,
+      },
+    });
+
+    // -----------------------------
+    // 3. Categoria default (POR INSTITUIÇÃO)
     // -----------------------------
     const categoria = await tx.categoria.create({
       data: {
@@ -29,13 +40,13 @@ export async function signup(data) {
     });
 
     // -----------------------------
-    // 3. Sala default (POR INSTITUIÇÃO)
+    // 4. Sala default (POR INSTITUIÇÃO)
     // -----------------------------
     const sala = await tx.sala.create({
       data: {
-        numeroSala: "0",
-        tipoSala: "Default",
-        departamentoId: null,
+        numeroSala: "Default",
+        tipoSala: "Armazém padrão",
+        departamentoId: departamento.id,
       },
     });
 
@@ -76,6 +87,7 @@ export async function signup(data) {
 
     return {
       instituicao,
+      departamento,
       categoria,
       sala,
       cargo,
@@ -85,7 +97,7 @@ export async function signup(data) {
 }
 
 export async function login(email, password) {
-  const user = await prisma.utilizador.findUnique({
+  const user = await prisma.utilizador.findFirst({
     where: { email },
     include: {
       instituicao: true,
