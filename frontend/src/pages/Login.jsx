@@ -63,13 +63,15 @@ export default function Login() {
   };
 
   return (
-    <main className="w-full h-full flex items-center justify-center gradient-primary">
-      <section className="w-[60vw] max-w-xl bg-card max-h-[94vh] min-h-fit rounded-xl p-6 overflow-y-auto">
+    <main className="w-full h-full min-h-fit flex items-center justify-center gradient-primary py-4">
+      <section className="w-2xl max-w-[90vw] bg-card max-h-[94vh] min-h-fit rounded-xl p-6 overflow-y-auto no-scrollbar">
         <aside className="text-center space-y-1">
-          <i className="block mx-auto w-fit h-fit p-1.5 px-2 rounded-sm bg-success text-muted">
-            <Boxes className="w-10 h-10" />
+          <i className="block mx-auto w-fit h-fit p-1 rounded-sm text-muted-foreground">
+            <img src="/logo.png" className="w-30 aspect-auto" alt="IPIKK" />
           </i>
-          <h1 className="text-2xl font-bold capitalize">inventário escolar</h1>
+          <h1 className="text-2xl font-bold capitalize -mt-5">
+            inventário escolar
+          </h1>
           <p>Faça login para acessar o sistema</p>
         </aside>
         <form

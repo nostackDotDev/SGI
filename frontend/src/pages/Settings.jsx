@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { request } from "@/lib/request";
+import { request, refreshManager } from "@/lib/request";
 import { cn, formatDate } from "@/lib/utils";
 import { groupPermissionsByFeature } from "@/lib/authContext";
 import {
@@ -58,47 +58,67 @@ export default function Settings() {
   const [AddCategoryOpen, setAddCategoryOpen] = useState(false);
 
   useEffect(() => {
-    request(
-      "/categoria",
-      "GET",
-      {},
-      (data) => setCategorias(data.data || []),
-      (err) => {
-        setCategorias([]);
-        console.error(err);
-      },
-    );
-    request(
-      "/cargo",
-      "GET",
-      {},
-      (data) => setCargos(data.data || []),
-      (err) => {
-        setCargos([]);
-        console.error(err);
-      },
-    );
-    request(
-      "/localizacao",
-      "GET",
-      {},
-      (data) => setLocalizacoes(data.data || []),
-      (err) => {
-        setLocalizacoes([]);
-        console.error(err);
-      },
-    );
+    // Define refresh functions
+    const refreshCategorias = () => {
+      request(
+        "/categoria",
+        "GET",
+        {},
+        (data) => setCategorias(data.data || []),
+        (err) => {
+          console.error(err);
+        },
+      );
+    };
 
-    request(
-      "/departamento",
-      "GET",
-      {},
-      (data) => setDepartamentos(data.data || []),
-      (err) => {
-        setDepartamentos([]);
-        console.error(err);
-      },
-    );
+    const refreshCargos = () => {
+      request(
+        "/cargo",
+        "GET",
+        {},
+        (data) => setCargos(data.data || []),
+        (err) => {
+          console.error(err);
+        },
+      );
+    };
+
+    const refreshLocalizacoes = () => {
+      request(
+        "/localizacao",
+        "GET",
+        {},
+        (data) => setLocalizacoes(data.data || []),
+        (err) => {
+          console.error(err);
+        },
+      );
+    };
+
+    const refreshDepartamentos = () => {
+      request(
+        "/departamento",
+        "GET",
+        {},
+        (data) => setDepartamentos(data.data || []),
+        (err) => {
+          console.error(err);
+        },
+      );
+    };
+
+    // Register refresh callbacks
+    refreshManager.register("categorias", refreshCategorias);
+    refreshManager.register("cargos", refreshCargos);
+    refreshManager.register("localizacoes", refreshLocalizacoes);
+    refreshManager.register("departamentos", refreshDepartamentos);
+
+    // Initial data load
+    refreshCategorias();
+    refreshCargos();
+    refreshLocalizacoes();
+    refreshDepartamentos();
+
     const f = () =>
       setFormData({
         companyName: user?.instituicao?.nome || "",
@@ -107,7 +127,15 @@ export default function Settings() {
         companyPhone: user?.instituicao?.telefone || "",
       });
     f();
-  }, []);
+
+    // Cleanup on unmount
+    return () => {
+      refreshManager.unregister("categorias");
+      refreshManager.unregister("cargos");
+      refreshManager.unregister("localizacoes");
+      refreshManager.unregister("departamentos");
+    };
+  }, [user.id]);
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));

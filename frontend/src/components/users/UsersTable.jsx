@@ -193,7 +193,7 @@ export default function UsersTable({
                   >
                     <td colSpan={6} className="p-0 border-none">
                       <Collapsible open={isOpen}>
-                        <CollapsibleContent className="px-4 py-3 overflow-hidden flex items-center justify-center gap-2">
+                        <CollapsibleContent className="px-4 py-3 overflow-hidden flex items-center justify-center flex-wrap gap-2">
                           {cargos[index]?.permissoes?.length ? (
                             groupPermissionsByFeature(
                               cargos[index].permissoes,

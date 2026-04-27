@@ -53,6 +53,7 @@ export function CreateCategoryDialog({ open, onOpenChange }) {
       "POST",
       {
         data: formData,
+        refreshKey: "categorias",
       },
       (res) => {
         console.log(res);

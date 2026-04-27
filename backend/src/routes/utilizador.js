@@ -6,6 +6,7 @@ import { tenantIsolation } from "../middlewares/tenantIsolation.middleware.js";
 import { requirePermission } from "../middlewares/permissions.middleware.js";
 import { PERMISSIONS } from "../constants/permissions.constants.js";
 import { getUserPermissions } from "../services/permissions.service.js";
+import { handlePrismaError } from "../lib/errorHandler.js";
 const router = express.Router();
 
 /**
@@ -141,10 +142,11 @@ router.post(
         error: null,
       });
     } catch (error) {
-      res.status(500).json({
-        message: "Erro ao criar utilizador",
+      const { status, message } = handlePrismaError(error);
+      res.status(status).json({
+        message,
         data: null,
-        error: error.message,
+        error: null,
       });
     }
   },
@@ -220,10 +222,11 @@ router.put(
         error: null,
       });
     } catch (error) {
-      res.status(500).json({
-        message: "Erro ao atualizar utilizador",
+      const { status, message } = handlePrismaError(error);
+      res.status(status).json({
+        message,
         data: null,
-        error: error.message,
+        error: null,
       });
     }
   },

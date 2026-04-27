@@ -1,4 +1,5 @@
 import { login, signup, refreshAccessToken } from "../services/auth.service.js";
+import { handlePrismaError } from "../lib/errorHandler.js";
 
 export async function signupController(req, res) {
   try {
@@ -10,10 +11,11 @@ export async function signupController(req, res) {
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({
-      message: "Erro ao criar conta",
+    const { status, message } = handlePrismaError(error);
+    return res.status(status).json({
+      message,
       data: null,
-      error: error?.message ?? "Unrecognized error encountered",
+      error: error?.message ?? error,
     });
   }
 }
@@ -28,7 +30,7 @@ export async function loginController(req, res) {
       return res.status(401).json({
         message: "Credenciais inválidas",
         data: null,
-        error: "Invalid email or password",
+        error: result.error ?? "Unrecognized error found: " + result,
       });
     }
 
@@ -57,12 +59,12 @@ export async function loginController(req, res) {
       },
     });
   } catch (error) {
-    console.error(error);
-
-    return res.status(error?.status || 500).json({
-      message: "Internal server error",
+    console.error("Signup error:", error);
+    const { status, message } = handlePrismaError(error);
+    return res.status(status).json({
+      message,
       data: null,
-      error: error?.message ?? "Unrecognized error encountered",
+      error: null,
     });
   }
 }

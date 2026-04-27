@@ -54,6 +54,7 @@ export function CreateLocationDialog({ open, onOpenChange, departaments }) {
       "POST",
       {
         data: formData,
+        refreshKey: "localizacoes",
       },
       (res) => {
         console.log(res);

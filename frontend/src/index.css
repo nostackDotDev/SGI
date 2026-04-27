@@ -19,11 +19,14 @@
 html,
 body {
   width: 100dvw;
-  height: 100dvh;
+  min-height: 100dvh;
   scroll-behavior: smooth;
+  scrollbar-width: none;
 }
 #root {
   width: 100%;
-  height: 100%;
+  height: 100dvh;
+  min-height: fit-content;
   overflow-x: hidden;
+  scrollbar-width: none;
 }

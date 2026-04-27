@@ -53,8 +53,8 @@ export function InventoryFilters({
         </div>
 
         {/* Filters */}
-        <div className="flex gap-4">
-          <div className="grid gap-2">
+        <div className="flex flex-wrap sm:flex-nowrap gap-4">
+          <div className="flex-1 min-w-fit grid gap-2">
             <Label htmlFor="categoryFilter" className="px-2">
               Categoria
             </Label>
@@ -74,7 +74,7 @@ export function InventoryFilters({
             </Select>
           </div>
 
-          <div className="grid gap-2">
+          <div className="flex-1 min-w-fit grid gap-2">
             <Label htmlFor="statusFilter" className="px-2">
               Status
             </Label>
@@ -94,7 +94,7 @@ export function InventoryFilters({
             </Select>
           </div>
 
-          <div className="grid gap-2">
+          <div className="flex-1 min-w-fit grid gap-2">
             <Label htmlFor="locationFilter" className="px-2">
               Localização
             </Label>

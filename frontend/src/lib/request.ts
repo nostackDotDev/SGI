@@ -100,11 +100,57 @@ axiosInstance.interceptors.response.use(
   },
 );
 
+// ============================================================================
+// REFRESH REGISTRY - Manage data refresh callbacks
+// ============================================================================
+
+type RefreshCallback = () => void | Promise<void>;
+const refreshRegistry: Map<string, RefreshCallback> = new Map();
+
+export const refreshManager = {
+  /**
+   * Register a refresh callback for a specific key
+   * @param key - Unique identifier for the refresh (e.g., 'cargos', 'categorias')
+   * @param callback - Function to call when refresh is needed
+   */
+  register: (key: string, callback: RefreshCallback) => {
+    refreshRegistry.set(key, callback);
+  },
+
+  /**
+   * Unregister a refresh callback
+   * @param key - The key to unregister
+   */
+  unregister: (key: string) => {
+    refreshRegistry.delete(key);
+  },
+
+  /**
+   * Trigger a refresh for a specific key
+   * @param key - The key to refresh
+   */
+  refresh: async (key: string) => {
+    const callback = refreshRegistry.get(key);
+    if (callback) {
+      await callback();
+    }
+  },
+
+  /**
+   * Trigger multiple refreshes
+   * @param keys - Array of keys to refresh
+   */
+  refreshMultiple: async (keys: string[]) => {
+    await Promise.all(keys.map((key) => refreshManager.refresh(key)));
+  },
+};
+
 export interface RequestOptions<T = any> extends Omit<
   AxiosRequestConfig<T>,
   "url" | "method"
 > {
   withCredentials?: boolean;
+  refreshKey?: string | string[];
 }
 
 export function request<T = any>(
@@ -114,15 +160,26 @@ export function request<T = any>(
   onSuccess?: (data: T) => void,
   onError?: (error: any) => void,
 ): void {
+  const { refreshKey, ...requestOptions } = options;
+
   axiosInstance
     .request<T>({
       url: path,
       method,
       baseURL: options.baseURL ?? API_BASE_URL,
-      ...options,
+      ...requestOptions,
     })
     .then((response) => {
       if (onSuccess) onSuccess(response.data);
+
+      // Trigger refresh if refreshKey is provided
+      if (refreshKey) {
+        if (Array.isArray(refreshKey)) {
+          refreshManager.refreshMultiple(refreshKey);
+        } else {
+          refreshManager.refresh(refreshKey);
+        }
+      }
     })
     .catch((error) => {
       if (axios.isAxiosError(error)) {

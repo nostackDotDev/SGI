@@ -88,6 +88,7 @@ export function CreateCargoDialog({ open, onOpenChange }) {
       "POST",
       {
         data: formData,
+        refreshKey: "cargos",
       },
       (res) => {
         if (!res || res.error) {
