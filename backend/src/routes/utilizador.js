@@ -1,11 +1,26 @@
 import express from "express";
 import prisma from "../lib/prisma.js";
+import bcrypt from "bcrypt";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { tenantIsolation } from "../middlewares/tenantIsolation.middleware.js";
 import { requirePermission } from "../middlewares/permissions.middleware.js";
 import { PERMISSIONS } from "../constants/permissions.constants.js";
 import { getUserPermissions } from "../services/permissions.service.js";
 const router = express.Router();
+
+/**
+ * Helper function to sanitize user response (exclude password)
+ */
+const sanitizeUtilizador = (user) => ({
+  id: user.id,
+  nome: user.nome,
+  email: user.email,
+  descricao: user.descricao ?? "",
+  cargoId: user.cargoId,
+  instituicaoId: user.instituicaoId,
+  updatedAt: user.updatedAt,
+  createdAt: user.createdAt,
+});
 
 router.use(authMiddleware);
 router.use(tenantIsolation);
@@ -27,16 +42,15 @@ router.get("/", requirePermission(PERMISSIONS.USER_READ), async (req, res) => {
   }
 
   const safeUtilizadores = await Promise.all(
-    utilizadores.map(async (u) => ({
-      id: u.id,
-      nome: u.nome,
-      email: u.email,
-      descricao: u.descricao ?? "",
-      instituicao: u.instituicao.nome,
-      cargo: u.cargo.nome,
-      updatedAt: u.updatedAt,
-      permissions: Array.from(await getUserPermissions(u.id)),
-    })),
+    utilizadores.map(async (u) => {
+      const safeUser = sanitizeUtilizador(u);
+      return {
+        ...safeUser,
+        instituicao: u.instituicao.nome,
+        cargo: u.cargo.nome,
+        permissions: Array.from(await getUserPermissions(u.id)),
+      };
+    }),
   );
 
   res.json({
@@ -70,17 +84,14 @@ router.get(
     }
 
     const permissions = await getUserPermissions(utilizador.id);
+    const safeUser = sanitizeUtilizador(utilizador);
 
     res.json({
       message: "Utilizador encontrado",
       data: {
-        id: utilizador.id,
-        nome: utilizador.nome,
-        email: utilizador.email,
-        descricao: utilizador.descricao ?? "",
+        ...safeUser,
         instituicao: utilizador.instituicao.nome,
         cargo: utilizador.cargo.nome,
-        updatedAt: utilizador.updatedAt,
         permissions: Array.from(permissions),
       },
       error: null,
@@ -110,11 +121,14 @@ router.post(
     }
 
     try {
+      // Hash password before storing
+      const hashedPassword = await bcrypt.hash(password, 10);
+
       const newUtilizador = await prisma.utilizador.create({
         data: {
           nome,
           email,
-          password,
+          password: hashedPassword,
           cargoId: parseInt(cargoId),
           instituicaoId,
           descricao: descricao || "",
@@ -123,12 +137,7 @@ router.post(
 
       res.status(201).json({
         message: "Utilizador criado com sucesso",
-        data: {
-          id: newUtilizador.id,
-          nome: newUtilizador.nome,
-          email: newUtilizador.email,
-          descricao: newUtilizador.descricao ?? "",
-        },
+        data: sanitizeUtilizador(newUtilizador),
         error: null,
       });
     } catch (error) {
@@ -187,21 +196,27 @@ router.put(
     }
 
     try {
+      // Build update data object, only including provided fields
+      const updateData = {};
+
+      if (nome) updateData.nome = nome;
+      if (email) updateData.email = email;
+      if (cargoId) updateData.cargoId = parseInt(cargoId);
+      if (descricao) updateData.descricao = descricao;
+
+      // Hash password if provided
+      if (password) {
+        updateData.password = await bcrypt.hash(password, 10);
+      }
+
       const updated = await prisma.utilizador.update({
         where: { id: utilizador.id },
-        data: {
-          id: utilizador.id,
-          nome: nome ?? utilizador.nome,
-          email: email ?? utilizador.email,
-          password: password ?? utilizador.password,
-          cargoId: parseInt(cargoId) ?? utilizador.cargoId,
-          descricao: descricao ?? utilizador.descricao,
-        },
+        data: updateData,
       });
 
       res.json({
         message: "Utilizador atualizado com sucesso",
-        data: updated,
+        data: sanitizeUtilizador(updated),
         error: null,
       });
     } catch (error) {
@@ -244,7 +259,7 @@ router.delete(
 
       res.json({
         message: "Utilizador eliminado com sucesso",
-        data: deletedUtilizador,
+        data: sanitizeUtilizador(deletedUtilizador),
         error: null,
       });
     } catch (error) {

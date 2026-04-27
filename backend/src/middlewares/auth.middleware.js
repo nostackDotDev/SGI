@@ -2,9 +2,10 @@ import jwt from "jsonwebtoken";
 import prisma from "../lib/prisma.js";
 
 export async function authMiddleware(req, res, next) {
-  const token = req.cookies?.token || req.headers.authorization?.split(" ")[1];
+  const accessToken =
+    req.cookies?.accessToken || req.headers.authorization?.split(" ")[1];
 
-  if (!token) {
+  if (!accessToken) {
     return res.status(401).json({
       message: "Unauthorized",
       data: null,
@@ -13,7 +14,7 @@ export async function authMiddleware(req, res, next) {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
 
     const user = await prisma.utilizador.findFirst({
       where: { id: decoded.userId },
@@ -33,9 +34,9 @@ export async function authMiddleware(req, res, next) {
       cargoId: decoded.cargoId,
     };
     next();
-  } catch {
-    // Clear invalid token
-    res.clearCookie("token", {
+  } catch (error) {
+    // Clear invalid access token
+    res.clearCookie("accessToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",

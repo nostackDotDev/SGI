@@ -102,6 +102,9 @@ model Utilizador {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  refreshToken        String?   @db.LongText
+  refreshTokenExpires DateTime?
+
   instituicaoId Int
   instituicao   Instituicao @relation(fields: [instituicaoId], references: [id], onDelete: Restrict)
 

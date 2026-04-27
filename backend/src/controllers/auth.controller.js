@@ -1,4 +1,4 @@
-import { login, signup } from "../services/auth.service.js";
+import { login, signup, refreshAccessToken } from "../services/auth.service.js";
 
 export async function signupController(req, res) {
   try {
@@ -32,12 +32,21 @@ export async function loginController(req, res) {
       });
     }
 
-    // set httpOnly cookie
-    res.cookie("token", result.token, {
+    // Set httpOnly cookies for both tokens
+    // Access token - short-lived (1 hour)
+    res.cookie("accessToken", result.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 1000, // 1 day
+      maxAge: 60 * 60 * 1000, // 1 hour
+    });
+
+    // Refresh token - long-lived (7 days)
+    res.cookie("refreshToken", result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     return res.json({
@@ -45,6 +54,74 @@ export async function loginController(req, res) {
       data: {
         user: result.user,
         instituicao: result.instituicao,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(error?.status || 500).json({
+      message: "Internal server error",
+      data: null,
+      error: error?.message ?? "Unrecognized error encountered",
+    });
+  }
+}
+
+export async function refreshController(req, res) {
+  try {
+    // Get refresh token from cookies
+    const refreshToken = req.cookies?.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(401).json({
+        message: "Unauthorized",
+        data: null,
+        error: "No refresh token provided",
+      });
+    }
+
+    // Validate refresh token and generate new access token
+    const result = await refreshAccessToken(refreshToken);
+
+    if (!result) {
+      // Refresh token invalid or expired, clear cookies
+      res.clearCookie("accessToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+      });
+      res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+      });
+
+      return res.status(401).json({
+        message: "Unauthorized",
+        data: null,
+        error: "Refresh token invalid or expired",
+      });
+    }
+
+    // Set new tokens in cookies
+    res.cookie("accessToken", result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 1000, // 1 hour
+    });
+
+    res.cookie("refreshToken", result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    return res.json({
+      message: "Token refreshed successfully",
+      data: {
+        accessToken: result.accessToken,
       },
     });
   } catch (error) {
