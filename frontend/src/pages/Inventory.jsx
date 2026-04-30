@@ -6,12 +6,16 @@ import { InventoryTable } from "@/components/inventory/InventoryTable";
 import PageContainer from "@/components/layout/PageContainer";
 import { refreshManager, request } from "@/lib/request";
 import { EditItemDialog } from "@/components/inventory/EditItemDialog";
+import DeleteDialog from "@/components/common/DeleteDialog";
 
 export default function Inventory() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
   const [selectedItem, setSelectedItem] = useState(null);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [searchTerm, setSearchTerm] = useState("");
@@ -32,6 +36,20 @@ export default function Inventory() {
       (data) => setItems(data.data || []),
       (err) => {
         setItems([]);
+        console.error(err);
+      },
+    );
+  };
+
+  const deleteItem = (id) => {
+    request(
+      `/item/${id}`,
+      "DELETE",
+      {},
+      () => {
+        fetchItems();
+      },
+      (err) => {
         console.error(err);
       },
     );
@@ -125,6 +143,10 @@ export default function Inventory() {
           setSelectedItem(item);
           setEditDialogOpen(true);
         }}
+        onDeleteItem={(item) => {
+          setSelectedItem(item);
+          setDeleteDialogOpen(true);
+        }}
       />
 
       {/* Modais */}
@@ -153,6 +175,17 @@ export default function Inventory() {
           setDetailDialogOpen(false);
           setEditDialogOpen(true);
         }}
+      />
+      <DeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={() => {
+          if (selectedItem) {
+            deleteItem(selectedItem.id);
+          }
+        }}
+        title={`Eliminar ${selectedItem?.nome || "item"}?`}
+        description="Tem certeza de que deseja eliminar este item? Esta ação não pode ser desfeita."
       />
     </PageContainer>
   );
