@@ -36,6 +36,7 @@ export function CreateItemDialog({
   categorias,
   status,
   localizacoes,
+  onSuccess,
 }) {
   const [formData, setFormData] = useState(initialFormData);
   const [isLoading, setIsLoading] = useState(false);
@@ -63,6 +64,7 @@ export function CreateItemDialog({
       "POST",
       {
         data: formData,
+        refreshKey: "items",
       },
       (res) => {
         console.log(res);
@@ -73,6 +75,9 @@ export function CreateItemDialog({
         }
         resetForm();
         setIsLoading(false);
+
+        onSuccess && onSuccess();
+        onOpenChange(false);
       },
       (err) => {
         console.error("Error creating new item:", err?.message ?? err);

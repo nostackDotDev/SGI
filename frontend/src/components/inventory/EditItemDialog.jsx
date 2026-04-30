@@ -40,7 +40,7 @@ const initialFormData = {
     label: "",
   },
   salaId: undefined,
-  quantity: undefined,
+  quantidade: undefined,
   serialNumber: "",
 };
 
@@ -61,6 +61,7 @@ export function EditItemDialog({
       if (open && item) {
         setFormData({
           ...item,
+          quantidade: item.quantity,
           categoriaId: item.category.value,
           condicaoId: item.status.value,
           salaId: item.location.value,
@@ -252,7 +253,7 @@ export function EditItemDialog({
                   type="number"
                   min="1"
                   placeholder="0"
-                  value={formData.quantity ?? ""}
+                  value={formData.quantidade ?? ""}
                   onChange={(v) =>
                     handleInputChange("quantidade", v.currentTarget.value)
                   }

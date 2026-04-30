@@ -32,6 +32,10 @@ import { CreateDepartmentDialog } from "@/components/settings/CreateDepartmentDi
 import { CreateLocationDialog } from "@/components/settings/CreateLocationDialog";
 import { CreateCargoDialog } from "@/components/settings/CreateCargoDialog";
 import { CreateCategoryDialog } from "@/components/settings/CreateCategoryDialog";
+import { EditCategoryDialog } from "@/components/settings/EditCategoryDialog";
+import { EditCargoDialog } from "@/components/settings/EditCargoDialog";
+import { EditDepartmentDialog } from "@/components/settings/EditDepartmentDialog";
+import { EditLocationDialog } from "@/components/settings/EditLocationDialog";
 
 export default function Settings() {
   const { user } = useAuth();
@@ -42,6 +46,15 @@ export default function Settings() {
     companyEmail: "",
     companyPhone: "",
   });
+  const [editCategoryOpen, setEditCategoryOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [editCargoOpen, setEditCargoOpen] = useState(false);
+  const [selectedCargo, setSelectedCargo] = useState(null);
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
+  const [editDepartmentOpen, setEditDepartmentOpen] = useState(false);
+  const [editLocationOpen, setEditLocationOpen] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+
   const [canEditCompanyInfo, setCanEditCompanyInfo] = useState(false);
 
   const [categorias, setCategorias] = useState([]);
@@ -329,7 +342,10 @@ export default function Settings() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              // onClick={() => onEditItem?.(item)}
+                              onClick={() => {
+                                setSelectedCategory(item);
+                                setEditCategoryOpen(true);
+                              }}
                             >
                               <Pencil className="w-4 h-4" />
                             </Button>
@@ -436,7 +452,10 @@ export default function Settings() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              // onClick={() => onEditItem?.(item)}
+                              onClick={() => {
+                                setSelectedCargo(item);
+                                setEditCargoOpen(true);
+                              }}
                             >
                               <Pencil className="w-4 h-4" />
                             </Button>
@@ -574,7 +593,10 @@ export default function Settings() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            // onClick={() => onEditItem?.(item)}
+                            onClick={() => {
+                              setSelectedDepartment(item);
+                              setEditDepartmentOpen(true);
+                            }} // onClick={() => onEditItem?.(item)}
                           >
                             <Pencil className="w-4 h-4" />
                           </Button>
@@ -701,7 +723,10 @@ export default function Settings() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              // onClick={() => onEditItem?.(item)}
+                              onClick={() => {
+                                setSelectedLocation(item);
+                                setEditLocationOpen(true);
+                              }}
                             >
                               <Pencil className="w-4 h-4" />
                             </Button>
@@ -745,6 +770,27 @@ export default function Settings() {
       <CreateCategoryDialog
         open={AddCategoryOpen}
         onOpenChange={setAddCategoryOpen}
+      />
+      <EditCategoryDialog
+        open={editCategoryOpen}
+        onOpenChange={setEditCategoryOpen}
+        category={selectedCategory}
+      />
+      <EditCargoDialog
+        open={editCargoOpen}
+        onOpenChange={setEditCargoOpen}
+        cargo={selectedCargo}
+      />
+      <EditDepartmentDialog
+        open={editDepartmentOpen}
+        onOpenChange={setEditDepartmentOpen}
+        department={selectedDepartment}
+      />
+      <EditLocationDialog
+        open={editLocationOpen}
+        onOpenChange={setEditLocationOpen}
+        location={selectedLocation}
+        departaments={departamentos}
       />
     </PageContainer>
   );

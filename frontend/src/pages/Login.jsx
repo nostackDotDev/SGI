@@ -129,28 +129,32 @@ export default function Login() {
             </div>
           </div>
           <div className="h-fit flex items-center justify-end">
-            {/* <div className="flex items-end justify-center gap-1">
-              <input
-                type="checkbox"
-                name="remeberUser"
-                id="rememberUser"
-                className="rounded-full text-success cursor-pointer"
-              />
-              <label htmlFor="rememberUser" className="cursor-pointer">
-                Lembrar-me
-              </label>
-            </div> */}
+            {
+              <div className="flex items-end justify-center gap-1">
+                <input
+                  type="checkbox"
+                  name="remeberUser"
+                  id="rememberUser"
+                  className="rounded-full text-success cursor-pointer"
+                />
+                <label htmlFor="rememberUser" className="cursor-pointer">
+                  Lembrar-me
+                </label>
+              </div>
+            }
             <span className="text-ring text-shadow-2xs cursor-pointer hover:underline">
               Esqueceu a senha?
             </span>
           </div>
-          <Link
-            to="/signup"
-            replace
-            className="-mt-5 text-right text-ring text-shadow-2xs cursor-pointer hover:underline"
-          >
-            Não possui uma conta? Criar conta
-          </Link>
+          {
+            <Link
+              to="/signup"
+              replace
+              className="-mt-5 text-right text-ring text-shadow-2xs cursor-pointer hover:underline"
+            >
+              Não possui uma conta? Criar conta
+            </Link>
+          }
           <button
             type="submit"
             disabled={isLoading}

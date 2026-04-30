@@ -4,7 +4,7 @@ import { CreateItemDialog } from "@/components/inventory/CreateItemDialog";
 import { ItemDetailDialog } from "@/components/inventory/ItemDetailDialog";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
 import PageContainer from "@/components/layout/PageContainer";
-import { request } from "@/lib/request";
+import { refreshManager, request } from "@/lib/request";
 import { EditItemDialog } from "@/components/inventory/EditItemDialog";
 
 export default function Inventory() {
@@ -24,17 +24,36 @@ export default function Inventory() {
   const [locations, setLocations] = useState([]);
   const [items, setItems] = useState([]);
 
-  useEffect(() => {
+  const fetchItems = () => {
     request(
-      "/categoria",
+      "/item",
       "GET",
       {},
-      (data) => setCategories(data.data || []),
+      (data) => setItems(data.data || []),
       (err) => {
-        setCategories([]);
+        setItems([]);
         console.error(err);
       },
     );
+  };
+
+  useEffect(() => {
+    const refreshItems = () => {
+      request(
+        "/categoria",
+        "GET",
+        {},
+        (data) => setCategories(data.data || []),
+        (err) => {
+          setCategories([]);
+          console.error(err);
+        },
+      );
+    };
+
+    refreshManager.register("items", refreshItems);
+    refreshItems();
+
     request(
       "/condicao",
       "GET",
@@ -56,16 +75,7 @@ export default function Inventory() {
       },
     );
 
-    request(
-      "/item",
-      "GET",
-      {},
-      (data) => setItems(data.data || []),
-      (err) => {
-        setItems([]);
-        console.error(err);
-      },
-    );
+    fetchItems();
   }, []);
 
   return (
@@ -124,6 +134,7 @@ export default function Inventory() {
         categorias={categories}
         status={statusOptions}
         localizacoes={locations}
+        onSuccess={fetchItems}
       />
       <EditItemDialog
         open={editDialogOpen}

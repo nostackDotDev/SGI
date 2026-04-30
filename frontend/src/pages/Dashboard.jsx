@@ -9,8 +9,8 @@ import {
   Clock,
   Package,
 } from "lucide-react";
-import { Activity } from "react";
 import { Link } from "react-router-dom";
+import { StockChart } from "@/components/layout/StockChart";
 
 export default function Dashboard() {
   return (
@@ -55,13 +55,11 @@ export default function Dashboard() {
 
       <div className="grid grid-rows-[auto_auto] grid-cols-1 xl:grid-rows-1 xl:grid-cols-3 gap-4">
         {/* GRÁFICO */}
+        {/* GRÁFICO */}
         <div className="lg:col-span-2 bg-white p-4 rounded-xl border">
           <h2 className="font-semibold mb-4">Evolução dos movimentos</h2>
 
-          {/* Placeholder gráfico */}
-          <div className="min-h-86 flex items-center justify-center text-gray-400">
-            Gráfico aqui
-          </div>
+          <StockChart />
         </div>
 
         <ActivityFeed />
