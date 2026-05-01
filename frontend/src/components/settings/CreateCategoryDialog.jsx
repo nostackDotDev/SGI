@@ -26,7 +26,7 @@ const initialFormData = {
   descricao: "",
 };
 
-export function CreateDepartmentDialog({ open, onOpenChange }) {
+export function CreateCategoryDialog({ open, onOpenChange }) {
   const [formData, setFormData] = useState(initialFormData);
   const [isLoading, setIsLoading] = useState(false);
   // const [canSubmit, setCanSubmit] = useState(false)
@@ -49,16 +49,16 @@ export function CreateDepartmentDialog({ open, onOpenChange }) {
     setIsLoading(true);
 
     request(
-      "/departamento/create",
+      "/categoria/create",
       "POST",
       {
         data: formData,
-        refreshKey: "departamentos",
+        refreshKey: "categorias",
       },
       (res) => {
         console.log(res);
         if (!res || res.error) {
-          console.log("Failed to create new department:", res.error);
+          console.log("Failed to create new category:", res.error);
           setIsLoading(false);
           return;
         }
@@ -66,7 +66,7 @@ export function CreateDepartmentDialog({ open, onOpenChange }) {
         setIsLoading(false);
       },
       (err) => {
-        console.error("Error creating new department:", err?.message ?? err);
+        console.error("Error creating new category:", err?.message ?? err);
         setIsLoading(false);
       },
     );
@@ -81,9 +81,9 @@ export function CreateDepartmentDialog({ open, onOpenChange }) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-125 max-h-7/9 overflow-y-auto no-scrollbar">
         <DialogHeader className="">
-          <DialogTitle>Novo Departamento</DialogTitle>
+          <DialogTitle>Novo Categoria</DialogTitle>
           <DialogDescription>
-            Preencha as informações do novo departamento
+            Preencha as informações da nova categoria
           </DialogDescription>
         </DialogHeader>
 
@@ -93,7 +93,7 @@ export function CreateDepartmentDialog({ open, onOpenChange }) {
               <Label htmlFor="name">Nome</Label>
               <Input
                 id="name"
-                placeholder="Ex: TI"
+                placeholder="Ex: Eletrônicos"
                 value={formData.nome}
                 onChange={(v) =>
                   handleInputChange("nome", v.currentTarget.value)
@@ -106,7 +106,7 @@ export function CreateDepartmentDialog({ open, onOpenChange }) {
               <Label htmlFor="description">Descrição</Label>
               <Textarea
                 id="description"
-                placeholder="Informações adicionais sobre o departamento"
+                placeholder="Informações adicionais sobre a categoria"
                 rows={3}
                 value={formData.descricao}
                 onChange={(v) =>
@@ -126,7 +126,7 @@ export function CreateDepartmentDialog({ open, onOpenChange }) {
               disabled={isLoading}
               className="flex items-center justify-center gap-2"
             >
-              Adicionar Departamento{" "}
+              Adicionar Categoria{" "}
               {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
             </Button>
           </DialogFooter>

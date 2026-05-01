@@ -4,6 +4,7 @@ import {
   Building2,
   Eye,
   EyeOff,
+  Loader2,
   LocationEdit,
   Lock,
   Mail,
@@ -14,27 +15,32 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+const initialData = {
+  institutionName: undefined,
+  institutionAddress: undefined,
+  userName: undefined,
+  userEmail: undefined,
+  userPassword: undefined,
+  userPasswordCheck: undefined,
+};
+
 export default function SignUp() {
-  const [formData, setFormData] = useState({
-    institutionName: undefined,
-    institutionAddress: undefined,
-    userName: undefined,
-    userEmail: undefined,
-    userPassword: undefined,
-    userPasswordCheck: undefined,
-  });
+  const [formData, setFormData] = useState(initialData);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setIsLoading(true);
     console.log(formData);
 
     if (formData.userPassword !== formData.userPasswordCheck) {
       toast.error("As palavras-passe não coincidem", {
         position: "bottom-right",
       });
+      setIsLoading(false);
       return;
     }
 
@@ -48,7 +54,7 @@ export default function SignUp() {
             endereco: formData.institutionAddress,
           },
           user: {
-            nome: formData.institutionName,
+            nome: formData.userName,
             email: formData.userEmail,
             password: formData.userPassword,
           },
@@ -56,12 +62,27 @@ export default function SignUp() {
       },
       (res) => {
         console.log(res);
+        setIsLoading(false);
         if (res && !res.error) {
           navigate("/login");
+          toast.success(res.message || "Conta criada com sucesso!", {
+            id: "fetch-toast",
+            position: "bottom-right",
+          });
+          return;
         }
+        toast.error(res?.message || "Ocorreu um erro ao criar a conta", {
+          id: "fetch-toast",
+          position: "bottom-right",
+        });
       },
       (err) => {
         console.error(err);
+        setIsLoading(false);
+        toast.error(err?.message || "Ocorreu um erro ao criar a conta", {
+          id: "fetch-toast",
+          position: "bottom-right",
+        });
       },
     );
   };
@@ -71,13 +92,15 @@ export default function SignUp() {
   };
 
   return (
-    <main className="w-full h-full flex items-center justify-center gradient-primary">
-      <section className="w-[90vw] max-w-7xl max-h-[94vh] min-h-fit rounded-xl card-elevated p-6 overflow-y-auto">
-        <aside className="text-center space-y-3 pb-3">
-          <i className="block mx-auto w-fit h-fit p-1.5 px-2 rounded-sm bg-success text-muted">
-            <Boxes className="w-10 h-10" />
+    <main className="w-full h-full min-h-fit flex items-center justify-center gradient-primary py-4">
+      <section className="w-6xl max-w-[90vw] max-h-[94vh] min-h-fit rounded-xl card-elevated p-6 overflow-y-auto no-scrollbar">
+        <aside className="text-center pb-3">
+          <i className="block mx-auto w-fit h-fit p-1 rounded-sm text-muted-foreground">
+            <img src="/logo.png" className="w-30 aspect-auto" alt="IPIKK" />
           </i>
-          <h1 className="text-2xl font-bold capitalize">inventário escolar</h1>
+          <h1 className="text-2xl font-bold capitalize -mt-5">
+            inventário escolar
+          </h1>
           <p>Cadastre a sua instituição em alguns passos</p>
         </aside>
         <form
@@ -230,7 +253,7 @@ export default function SignUp() {
               </div>
             </div>
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center flex-wrap gap-2 justify-center sm:justify-between">
             <Link
               to="/login"
               replace
@@ -240,9 +263,11 @@ export default function SignUp() {
             </Link>
             <button
               type="submit"
-              className="w-fit px-20  capitalize bg-success text-muted text-xl text-center py-2 rounded-lg font-semibold cursor-pointer scale-95 hover:scale-100 transition-transform ease-in duration-200"
+              disabled={isLoading}
+              className="w-fit px-20 flex items-center justify-center gap-2 capitalize bg-success text-muted text-xl text-center py-2 rounded-lg font-semibold cursor-pointer scale-95 hover:scale-100 transition-transform ease-in duration-200"
             >
-              Cadastrar
+              Cadastrar{" "}
+              {isLoading && <Loader2 className="w-5 h-5 animate-spin" />}
             </button>
           </div>
         </form>

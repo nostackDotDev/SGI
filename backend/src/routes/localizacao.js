@@ -2,15 +2,23 @@ import express from "express";
 import prisma from "../lib/prisma.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { requirePermission } from "../middlewares/permissions.middleware.js";
+import { tenantIsolation } from "../middlewares/tenantIsolation.middleware.js";
 import { PERMISSIONS } from "../constants/permissions.constants.js";
+import { handlePrismaError } from "../lib/errorHandler.js";
 
 const router = express.Router();
 
 router.use(authMiddleware);
+router.use(tenantIsolation);
 
 router.get("/", requirePermission(PERMISSIONS.SALA_READ), async (req, res) => {
   const salas = await prisma.sala.findMany({
-    where: { deletedAt: null },
+    where: {
+      deletedAt: null,
+      departamento: {
+        instituicaoId: req.tenantId,
+      },
+    },
     include: { departamento: true, itens: true },
   });
 
@@ -24,6 +32,7 @@ router.get("/", requirePermission(PERMISSIONS.SALA_READ), async (req, res) => {
       id: item.id,
       nomeItem: item.nome,
     })),
+    instituicaoId: sala.departamento?.instituicaoId ?? null,
   }));
 
   res.json({
@@ -38,7 +47,12 @@ router.get(
   requirePermission(PERMISSIONS.SALA_READ),
   async (req, res) => {
     const sala = await prisma.sala.findUnique({
-      where: { id: parseInt(req.params.id) },
+      where: {
+        id: parseInt(req.params.id),
+        departamento: {
+          instituicaoId: req.tenantId,
+        },
+      },
       include: { departamento: true, itens: true },
     });
 
@@ -75,7 +89,10 @@ router.post(
     }
 
     const departamento = await prisma.departamento.findUnique({
-      where: { id: parseInt(departamentoId) },
+      where: {
+        id: parseInt(departamentoId),
+        instituicaoId: req.tenantId,
+      },
     });
 
     if (!departamento) {
@@ -95,7 +112,8 @@ router.post(
 
       res.status(201).json({ data: newSala, error: null });
     } catch (error) {
-      res.status(500).json({ data: null, error: error.message });
+      const { status, message } = handlePrismaError(error);
+      res.status(status).json({ data: null, message });
     }
   },
 );
@@ -118,7 +136,12 @@ router.put(
     }
 
     const sala = await prisma.sala.findUnique({
-      where: { id: parseInt(req.params.id) },
+      where: {
+        id: parseInt(req.params.id),
+        departamento: {
+          instituicaoId: req.tenantId,
+        },
+      },
     });
 
     if (!sala || sala.deletedAt) {
@@ -127,7 +150,10 @@ router.put(
 
     const departamento = departamentoId
       ? await prisma.departamento.findUnique({
-          where: { id: parseInt(departamentoId) },
+          where: {
+            id: parseInt(departamentoId),
+            instituicaoId: req.tenantId,
+          },
         })
       : null;
 
@@ -151,7 +177,8 @@ router.put(
 
       res.json({ data: { ...newSala }, error: null });
     } catch (error) {
-      res.status(500).json({ data: null, error: error.message });
+      const { status, message } = handlePrismaError(error);
+      res.status(status).json({ data: null, message });
     }
   },
 );
@@ -161,7 +188,12 @@ router.delete(
   requirePermission(PERMISSIONS.SALA_DELETE),
   async (req, res) => {
     const sala = await prisma.sala.findUnique({
-      where: { id: parseInt(req.params.id) },
+      where: {
+        id: parseInt(req.params.id),
+        departamento: {
+          instituicaoId: req.tenantId,
+        },
+      },
     });
 
     if (!sala || sala.deletedAt) {

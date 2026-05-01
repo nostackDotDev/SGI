@@ -9,36 +9,32 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
 import { request } from "@/lib/request";
-import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const initialFormData = {
+  id: undefined,
   nome: "",
   descricao: "",
 };
 
-export function CreateDepartmentDialog({ open, onOpenChange }) {
+export function EditDepartmentDialog({ open, onOpenChange, department }) {
   const [formData, setFormData] = useState(initialFormData);
   const [isLoading, setIsLoading] = useState(false);
-  // const [canSubmit, setCanSubmit] = useState(false)
 
   useEffect(() => {
-    const f = () => {
-      if (open) {
-        setFormData(initialFormData);
-      }
-    };
-    f();
-  }, [open]);
+    if (open && department) {
+      setFormData({
+        id: department.id,
+        nome: department.nome ?? "",
+        descricao: department.descricao ?? "",
+      });
+    } else {
+      setFormData(initialFormData);
+    }
+  }, [open, department]);
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -49,24 +45,39 @@ export function CreateDepartmentDialog({ open, onOpenChange }) {
     setIsLoading(true);
 
     request(
-      "/departamento/create",
-      "POST",
+      `/departamento/update/${department.id}`,
+      "PUT",
       {
-        data: formData,
+        data: {
+          id: department.id,
+          nome: formData.nome,
+          descricao: formData.descricao,
+        },
         refreshKey: "departamentos",
       },
       (res) => {
-        console.log(res);
         if (!res || res.error) {
-          console.log("Failed to create new department:", res.error);
+          toast.error(res?.message ?? "Erro ao atualizar departamento!", {
+            id: "fetch-toast",
+            position: "bottom-right",
+          });
           setIsLoading(false);
           return;
         }
+
+        toast.success(res?.message ?? "Departamento atualizado com sucesso!", {
+          id: "fetch-toast",
+          position: "bottom-right",
+        });
+
         resetForm();
         setIsLoading(false);
       },
       (err) => {
-        console.error("Error creating new department:", err?.message ?? err);
+        toast.error(err?.message ?? "Erro ao atualizar departamento!", {
+          id: "fetch-toast",
+          position: "bottom-right",
+        });
         setIsLoading(false);
       },
     );
@@ -77,40 +88,42 @@ export function CreateDepartmentDialog({ open, onOpenChange }) {
     onOpenChange(false);
   };
 
+  if (!department) return null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-125 max-h-7/9 overflow-y-auto no-scrollbar">
-        <DialogHeader className="">
-          <DialogTitle>Novo Departamento</DialogTitle>
+        <DialogHeader>
+          <DialogTitle>Editar Departamento</DialogTitle>
           <DialogDescription>
-            Preencha as informações do novo departamento
+            Atualize as informações do departamento
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Nome</Label>
+              <Label htmlFor="nome">Nome</Label>
               <Input
-                id="name"
+                id="nome"
                 placeholder="Ex: TI"
                 value={formData.nome}
-                onChange={(v) =>
-                  handleInputChange("nome", v.currentTarget.value)
+                onChange={(e) =>
+                  handleInputChange("nome", e.currentTarget.value)
                 }
                 required
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="description">Descrição</Label>
+              <Label htmlFor="descricao">Descrição</Label>
               <Textarea
-                id="description"
-                placeholder="Informações adicionais sobre o departamento"
+                id="descricao"
+                placeholder="Descrição do departamento"
                 rows={3}
                 value={formData.descricao}
-                onChange={(v) =>
-                  handleInputChange("descricao", v.currentTarget.value)
+                onChange={(e) =>
+                  handleInputChange("descricao", e.currentTarget.value)
                 }
                 className="h-13 resize-none"
               />
@@ -121,13 +134,9 @@ export function CreateDepartmentDialog({ open, onOpenChange }) {
             <Button type="reset" variant="outline" onClick={resetForm}>
               Cancelar
             </Button>
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="flex items-center justify-center gap-2"
-            >
-              Adicionar Departamento{" "}
-              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+
+            <Button type="submit" disabled={isLoading}>
+              Atualizar Departamento
             </Button>
           </DialogFooter>
         </form>

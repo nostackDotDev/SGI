@@ -4,6 +4,7 @@ import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { tenantIsolation } from "../middlewares/tenantIsolation.middleware.js";
 import { requirePermission } from "../middlewares/permissions.middleware.js";
 import { PERMISSIONS } from "../constants/permissions.constants.js";
+import { handlePrismaError } from "../lib/errorHandler.js";
 
 const router = express.Router();
 
@@ -14,8 +15,9 @@ router.get(
   "/",
   requirePermission(PERMISSIONS.DEPARTAMENTO_READ),
   async (req, res) => {
+    const instituicaoId = req.tenantId;
     const departamentos = await prisma.departamento.findMany({
-      where: { deletedAt: null },
+      where: { deletedAt: null, instituicaoId: instituicaoId },
       include: { instituicao: true, salas: true },
     });
 
@@ -103,7 +105,8 @@ router.post(
 
       res.status(201).json({ data: newDepartamento, error: null });
     } catch (error) {
-      res.status(500).json({ data: null, error: error.message });
+      const { status, message } = handlePrismaError(error);
+      res.status(status).json({ data: null, message });
     }
   },
 );
@@ -168,7 +171,8 @@ router.put(
         error: null,
       });
     } catch (error) {
-      res.status(500).json({ data: null, error: error.message });
+      const { status, message } = handlePrismaError(error);
+      res.status(status).json({ data: null, message });
     }
   },
 );

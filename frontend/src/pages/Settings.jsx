@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { request } from "@/lib/request";
+import { request, refreshManager } from "@/lib/request";
 import { cn, formatDate } from "@/lib/utils";
 import { groupPermissionsByFeature } from "@/lib/authContext";
 import {
@@ -16,9 +16,13 @@ import {
   Building,
   ChevronDown,
   ChevronUp,
+  Component,
+  Eye,
   LocationEdit,
   Pen,
+  Pencil,
   Save,
+  Trash2,
   UserRoundKey,
   X,
 } from "lucide-react";
@@ -26,6 +30,12 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/core/contexts/AuthContext";
 import { CreateDepartmentDialog } from "@/components/settings/CreateDepartmentDialog";
 import { CreateLocationDialog } from "@/components/settings/CreateLocationDialog";
+import { CreateCargoDialog } from "@/components/settings/CreateCargoDialog";
+import { CreateCategoryDialog } from "@/components/settings/CreateCategoryDialog";
+import { EditCategoryDialog } from "@/components/settings/EditCategoryDialog";
+import { EditCargoDialog } from "@/components/settings/EditCargoDialog";
+import { EditDepartmentDialog } from "@/components/settings/EditDepartmentDialog";
+import { EditLocationDialog } from "@/components/settings/EditLocationDialog";
 
 export default function Settings() {
   const { user } = useAuth();
@@ -36,6 +46,15 @@ export default function Settings() {
     companyEmail: "",
     companyPhone: "",
   });
+  const [editCategoryOpen, setEditCategoryOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [editCargoOpen, setEditCargoOpen] = useState(false);
+  const [selectedCargo, setSelectedCargo] = useState(null);
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
+  const [editDepartmentOpen, setEditDepartmentOpen] = useState(false);
+  const [editLocationOpen, setEditLocationOpen] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+
   const [canEditCompanyInfo, setCanEditCompanyInfo] = useState(false);
 
   const [categorias, setCategorias] = useState([]);
@@ -48,49 +67,71 @@ export default function Settings() {
 
   const [AddDepartmentOpen, setAddDepartmentOpen] = useState(false);
   const [AddLocationOpen, setAddLocationOpen] = useState(false);
+  const [AddCargoOpen, setAddCargoOpen] = useState(false);
+  const [AddCategoryOpen, setAddCategoryOpen] = useState(false);
 
   useEffect(() => {
-    request(
-      "/categoria",
-      "GET",
-      {},
-      (data) => setCategorias(data.data || []),
-      (err) => {
-        setCategorias([]);
-        console.error(err);
-      },
-    );
-    request(
-      "/cargo",
-      "GET",
-      {},
-      (data) => setCargos(data.data || []),
-      (err) => {
-        setCargos([]);
-        console.error(err);
-      },
-    );
-    request(
-      "/localizacao",
-      "GET",
-      {},
-      (data) => setLocalizacoes(data.data || []),
-      (err) => {
-        setLocalizacoes([]);
-        console.error(err);
-      },
-    );
+    // Define refresh functions
+    const refreshCategorias = () => {
+      request(
+        "/categoria",
+        "GET",
+        {},
+        (data) => setCategorias(data.data || []),
+        (err) => {
+          console.error(err);
+        },
+      );
+    };
 
-    request(
-      "/departamento",
-      "GET",
-      {},
-      (data) => setDepartamentos(data.data || []),
-      (err) => {
-        setDepartamentos([]);
-        console.error(err);
-      },
-    );
+    const refreshCargos = () => {
+      request(
+        "/cargo",
+        "GET",
+        {},
+        (data) => setCargos(data.data || []),
+        (err) => {
+          console.error(err);
+        },
+      );
+    };
+
+    const refreshLocalizacoes = () => {
+      request(
+        "/localizacao",
+        "GET",
+        {},
+        (data) => setLocalizacoes(data.data || []),
+        (err) => {
+          console.error(err);
+        },
+      );
+    };
+
+    const refreshDepartamentos = () => {
+      request(
+        "/departamento",
+        "GET",
+        {},
+        (data) => setDepartamentos(data.data || []),
+        (err) => {
+          console.error(err);
+        },
+      );
+    };
+
+    // Register refresh callbacks
+    refreshManager.register("categorias", refreshCategorias);
+    refreshManager.register("cargos", refreshCargos);
+    refreshManager.register("localizacoes", refreshLocalizacoes);
+    refreshManager.register("departamentos", refreshDepartamentos);
+
+    // Initial data load
+    refreshCategorias();
+    refreshCargos();
+    refreshLocalizacoes();
+    refreshDepartamentos();
+
     const f = () =>
       setFormData({
         companyName: user?.instituicao?.nome || "",
@@ -99,7 +140,15 @@ export default function Settings() {
         companyPhone: user?.instituicao?.telefone || "",
       });
     f();
-  }, []);
+
+    // Cleanup on unmount
+    return () => {
+      refreshManager.unregister("categorias");
+      refreshManager.unregister("cargos");
+      refreshManager.unregister("localizacoes");
+      refreshManager.unregister("departamentos");
+    };
+  }, [user.id]);
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -235,8 +284,9 @@ export default function Settings() {
         description="Criar, editar e eliminar categorias"
         actionBtn={{
           title: "Nova categoria",
-          // action: () => console.log("WASD"),
+          action: () => setAddCategoryOpen(true),
         }}
+        style="max-h-140"
       >
         <div className="flex-1 min-h-0 bg-card rounded-xl border border-border flex flex-col">
           <div className="rounded-xl flex-1 min-h-0 overflow-auto relative no-scrollbar flex flex-col">
@@ -272,12 +322,43 @@ export default function Settings() {
                       <td className="font-semibold py-3 truncate">
                         {item.descricao}
                       </td>
-                      <td className="text-primary/80 py-2">
-                        {
-                          item.id === 1
-                            ? ""
-                            : "Opções" /* Esconder opções da categoria padrão */
-                        }
+                      <td className="py-2 pl-2 text-center text-primary/80">
+                        {item.id === 1 ? (
+                          ""
+                        ) : (
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              // onClick={() => {
+                              //   console.log("View pressed");
+                              // onViewItem?.(item);
+                              // }}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setSelectedCategory(item);
+                                setEditCategoryOpen(true);
+                              }}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              // onClick={() => onDeleteItem?.(item)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -301,12 +382,13 @@ export default function Settings() {
         description="Criar, editar e eliminar cargos"
         actionBtn={{
           title: "Novo cargo",
-          // action: () => console.log("WASD"),
+          action: () => setAddCargoOpen(true),
         }}
+        style="max-h-140"
       >
         <div className="flex-1 min-h-0 bg-card rounded-xl border border-border flex flex-col">
           <div className="rounded-xl flex-1 min-h-0 overflow-auto relative no-scrollbar flex flex-col">
-            <table className="w-full table-fixed min-w-lg text-sm">
+            <table className="w-full table-fixed min-w-xl text-sm">
               <colgroup>
                 <col className="w-50" />
                 <col className="w-auto" />
@@ -350,12 +432,43 @@ export default function Settings() {
                           )}{" "}
                         </div>
                       </td>
-                      <td className="text-primary/80 py-2">
-                        {
-                          item.id === 1
-                            ? ""
-                            : "Opções" /* Esconder opções do cargo admin */
-                        }
+                      <td className="py-2 pl-2 text-center text-primary/80">
+                        {item.id === 1 ? (
+                          ""
+                        ) : (
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              // onClick={() => {
+                              //   console.log("View pressed");
+                              // onViewItem?.(item);
+                              // }}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setSelectedCargo(item);
+                                setEditCargoOpen(true);
+                              }}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              // onClick={() => onDeleteItem?.(item)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -372,9 +485,9 @@ export default function Settings() {
             {expandedRow !== null && cargos[expandedRow] && (
               <div className="w-full h-fit py-4 px-4 bg-accent/10 border-t border-border">
                 <div className="flex items-center justify-center flex-wrap gap-2">
-                  {cargos[expandedRow]?.permissions?.length ? (
+                  {cargos[expandedRow]?.permissoes?.length ? (
                     groupPermissionsByFeature(
-                      cargos[expandedRow].permissions,
+                      cargos[expandedRow].permissoes,
                     ).map((group, i) => (
                       <div key={i} className="flex gap-1">
                         <span className="font-bold text-sm text-primary">
@@ -382,8 +495,8 @@ export default function Settings() {
                         </span>
                         <span className="text-sm text-muted-foreground">
                           {group.accessLevel}
-                          {i === cargos[expandedRow].permissions?.length - 1
-                            ? "wasd"
+                          {i === cargos[expandedRow].permissoes?.length - 1
+                            ? ""
                             : ","}{" "}
                         </span>
                       </div>
@@ -401,13 +514,14 @@ export default function Settings() {
       </Card>
 
       <Card
-        Icon={UserRoundKey}
+        Icon={Component}
         title="Departamentos"
         description="Criar, editar e eliminar departamentos"
         actionBtn={{
           title: "Novo departamento",
           action: () => setAddDepartmentOpen(true),
         }}
+        style="max-h-140"
       >
         <div className="flex-1 min-h-0 bg-card rounded-xl border border-border flex flex-col">
           <div className="rounded-xl flex-1 min-h-0 overflow-auto relative no-scrollbar flex flex-col">
@@ -462,7 +576,40 @@ export default function Settings() {
                           )}{" "}
                         </div>
                       </td>
-                      <td className="text-primary/80 py-2">Opções</td>
+                      <td className="py-2 pl-2 text-center text-primary/80">
+                        <div className="flex items-center justify-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            // onClick={() => {
+                            //   console.log("View pressed");
+                            // onViewItem?.(item);
+                            // }}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => {
+                              setSelectedDepartment(item);
+                              setEditDepartmentOpen(true);
+                            }} // onClick={() => onEditItem?.(item)}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            // onClick={() => onDeleteItem?.(item)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
               </tbody>
@@ -515,6 +662,7 @@ export default function Settings() {
           title: "Nova localização",
           action: () => setAddLocationOpen(true),
         }}
+        style="max-h-140"
       >
         <div className="flex-1 min-h-0 bg-card rounded-xl border border-border flex flex-col">
           <div className="rounded-xl flex-1 min-h-0 overflow-auto relative no-scrollbar flex flex-col">
@@ -555,12 +703,43 @@ export default function Settings() {
                       <td className="font-semibold py-3 truncate">
                         {item.tipo}
                       </td>
-                      <td className="text-primary/80 py-2">
-                        {
-                          item.id === 1
-                            ? ""
-                            : "Opções" /* Esconder opções da localização padrão */
-                        }
+                      <td className="py-2 pl-2 text-center text-primary/80">
+                        {item.id === 1 ? (
+                          ""
+                        ) : (
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              // onClick={() => {
+                              //   console.log("View pressed");
+                              // onViewItem?.(item);
+                              // }}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setSelectedLocation(item);
+                                setEditLocationOpen(true);
+                              }}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              // onClick={() => onDeleteItem?.(item)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -585,6 +764,32 @@ export default function Settings() {
       <CreateLocationDialog
         open={AddLocationOpen}
         onOpenChange={setAddLocationOpen}
+        departaments={departamentos}
+      />
+      <CreateCargoDialog open={AddCargoOpen} onOpenChange={setAddCargoOpen} />
+      <CreateCategoryDialog
+        open={AddCategoryOpen}
+        onOpenChange={setAddCategoryOpen}
+      />
+      <EditCategoryDialog
+        open={editCategoryOpen}
+        onOpenChange={setEditCategoryOpen}
+        category={selectedCategory}
+      />
+      <EditCargoDialog
+        open={editCargoOpen}
+        onOpenChange={setEditCargoOpen}
+        cargo={selectedCargo}
+      />
+      <EditDepartmentDialog
+        open={editDepartmentOpen}
+        onOpenChange={setEditDepartmentOpen}
+        department={selectedDepartment}
+      />
+      <EditLocationDialog
+        open={editLocationOpen}
+        onOpenChange={setEditLocationOpen}
+        location={selectedLocation}
         departaments={departamentos}
       />
     </PageContainer>

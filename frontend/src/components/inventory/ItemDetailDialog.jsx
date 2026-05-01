@@ -17,20 +17,16 @@ import {
   Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useEffect } from "react";
 
 const statusConfig = {
-  disponivel: {
-    label: "Disponível",
+  1: {
     className: "bg-success/10 text-success border-success/20",
   },
-  emprestado: {
-    label: "Emprestado",
-    className: "bg-warning/10 text-warning border-warning/20",
-  },
-  manutencao: {
-    label: "Manutenção",
+  2: {
     className: "bg-destructive/10 text-destructive border-destructive/20",
+  },
+  3: {
+    className: "bg-warning/10 text-warning border-warning/20",
   },
 };
 
@@ -57,11 +53,7 @@ const mockHistory = [
 ];
 
 export function ItemDetailDialog({ open, onOpenChange, item, onEdit }) {
-  useEffect(() => console.log("Open?", true, "Details", item), [open, item]);
-
   if (!item) return null;
-
-  const status = statusConfig[item.status];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -72,9 +64,12 @@ export function ItemDetailDialog({ open, onOpenChange, item, onEdit }) {
               <DialogTitle className="text-xl">{item.name}</DialogTitle>
               <Badge
                 variant="outline"
-                className={cn("mt-2 font-medium", status.className)}
+                className={cn(
+                  "mt-2 font-medium",
+                  statusConfig[item.status.value]?.className,
+                )}
               >
-                {status.label}
+                {item.status.label}
               </Badge>
             </div>
           </div>
@@ -160,13 +155,13 @@ export function ItemDetailDialog({ open, onOpenChange, item, onEdit }) {
 
           {/* Actions */}
           <div className="flex gap-3">
-            {item.status === "disponivel" ? (
+            {item.status.value === 1 ? (
               <Button className="flex-1">
                 <ArrowUpRight className="w-4 h-4 mr-2" />
                 Registrar Saída
               </Button>
-            ) : item.status === "emprestado" ? (
-              <Button variant="success" className="flex-1">
+            ) : item.status.value === 3 ? (
+              <Button variant="secondary" className="flex-1">
                 <ArrowDownLeft className="w-4 h-4 mr-2" />
                 Registrar Devolução
               </Button>

@@ -2,18 +2,25 @@ import express from "express";
 import prisma from "../lib/prisma.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { requirePermission } from "../middlewares/permissions.middleware.js";
+import { tenantIsolation } from "../middlewares/tenantIsolation.middleware.js";
 import { PERMISSIONS } from "../constants/permissions.constants.js";
 
 const router = express.Router();
 
 router.use(authMiddleware);
+router.use(tenantIsolation);
 
 router.get(
   "/",
   requirePermission(PERMISSIONS.REGISTO_READ),
   async (req, res) => {
     const registos = await prisma.registo.findMany({
-      where: { deletedAt: null },
+      where: {
+        deletedAt: null,
+        utilizador: {
+          instituicaoId: req.tenantId,
+        },
+      },
       include: {
         item: true,
         utilizador: true,
@@ -29,7 +36,12 @@ router.get(
   requirePermission(PERMISSIONS.REGISTO_READ),
   async (req, res) => {
     const registo = await prisma.registo.findUnique({
-      where: { id: parseInt(req.params.id) },
+      where: {
+        id: parseInt(req.params.id),
+        utilizador: {
+          instituicaoId: req.tenantId,
+        },
+      },
       include: {
         item: true,
         utilizador: true,
@@ -56,11 +68,21 @@ router.post(
     }
 
     const item = await prisma.item.findUnique({
-      where: { id: itemId },
+      where: {
+        id: itemId,
+        sala: {
+          departamento: {
+            instituicaoId: req.tenantId,
+          },
+        },
+      },
     });
 
     const utilizador = await prisma.utilizador.findUnique({
-      where: { id: utilizadorId },
+      where: {
+        id: utilizadorId,
+        instituicaoId: req.tenantId,
+      },
     });
 
     if (!item || item.deletedAt)
@@ -102,7 +124,12 @@ router.put(
     }
 
     const registo = await prisma.registo.findUnique({
-      where: { id: parseInt(req.params.id) },
+      where: {
+        id: parseInt(req.params.id),
+        utilizador: {
+          instituicaoId: req.tenantId,
+        },
+      },
     });
 
     if (!registo || registo.deletedAt) {
@@ -111,13 +138,23 @@ router.put(
 
     const item = itemId
       ? await prisma.item.findUnique({
-          where: { id: itemId },
+          where: {
+            id: itemId,
+            sala: {
+              departamento: {
+                instituicaoId: req.tenantId,
+              },
+            },
+          },
         })
       : null;
 
     const utilizador = utilizadorId
       ? await prisma.utilizador.findUnique({
-          where: { id: utilizadorId },
+          where: {
+            id: utilizadorId,
+            instituicaoId: req.tenantId,
+          },
         })
       : null;
 
@@ -153,7 +190,12 @@ router.delete(
   requirePermission(PERMISSIONS.REGISTO_DELETE),
   async (req, res) => {
     const registo = await prisma.registo.findUnique({
-      where: { id: parseInt(req.params.id) },
+      where: {
+        id: parseInt(req.params.id),
+        utilizador: {
+          instituicaoId: req.tenantId,
+        },
+      },
     });
 
     if (!registo || registo.deletedAt) {
