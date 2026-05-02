@@ -109,7 +109,7 @@ export function InventoryTable({
       (entry) =>
         filter.status === "all"
           ? entry
-          : String(entry.status.value) === filter.status,
+          : String(entry.status.label) === filter.status,
       (entry) =>
         filter.location === "all"
           ? entry
@@ -138,7 +138,7 @@ export function InventoryTable({
   }, [filters, mockItems]);
 
   return (
-    <div className="bg-card rounded-xl border border-border shadow-card overflow-hidden grid grid-rows-[1fr_auto]">
+    <div className="bg-card rounded-xl border border-border shadow-card overflow-hidden grid grid-rows-[1fr_auto] animate-in duration-300 ease-in">
       <div className="overflow-auto relative no-scrollbar flex flex-col">
         <table className="w-full min-w-3xl table-fixed text-sm">
           <colgroup>

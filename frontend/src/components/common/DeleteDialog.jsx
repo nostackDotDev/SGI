@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,9 +21,9 @@ export default function DeleteDialog({
   onConfirm,
   title,
   description,
+  reason,
+  setReason,
 }) {
-  const [reason, setReason] = useState("");
-
   const handleDelete = () => {
     if (!reason.trim()) {
       return;
