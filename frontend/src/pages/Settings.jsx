@@ -37,6 +37,8 @@ import { EditCargoDialog } from "@/components/settings/EditCargoDialog";
 import { EditDepartmentDialog } from "@/components/settings/EditDepartmentDialog";
 import { EditLocationDialog } from "@/components/settings/EditLocationDialog";
 import Loader, { LoaderSmall } from "@/components/layout/Loader";
+import DeleteDialog from "@/components/common/DeleteDialog";
+import { toast } from "sonner";
 
 export default function Settings() {
   const { user } = useAuth();
@@ -70,6 +72,11 @@ export default function Settings() {
   const [AddLocationOpen, setAddLocationOpen] = useState(false);
   const [AddCargoOpen, setAddCargoOpen] = useState(false);
   const [AddCategoryOpen, setAddCategoryOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteAction, setDeleteAction] = useState({
+    action: null,
+    label: "",
+  });
 
   // Define refresh functions
   const refreshCategorias = () => {
@@ -162,6 +169,33 @@ export default function Settings() {
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleDeletion = {
+    category: async (id) => {
+      await request(`/categoria/${id}`, "DELETE", {}, () => {
+        refreshManager.refresh("categorias");
+        toast.success("Categoria eliminada com sucesso");
+      });
+    },
+    cargos: async (id) => {
+      await request(`/cargos/${id}`, "DELETE", {}, () => {
+        refreshManager.refresh("cargos");
+        toast.success("Cargo eliminado com sucesso");
+      });
+    },
+    localizacao: async (id) => {
+      await request(`/localizacao/${id}`, "DELETE", {}, () => {
+        refreshManager.refresh("localizacoes");
+        toast.success("Localização eliminada com sucesso");
+      });
+    },
+    departamento: async (id) => {
+      await request(`/departamento/${id}`, "DELETE", {}, () => {
+        refreshManager.refresh("departamentos");
+        toast.success("Departamento eliminado com sucesso");
+      });
+    },
   };
 
   // const handleEditCompanyInfo = async (enable) => {
@@ -325,51 +359,51 @@ export default function Settings() {
                         style={{ animationDelay: `${index * 30}ms` }}
                       >
                         <td className="text-muted-foreground py-3">
-                          {formatDate(item.createdAt, true)}
+                          {formatDate(item.updatedAt, true)}
                         </td>
                         <td className="font-medium text-left text-primary py-3 truncate">
                           {item.nome}
                         </td>
                         <td className="font-semibold py-3 truncate">
-                          {item.descricao}
+                          {item.descricao.trim() ? (
+                            item.descricao
+                          ) : (
+                            <span className="italic text-muted-foreground">
+                              Sem descrição
+                            </span>
+                          )}
                         </td>
                         <td className="py-2 pl-2 text-center text-primary/80">
-                          {item.id === 1 ? (
-                            ""
-                          ) : (
-                            <div className="flex items-center justify-center gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                // onClick={() => {
-                                //   console.log("View pressed");
-                                // onViewItem?.(item);
-                                // }}
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => {
-                                  setSelectedCategory(item);
-                                  setEditCategoryOpen(true);
-                                }}
-                              >
-                                <Pencil className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive"
-                                // onClick={() => onDeleteItem?.(item)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          )}
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setSelectedCategory(item);
+                                setEditCategoryOpen(true);
+                              }}
+                              disabled={item.defaultType}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={() => {
+                                setDeleteAction({
+                                  action: () =>
+                                    handleDeletion.category(item.id),
+                                  label: `Eliminar a categoria: "${item.nome}"?`,
+                                });
+                                setDeleteDialogOpen(true);
+                              }}
+                              disabled={item.defaultType}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -430,7 +464,13 @@ export default function Settings() {
                           {item.nome}
                         </td>
                         <td className="font-semibold py-3 truncate">
-                          {item.descricao}
+                          {item.descricao.trim() ? (
+                            item.descricao
+                          ) : (
+                            <span className="italic text-muted-foreground">
+                              Sem descrição
+                            </span>
+                          )}
                         </td>
                         <td
                           className="font-semibold py-3 cursor-pointer hover:text-primary/80"
@@ -448,42 +488,35 @@ export default function Settings() {
                           </div>
                         </td>
                         <td className="py-2 pl-2 text-center text-primary/80">
-                          {item.id === 1 ? (
-                            ""
-                          ) : (
-                            <div className="flex items-center justify-center gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                // onClick={() => {
-                                //   console.log("View pressed");
-                                // onViewItem?.(item);
-                                // }}
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => {
-                                  setSelectedCargo(item);
-                                  setEditCargoOpen(true);
-                                }}
-                              >
-                                <Pencil className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive"
-                                // onClick={() => onDeleteItem?.(item)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          )}
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setSelectedCargo(item);
+                                setEditCargoOpen(true);
+                              }}
+                              disabled={item.defaultType}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={() => {
+                                setDeleteAction({
+                                  action: () => handleDeletion.cargos(item.id),
+                                  label: `Eliminar o cargo: "${item.nome}"?`,
+                                });
+                                setDeleteDialogOpen(true);
+                              }}
+                              disabled={item.defaultType}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -576,7 +609,13 @@ export default function Settings() {
                           {item.nome}
                         </td>
                         <td className="font-semibold py-3 truncate">
-                          {item.descricao}
+                          {item.descricao.trim() ? (
+                            item.descricao
+                          ) : (
+                            <span className="italic text-muted-foreground">
+                              Sem descrição
+                            </span>
+                          )}
                         </td>
                         <td
                           className="font-semibold py-3 cursor-pointer hover:text-primary/80"
@@ -601,21 +640,11 @@ export default function Settings() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              // onClick={() => {
-                              //   console.log("View pressed");
-                              // onViewItem?.(item);
-                              // }}
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
                               onClick={() => {
                                 setSelectedDepartment(item);
                                 setEditDepartmentOpen(true);
-                              }} // onClick={() => onEditItem?.(item)}
+                              }}
+                              disabled={item.defaultType}
                             >
                               <Pencil className="w-4 h-4" />
                             </Button>
@@ -623,7 +652,15 @@ export default function Settings() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-destructive hover:text-destructive"
-                              // onClick={() => onDeleteItem?.(item)}
+                              onClick={() => {
+                                setDeleteAction({
+                                  action: () =>
+                                    handleDeletion.departamento(item.id),
+                                  label: `Eliminar o departamento: "${item.nome}"?`,
+                                });
+                                setDeleteDialogOpen(true);
+                              }}
+                              disabled={item.defaultType}
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -727,42 +764,36 @@ export default function Settings() {
                           {item.tipo}
                         </td>
                         <td className="py-2 pl-2 text-center text-primary/80">
-                          {item.id === 1 ? (
-                            ""
-                          ) : (
-                            <div className="flex items-center justify-center gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                // onClick={() => {
-                                //   console.log("View pressed");
-                                // onViewItem?.(item);
-                                // }}
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => {
-                                  setSelectedLocation(item);
-                                  setEditLocationOpen(true);
-                                }}
-                              >
-                                <Pencil className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive"
-                                // onClick={() => onDeleteItem?.(item)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          )}
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setSelectedLocation(item);
+                                setEditLocationOpen(true);
+                              }}
+                              disabled={item.defaultType}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={() => {
+                                setDeleteAction({
+                                  action: () =>
+                                    handleDeletion.localizacao(item.id),
+                                  label: `Eliminar a localização: "${item.nome}"?`,
+                                });
+                                setDeleteDialogOpen(true);
+                              }}
+                              disabled={item.defaultType}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -817,6 +848,13 @@ export default function Settings() {
         onOpenChange={setEditLocationOpen}
         location={selectedLocation}
         departaments={departamentos}
+      />
+      <DeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={() => deleteAction.action?.()}
+        title={deleteAction?.label ?? "Eliminar este item?"}
+        description="Atenção! Esta ação não pode ser desfeita."
       />
     </PageContainer>
   );

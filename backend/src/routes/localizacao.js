@@ -71,6 +71,7 @@ router.get("/", requirePermission(PERMISSIONS.SALA_READ), async (req, res) => {
       id: item.id,
       nomeItem: item.nome,
     })),
+    defaultType: sala.defaultType,
     instituicaoId: sala.departamento?.instituicaoId ?? null,
   }));
 
@@ -109,6 +110,7 @@ router.get(
         id: item.id,
         nomeItem: item.nome,
       })),
+      defaultType: sala.defaultType,
     };
 
     res.json({ data: safeSala, error: null });
@@ -187,6 +189,14 @@ router.put(
       return res.status(404).json({ data: null, error: "Sala not found" });
     }
 
+    if (sala.defaultType) {
+      return res.status(400).json({
+        message: "Não é possível atualizar uma sala padrão",
+        data: null,
+        error: "Cannot update a default sala",
+      });
+    }
+
     const departamento = departamentoId
       ? await prisma.departamento.findUnique({
           where: {
@@ -239,10 +249,11 @@ router.delete(
       return res.status(404).json({ data: null, error: "Sala not found" });
     }
 
-    if (sala.defaultType && sala.defaultType !== "") {
+    if (sala.defaultType) {
       return res.status(400).json({
+        message: "Não é possível eliminar uma sala padrão",
         data: null,
-        error: "Cannot delete the default sala",
+        error: "Cannot delete a default sala",
       });
     }
 

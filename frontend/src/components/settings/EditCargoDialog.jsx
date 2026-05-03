@@ -65,21 +65,24 @@ export function EditCargoDialog({ open, onOpenChange, cargo }) {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (open && cargo) {
-      setFormData({
-        nome: cargo.nome || "",
-        descricao: cargo.descricao || "",
-        permissoes: cargo.permissoes || [],
-      });
-    }
+    const f = () => {
+      if (open && cargo) {
+        setFormData({
+          nome: cargo.nome || "",
+          descricao: cargo.descricao || "",
+          permissoes: cargo.permissoes || [],
+        });
+      }
 
-    if (!open) {
-      setFormData({
-        nome: "",
-        descricao: "",
-        permissoes: [],
-      });
-    }
+      if (!open) {
+        setFormData({
+          nome: "",
+          descricao: "",
+          permissoes: [],
+        });
+      }
+    };
+    f();
   }, [open, cargo?.id]);
 
   const handleInputChange = (field, value) => {
@@ -106,7 +109,9 @@ export function EditCargoDialog({ open, onOpenChange, cargo }) {
     request(
       `/cargo/update/${cargo.id}`,
       "PUT",
-      formData,
+      {
+        data: formData,
+      },
       () => {
         refreshManager.refresh("cargos");
         setIsLoading(false);

@@ -71,6 +71,7 @@ router.get("/", requirePermission(PERMISSIONS.CARGO_READ), async (req, res) => {
     nome: c.nome,
     descricao: c.descricao ?? "",
     permissoes: c.permissoes.map((cp) => cp.permissao.nome),
+    defaultType: c.defaultType,
   }));
 
   res.json({ data: safeCargos, error: null });
@@ -107,6 +108,7 @@ router.get(
         descricao: cargo.descricao ?? "",
         createdAt: cargo.createdAt,
         permissoes: cargo.permissoes.map((cp) => cp.permissao.nome),
+        defaultType: cargo.defaultType,
       },
       error: null,
     });
@@ -200,6 +202,14 @@ router.put(
 
     if (!cargo) {
       return res.status(404).json({ data: null, error: "Cargo not found" });
+    }
+
+    if (cargo.defaultType) {
+      return res.status(400).json({
+        message: "Não é possível atualizar um cargo padrão",
+        data: null,
+        error: "Cannot update a default cargo",
+      });
     }
 
     try {
@@ -306,10 +316,11 @@ router.delete(
       return res.status(404).json({ data: null, error: "Cargo not found" });
     }
 
-    if (cargo.defaultType && cargo.defaultType !== "") {
+    if (cargo.defaultType) {
       return res.status(400).json({
+        message: "Não é possível eliminar um cargo padrão",
         data: null,
-        error: "Cannot delete the default cargo",
+        error: "Cannot delete a default cargo",
       });
     }
 

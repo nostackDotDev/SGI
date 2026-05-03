@@ -75,6 +75,7 @@ router.get(
           nome: sala.numeroSala,
           tipo: sala.tipoSala,
         })),
+        defaultType: departamento.defaultType,
       })),
       error: null,
       message: "Departamento routes are working!",
@@ -108,6 +109,7 @@ router.get(
           nome: sala.numeroSala,
           tipo: sala.tipoSala,
         })),
+        defaultType: departamento.defaultType,
       },
       error: null,
     });
@@ -179,6 +181,14 @@ router.put(
         .json({ data: null, error: "Departamento not found" });
     }
 
+    if (departamento.defaultType) {
+      return res.status(400).json({
+        message: "Não é possível atualizar um departamento padrão",
+        data: null,
+        error: "Cannot update a default departamento",
+      });
+    }
+
     const instituicao = instituicaoId
       ? await prisma.instituicao.findUnique({
           where: { id: instituicaoId },
@@ -205,11 +215,12 @@ router.put(
           nome: newDepartamento.nome,
           descricao: newDepartamento.descricao,
           updatedAt: newDepartamento.updatedAt,
-          salas: newDepartamento.salas.map((sala) => ({
-            id: sala.id,
-            nome: sala.numeroSala,
-            tipo: sala.tipoSala,
-          })),
+          salas:
+            newDepartamento.salas?.map((sala) => ({
+              id: sala.id,
+              nome: sala.numeroSala,
+              tipo: sala.tipoSala,
+            })) ?? [],
         },
         error: null,
       });
@@ -232,6 +243,14 @@ router.delete(
       return res
         .status(404)
         .json({ data: null, error: "Departamento not found" });
+    }
+
+    if (departamento.defaultType) {
+      return res.status(400).json({
+        message: "Não é possível eliminar um departamento padrão",
+        data: null,
+        error: "Cannot delete a default departamento",
+      });
     }
 
     try {

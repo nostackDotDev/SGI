@@ -194,6 +194,7 @@ export default function Inventory() {
       <DeleteDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
+        withReason={true}
         reason={reason}
         setReason={setReason}
         onConfirm={() => {

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { CreateUserDialog } from "@/components/users/CreateUserDialog";
 import UsersTable from "@/components/users/UsersTable.jsx";
-import { request } from "@/lib/request";
+import { refreshManager, request } from "@/lib/request";
 import { Plus, Search } from "lucide-react";
 
 import { useEffect, useState } from "react";
@@ -25,17 +25,21 @@ export default function Users() {
 
   const [addUserOpen, setAddUserOpen] = useState(false);
 
-  useEffect(() => {
+  const refreshUsers = () =>
     request(
       "/utilizador",
       "GET",
-      {},
+      {
+        refreshKey: "cargos",
+      },
       (data) => setUsers(data.data || []),
       (err) => {
         setUsers([]);
         console.error(err);
       },
     );
+
+  const refreshCargos = () =>
     request(
       "/cargo",
       "GET",
@@ -46,6 +50,18 @@ export default function Users() {
         console.error(err);
       },
     );
+
+  useEffect(() => {
+    refreshManager.register("utlizadores", refreshUsers);
+    refreshManager.register("cargos", refreshCargos);
+
+    refreshUsers();
+    refreshCargos();
+
+    return () => {
+      refreshManager.unregister("utlizadores", refreshUsers);
+      refreshManager.unregister("cargos", refreshCargos);
+    };
   }, []);
 
   return (
@@ -76,8 +92,12 @@ export default function Users() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os tipos</SelectItem>
-              <SelectItem value="admin">Administrador</SelectItem>
-              <SelectItem value="user">Usuário padrão</SelectItem>
+              {cargos.length > 0 &&
+                cargos.map((d, i) => (
+                  <SelectItem key={i} value={String(d.id)}>
+                    {d.nome}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
           <Button

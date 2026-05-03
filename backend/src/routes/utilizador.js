@@ -94,6 +94,7 @@ router.get("/", requirePermission(PERMISSIONS.USER_READ), async (req, res) => {
         instituicao: u.instituicao.nome,
         cargo: u.cargo.nome,
         permissions: Array.from(await getUserPermissions(u.id)),
+        defaultType: u.defaultType,
       };
     }),
   );
@@ -138,6 +139,7 @@ router.get(
         instituicao: utilizador.instituicao.nome,
         cargo: utilizador.cargo.nome,
         permissions: Array.from(permissions),
+        defaultType: utilizador.defaultType,
       },
       error: null,
     });
@@ -241,6 +243,17 @@ router.put(
       });
     }
 
+    if (
+      Number(cargoId) !== Number(utilizador.cargoId) &&
+      utilizador.defaultType
+    ) {
+      return res.status(400).json({
+        message: "Não é possível atualizar o cargo do utilizador padrão",
+        data: null,
+        error: "Cannot update the default utilizador cargo",
+      });
+    }
+
     try {
       // Build update data object, only including provided fields
       const updateData = {};
@@ -298,7 +311,7 @@ router.delete(
       });
     }
 
-    if (utilizador.defaultType && utilizador.defaultType !== "") {
+    if (utilizador.defaultType) {
       return res.status(400).json({
         message: "Não é possível eliminar o utilizador padrão",
         data: null,
