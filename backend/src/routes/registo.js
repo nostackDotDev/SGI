@@ -2,25 +2,74 @@ import express from "express";
 import prisma from "../lib/prisma.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { requirePermission } from "../middlewares/permissions.middleware.js";
+import { tenantIsolation } from "../middlewares/tenantIsolation.middleware.js";
 import { PERMISSIONS } from "../constants/permissions.constants.js";
+import { parseDateRange } from "../lib/utils.js";
 
 const router = express.Router();
 
 router.use(authMiddleware);
+router.use(tenantIsolation);
 
 router.get(
   "/",
   requirePermission(PERMISSIONS.REGISTO_READ),
   async (req, res) => {
+    const { startDate, endDate } = req.query;
+
+    // Parse and validate date range
+    const {
+      startDate: parsedStart,
+      endDate: parsedEnd,
+      isInvalid,
+    } = parseDateRange(startDate, endDate);
+
+    // If date range is invalid, return empty array
+    if (isInvalid) {
+      return res.json({
+        data: [],
+        error: null,
+      });
+    }
+
     const registos = await prisma.registo.findMany({
-      where: { deletedAt: null },
+      where: {
+        deletedAt: null,
+        utilizador: {
+          instituicaoId: req.tenantId,
+        },
+        createdAt: {
+          gte: parsedStart,
+          lte: parsedEnd,
+        },
+      },
       include: {
         item: true,
         utilizador: true,
       },
     });
 
-    res.json({ data: registos, error: null });
+    res.json({
+      data: registos.map((reg) => ({
+        id: reg.id,
+        type: reg.type,
+        date: reg.createdAt,
+        reason: reg.reason,
+        item: {
+          id: reg.item.id,
+          nome: reg.item.nome,
+          descricao: reg.item.descricao ?? "",
+          quantidade: reg.item.quantidade,
+          categoriaId: reg.item.categoriaId,
+          salaId: reg.item.salaId,
+        },
+        utilizador: {
+          id: reg.utilizador.id,
+          nome: reg.utilizador.nome,
+        },
+      })),
+      error: null,
+    });
   },
 );
 
@@ -29,7 +78,12 @@ router.get(
   requirePermission(PERMISSIONS.REGISTO_READ),
   async (req, res) => {
     const registo = await prisma.registo.findUnique({
-      where: { id: parseInt(req.params.id) },
+      where: {
+        id: parseInt(req.params.id),
+        utilizador: {
+          instituicaoId: req.tenantId,
+        },
+      },
       include: {
         item: true,
         utilizador: true,
@@ -39,7 +93,27 @@ router.get(
     if (!registo || registo.deletedAt)
       return res.status(404).json({ data: null, error: "Registo not found" });
 
-    res.json({ data: registo, error: null });
+    res.json({
+      data: {
+        id: registo.id,
+        type: registo.type,
+        date: registo.createdAt,
+        reason: registo.reason,
+        item: {
+          id: registo.item.id,
+          nome: registo.item.nome,
+          descricao: registo.item.descricao ?? "",
+          quantidade: registo.item.quantidade,
+          categoriaId: registo.item.categoriaId,
+          salaId: registo.item.salaId,
+        },
+        utilizador: {
+          id: registo.utilizador.id,
+          nome: registo.utilizador.nome,
+        },
+      },
+      error: null,
+    });
   },
 );
 
@@ -56,11 +130,21 @@ router.post(
     }
 
     const item = await prisma.item.findUnique({
-      where: { id: itemId },
+      where: {
+        id: itemId,
+        sala: {
+          departamento: {
+            instituicaoId: req.tenantId,
+          },
+        },
+      },
     });
 
     const utilizador = await prisma.utilizador.findUnique({
-      where: { id: utilizadorId },
+      where: {
+        id: utilizadorId,
+        instituicaoId: req.tenantId,
+      },
     });
 
     if (!item || item.deletedAt)
@@ -102,7 +186,12 @@ router.put(
     }
 
     const registo = await prisma.registo.findUnique({
-      where: { id: parseInt(req.params.id) },
+      where: {
+        id: parseInt(req.params.id),
+        utilizador: {
+          instituicaoId: req.tenantId,
+        },
+      },
     });
 
     if (!registo || registo.deletedAt) {
@@ -111,13 +200,23 @@ router.put(
 
     const item = itemId
       ? await prisma.item.findUnique({
-          where: { id: itemId },
+          where: {
+            id: itemId,
+            sala: {
+              departamento: {
+                instituicaoId: req.tenantId,
+              },
+            },
+          },
         })
       : null;
 
     const utilizador = utilizadorId
       ? await prisma.utilizador.findUnique({
-          where: { id: utilizadorId },
+          where: {
+            id: utilizadorId,
+            instituicaoId: req.tenantId,
+          },
         })
       : null;
 
@@ -153,7 +252,12 @@ router.delete(
   requirePermission(PERMISSIONS.REGISTO_DELETE),
   async (req, res) => {
     const registo = await prisma.registo.findUnique({
-      where: { id: parseInt(req.params.id) },
+      where: {
+        id: parseInt(req.params.id),
+        utilizador: {
+          instituicaoId: req.tenantId,
+        },
+      },
     });
 
     if (!registo || registo.deletedAt) {

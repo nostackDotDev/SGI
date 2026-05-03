@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Button } from "../ui/button";
+import { useAuth } from "@/core/contexts/AuthContext";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Início", path: "/inicio" },
@@ -23,6 +24,7 @@ const navItems = [
 
 export function Sidebar({ collapsed, onToggle }) {
   const location = useLocation();
+  const { user } = useAuth();
 
   return (
     <>
@@ -47,12 +49,12 @@ export function Sidebar({ collapsed, onToggle }) {
         {/* Logo */}
         <div className="h-16 flex items-center justify-start px-4 border-b border-sidebar-border gap-2">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-              <Box className="w-5 h-5 text-primary-foreground" />
-            </div>
+            <i className="block mx-auto w-fit h-fit p-1 rounded-sm text-muted-foreground">
+              <img src="/logo.png" className="w-12 aspect-auto" alt="IPIKK" />
+            </i>
             {!collapsed && (
               <span className="font-semibold text-foreground animate-slide-in italic">
-                Institution
+                {user.instituicao.nome ?? "Instituição"}
               </span>
             )}
           </div>

@@ -25,7 +25,10 @@ model Instituicao {
   cargos        Cargo[]
   utilizadores  Utilizador[]
   categorias    Categoria[]
+  salas         Sala[]
+  registos      Registo[]
 
+  @@unique([nome, telefone])
   @@index([deletedAt])
 }
 
@@ -33,6 +36,7 @@ model Departamento {
   id        Int     @id @default(autoincrement())
   nome      String
   descricao String?
+  defaultType Boolean? @default(false)
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -43,6 +47,7 @@ model Departamento {
 
   salas Sala[]
 
+  @@unique([nome, instituicaoId])
   @@index([deletedAt])
 }
 
@@ -50,6 +55,7 @@ model Sala {
   id         Int    @id @default(autoincrement())
   numeroSala String
   tipoSala   String
+  defaultType Boolean? @default(false)
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -58,8 +64,13 @@ model Sala {
   departamentoId Int?
   departamento   Departamento? @relation(fields: [departamentoId], references: [id], onDelete: Restrict)
 
+  instituicaoId Int?
+  instituicao   Instituicao? @relation(fields: [instituicaoId], references: [id], onDelete: Restrict)
+
   itens Item[]
 
+  @@unique([numeroSala, departamentoId])
+  @@unique([numeroSala, tipoSala, departamentoId])
   @@index([deletedAt])
 }
 
@@ -67,6 +78,7 @@ model Cargo {
   id        Int     @id @default(autoincrement())
   nome      String
   descricao String?
+  defaultType Boolean? @default(false)
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -88,10 +100,14 @@ model Utilizador {
   email     String  @unique
   password  String
   descricao String?
+  defaultType Boolean? @default(false)
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
+
+  refreshToken        String?   @db.LongText
+  refreshTokenExpires DateTime?
 
   instituicaoId Int
   instituicao   Instituicao @relation(fields: [instituicaoId], references: [id], onDelete: Restrict)
@@ -102,6 +118,7 @@ model Utilizador {
   registos   Registo[]
   permissoes UtilizadorPermissao[]
 
+  @@unique([nome, instituicaoId])
   @@index([deletedAt])
 }
 
@@ -139,6 +156,7 @@ model Categoria {
   id        Int     @id @default(autoincrement())
   nome      String
   descricao String?
+  defaultType Boolean? @default(false)
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -177,6 +195,8 @@ model Item {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  serialNumber String?
+
   categoriaId Int?
   categoria   Categoria? @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
 
@@ -188,6 +208,7 @@ model Item {
 
   registos Registo[]
 
+  @@unique([nome, serialNumber, salaId])
   @@index([deletedAt])
   @@index([categoriaId])
   @@index([salaId])
@@ -200,6 +221,8 @@ model Registo {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
+  type      String
+  reason    String?
 
   itemId Int
   item   Item @relation(fields: [itemId], references: [id], onDelete: Restrict)
@@ -207,7 +230,11 @@ model Registo {
   utilizadorId Int
   utilizador   Utilizador @relation(fields: [utilizadorId], references: [id], onDelete: Restrict)
 
+  instituicaoId Int
+  instituicao   Instituicao @relation(fields: [instituicaoId], references: [id], onDelete: Restrict)
+
   @@index([deletedAt])
   @@index([itemId, createdAt])
   @@index([utilizadorId, createdAt])
+  @@index([type, utilizadorId])
 }

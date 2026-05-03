@@ -53,6 +53,7 @@ export function CreateDepartmentDialog({ open, onOpenChange }) {
       "POST",
       {
         data: formData,
+        refreshKey: "departamentos",
       },
       (res) => {
         console.log(res);

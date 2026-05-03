@@ -9,38 +9,60 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CreateUserDialog } from "@/components/users/CreateUserDialog";
 import UsersTable from "@/components/users/UsersTable.jsx";
-import { Search } from "lucide-react";
+import { refreshManager, request } from "@/lib/request";
+import { Plus, Search } from "lucide-react";
 
-import { useState } from "react";
-
-const utilizadores = [
-  {
-    id: 1,
-    name: "Edward Perry",
-    level: "admin",
-    permissions: ["Full Access", "User Management", "System Settings"],
-    createdAt: "07-16-2025",
-  },
-  {
-    id: 2,
-    name: "Josephine Drake",
-    level: "user",
-    createdAt: "07-16-2025",
-    permissions: ["View Articles", "Create Articles"],
-  },
-  {
-    id: 3,
-    name: "Cody Phillips",
-    level: "user",
-    createdAt: "7-16-2025",
-    permissions: ["View Articles"],
-  },
-];
+import { useEffect, useState } from "react";
 
 export default function Users() {
   const [searchTerm, setSearchTerm] = useState("");
   const [levelFilter, setLevelFilter] = useState("all");
+
+  const [users, setUsers] = useState([]);
+  const [cargos, setCargos] = useState([]);
+
+  const [addUserOpen, setAddUserOpen] = useState(false);
+
+  const refreshUsers = () =>
+    request(
+      "/utilizador",
+      "GET",
+      {
+        refreshKey: "cargos",
+      },
+      (data) => setUsers(data.data || []),
+      (err) => {
+        setUsers([]);
+        console.error(err);
+      },
+    );
+
+  const refreshCargos = () =>
+    request(
+      "/cargo",
+      "GET",
+      {},
+      (data) => setCargos(data.data || []),
+      (err) => {
+        setCargos([]);
+        console.error(err);
+      },
+    );
+
+  useEffect(() => {
+    refreshManager.register("utlizadores", refreshUsers);
+    refreshManager.register("cargos", refreshCargos);
+
+    refreshUsers();
+    refreshCargos();
+
+    return () => {
+      refreshManager.unregister("utlizadores", refreshUsers);
+      refreshManager.unregister("cargos", refreshCargos);
+    };
+  }, []);
 
   return (
     <PageContainer className="grid grid-rows-[auto_1fr] gap-6">
@@ -70,23 +92,41 @@ export default function Users() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os tipos</SelectItem>
-              <SelectItem value="admin">Administrador</SelectItem>
-              <SelectItem value="user">Usuário padrão</SelectItem>
+              {cargos.length > 0 &&
+                cargos.map((d, i) => (
+                  <SelectItem key={i} value={String(d.id)}>
+                    {d.nome}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
+          <Button
+            className="w-full py-5 sm:w-auto"
+            onClick={() => setAddUserOpen(true)}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Utilizador
+          </Button>
         </div>
 
         {/* Table */}
         <UsersTable
-          data={utilizadores}
+          data={users}
           levelFilter={levelFilter}
           pageSize={20}
           filter={{
             searchTerm: searchTerm,
             level: levelFilter,
           }}
+          cargos={cargos}
         />
       </div>
+
+      <CreateUserDialog
+        open={addUserOpen}
+        onOpenChange={setAddUserOpen}
+        cargos={cargos}
+      />
     </PageContainer>
   );
 }

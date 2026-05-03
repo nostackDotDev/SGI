@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { request } from "@/lib/request";
+import { request, refreshManager } from "@/lib/request";
 import { cn, formatDate } from "@/lib/utils";
 import { groupPermissionsByFeature } from "@/lib/authContext";
 import {
@@ -16,9 +16,13 @@ import {
   Building,
   ChevronDown,
   ChevronUp,
+  Component,
+  Eye,
   LocationEdit,
   Pen,
+  Pencil,
   Save,
+  Trash2,
   UserRoundKey,
   X,
 } from "lucide-react";
@@ -26,6 +30,15 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/core/contexts/AuthContext";
 import { CreateDepartmentDialog } from "@/components/settings/CreateDepartmentDialog";
 import { CreateLocationDialog } from "@/components/settings/CreateLocationDialog";
+import { CreateCargoDialog } from "@/components/settings/CreateCargoDialog";
+import { CreateCategoryDialog } from "@/components/settings/CreateCategoryDialog";
+import { EditCategoryDialog } from "@/components/settings/EditCategoryDialog";
+import { EditCargoDialog } from "@/components/settings/EditCargoDialog";
+import { EditDepartmentDialog } from "@/components/settings/EditDepartmentDialog";
+import { EditLocationDialog } from "@/components/settings/EditLocationDialog";
+import Loader, { LoaderSmall } from "@/components/layout/Loader";
+import DeleteDialog from "@/components/common/DeleteDialog";
+import { toast } from "sonner";
 
 export default function Settings() {
   const { user } = useAuth();
@@ -36,61 +49,102 @@ export default function Settings() {
     companyEmail: "",
     companyPhone: "",
   });
+  const [editCategoryOpen, setEditCategoryOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [editCargoOpen, setEditCargoOpen] = useState(false);
+  const [selectedCargo, setSelectedCargo] = useState(null);
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
+  const [editDepartmentOpen, setEditDepartmentOpen] = useState(false);
+  const [editLocationOpen, setEditLocationOpen] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+
   const [canEditCompanyInfo, setCanEditCompanyInfo] = useState(false);
 
-  const [categorias, setCategorias] = useState([]);
-  const [cargos, setCargos] = useState([]);
-  const [departamentos, setDepartamentos] = useState([]);
-  const [localizacoes, setLocalizacoes] = useState([]);
+  const [categorias, setCategorias] = useState(null);
+  const [cargos, setCargos] = useState(null);
+  const [departamentos, setDepartamentos] = useState(null);
+  const [localizacoes, setLocalizacoes] = useState(null);
 
   const [expandedRow, setExpandedRow] = useState(null);
   const [departmentExpandedRow, setDepartmentExpandedRow] = useState(null);
 
   const [AddDepartmentOpen, setAddDepartmentOpen] = useState(false);
   const [AddLocationOpen, setAddLocationOpen] = useState(false);
+  const [AddCargoOpen, setAddCargoOpen] = useState(false);
+  const [AddCategoryOpen, setAddCategoryOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteAction, setDeleteAction] = useState({
+    action: null,
+    label: "",
+  });
 
-  useEffect(() => {
+  // Define refresh functions
+  const refreshCategorias = () => {
     request(
       "/categoria",
       "GET",
       {},
       (data) => setCategorias(data.data || []),
       (err) => {
-        setCategorias([]);
         console.error(err);
+        setCategorias(categorias ?? []);
       },
     );
+  };
+
+  const refreshCargos = () => {
     request(
       "/cargo",
       "GET",
       {},
       (data) => setCargos(data.data || []),
       (err) => {
-        setCargos([]);
         console.error(err);
+        setCargos(cargos ?? []);
       },
     );
+  };
+
+  const refreshLocalizacoes = () => {
     request(
       "/localizacao",
       "GET",
       {},
       (data) => setLocalizacoes(data.data || []),
       (err) => {
-        setLocalizacoes([]);
         console.error(err);
+        setLocalizacoes(localizacoes ?? []);
       },
     );
+  };
 
+  const refreshDepartamentos = () => {
     request(
       "/departamento",
       "GET",
       {},
-      (data) => setDepartamentos(data.data || []),
+      (data) => {
+        setDepartamentos(data.data ?? []);
+      },
       (err) => {
-        setDepartamentos([]);
         console.error(err);
+        setDepartamentos(departamentos ?? []);
       },
     );
+  };
+  useEffect(() => {
+    // Register refresh callbacks
+    refreshManager.register("categorias", refreshCategorias);
+    refreshManager.register("cargos", refreshCargos);
+    refreshManager.register("localizacoes", refreshLocalizacoes);
+    refreshManager.register("departamentos", refreshDepartamentos);
+
+    // Initial data load
+    refreshCategorias();
+    refreshCargos();
+    refreshLocalizacoes();
+    refreshDepartamentos();
+
     const f = () =>
       setFormData({
         companyName: user?.instituicao?.nome || "",
@@ -99,10 +153,49 @@ export default function Settings() {
         companyPhone: user?.instituicao?.telefone || "",
       });
     f();
-  }, []);
+
+    // Cleanup on unmount
+    return () => {
+      refreshManager.unregister("categorias");
+      refreshManager.unregister("cargos");
+      refreshManager.unregister("localizacoes");
+      refreshManager.unregister("departamentos");
+    };
+  }, [user.id]);
+
+  useEffect(() => {
+    refreshDepartamentos();
+  }, [localizacoes]);
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleDeletion = {
+    category: async (id) => {
+      await request(`/categoria/${id}`, "DELETE", {}, () => {
+        refreshManager.refresh("categorias");
+        toast.success("Categoria eliminada com sucesso");
+      });
+    },
+    cargos: async (id) => {
+      await request(`/cargos/${id}`, "DELETE", {}, () => {
+        refreshManager.refresh("cargos");
+        toast.success("Cargo eliminado com sucesso");
+      });
+    },
+    localizacao: async (id) => {
+      await request(`/localizacao/${id}`, "DELETE", {}, () => {
+        refreshManager.refresh("localizacoes");
+        toast.success("Localização eliminada com sucesso");
+      });
+    },
+    departamento: async (id) => {
+      await request(`/departamento/${id}`, "DELETE", {}, () => {
+        refreshManager.refresh("departamentos");
+        toast.success("Departamento eliminado com sucesso");
+      });
+    },
   };
 
   // const handleEditCompanyInfo = async (enable) => {
@@ -235,64 +328,100 @@ export default function Settings() {
         description="Criar, editar e eliminar categorias"
         actionBtn={{
           title: "Nova categoria",
-          // action: () => console.log("WASD"),
+          action: () => setAddCategoryOpen(true),
         }}
+        style="max-h-140"
       >
-        <div className="flex-1 min-h-0 bg-card rounded-xl border border-border flex flex-col">
-          <div className="rounded-xl flex-1 min-h-0 overflow-auto relative no-scrollbar flex flex-col">
-            <table className="w-full table-fixed min-w-lg text-sm">
-              <colgroup>
-                <col className="w-50" />
-                <col className="w-auto" />
-                <col className="w-auto" />
-                <col className="w-28" />
-              </colgroup>
-              <thead className="sticky top-0 z-10 text-lg bg-card font-semibold text-center">
-                <tr className="bg-secondary/50">
-                  <td className="py-2 px-4">Última atualização</td>
-                  <td className="py-2 text-left">Nome</td>
-                  <td className="py-2">Descrição</td>
-                  <td className="py-2 px-4">Ações</td>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {categorias?.length > 0 &&
-                  categorias.map((item, index) => (
-                    <tr
-                      key={index}
-                      className="animate-fade-in text-center hover:bg-accent/20 even:bg-accent/10"
-                      style={{ animationDelay: `${index * 30}ms` }}
-                    >
-                      <td className="text-muted-foreground py-3">
-                        {formatDate(item.createdAt, true)}
-                      </td>
-                      <td className="font-medium text-left text-primary py-3 truncate">
-                        {item.nome}
-                      </td>
-                      <td className="font-semibold py-3 truncate">
-                        {item.descricao}
-                      </td>
-                      <td className="text-primary/80 py-2">
-                        {
-                          item.id === 1
-                            ? ""
-                            : "Opções" /* Esconder opções da categoria padrão */
-                        }
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-            {!categorias.length && (
-              <div className="w-full flex-1 flex flex-col items-center justify-center py-6">
-                <BookSearch className="w-12 h-12 text-primary" />
-                <h3 className="text-lg">
-                  Todas as suas categorias aparecerão aqui
-                </h3>
-              </div>
-            )}
+        {categorias ? (
+          <div className="flex-1 min-h-0 bg-card rounded-xl border border-border flex flex-col">
+            <div className="rounded-xl flex-1 min-h-0 overflow-auto relative no-scrollbar flex flex-col">
+              <table className="w-full table-fixed min-w-lg text-sm">
+                <colgroup>
+                  <col className="w-50" />
+                  <col className="w-auto" />
+                  <col className="w-auto" />
+                  <col className="w-28" />
+                </colgroup>
+                <thead className="sticky top-0 z-10 text-lg bg-card font-semibold text-center">
+                  <tr className="bg-secondary/50">
+                    <td className="py-2 px-4">Última atualização</td>
+                    <td className="py-2 text-left">Nome</td>
+                    <td className="py-2">Descrição</td>
+                    <td className="py-2 px-4">Ações</td>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {categorias?.length > 0 &&
+                    categorias.map((item, index) => (
+                      <tr
+                        key={index}
+                        className="animate-fade-in text-center hover:bg-accent/20 even:bg-accent/10"
+                        style={{ animationDelay: `${index * 30}ms` }}
+                      >
+                        <td className="text-muted-foreground py-3">
+                          {formatDate(item.updatedAt, true)}
+                        </td>
+                        <td className="font-medium text-left text-primary py-3 truncate">
+                          {item.nome}
+                        </td>
+                        <td className="font-semibold py-3 truncate">
+                          {item.descricao.trim() ? (
+                            item.descricao
+                          ) : (
+                            <span className="italic text-muted-foreground">
+                              Sem descrição
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2 pl-2 text-center text-primary/80">
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setSelectedCategory(item);
+                                setEditCategoryOpen(true);
+                              }}
+                              disabled={item.defaultType}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={() => {
+                                setDeleteAction({
+                                  action: () =>
+                                    handleDeletion.category(item.id),
+                                  label: `Eliminar a categoria: "${item.nome}"?`,
+                                });
+                                setDeleteDialogOpen(true);
+                              }}
+                              disabled={item.defaultType}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+              {!categorias.length && (
+                <div className="w-full flex-1 flex flex-col items-center justify-center py-6">
+                  <BookSearch className="w-12 h-12 text-primary" />
+                  <h3 className="text-lg">
+                    Todas as suas categorias aparecerão aqui
+                  </h3>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <LoaderSmall />
+        )}
       </Card>
 
       <Card
@@ -301,210 +430,287 @@ export default function Settings() {
         description="Criar, editar e eliminar cargos"
         actionBtn={{
           title: "Novo cargo",
-          // action: () => console.log("WASD"),
+          action: () => setAddCargoOpen(true),
         }}
+        style="max-h-140"
       >
-        <div className="flex-1 min-h-0 bg-card rounded-xl border border-border flex flex-col">
-          <div className="rounded-xl flex-1 min-h-0 overflow-auto relative no-scrollbar flex flex-col">
-            <table className="w-full table-fixed min-w-lg text-sm">
-              <colgroup>
-                <col className="w-50" />
-                <col className="w-auto" />
-                <col className="w-auto" />
-                <col className="w-28" />
-              </colgroup>
-              <thead className="sticky top-0 z-10 text-lg bg-card font-semibold text-center">
-                <tr className="bg-secondary/50">
-                  <td className="px-4 py-2 text-left">Nome</td>
-                  <td className="py-2">Descrição</td>
-                  <td className="py-2">Permissões</td>
-                  <td className="py-2 px-4">Ações</td>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {cargos?.length > 0 &&
-                  cargos.map((item, index) => (
-                    <tr
-                      key={index}
-                      className="animate-fade-in text-center hover:bg-accent/20 even:bg-accent/10"
-                      style={{ animationDelay: `${index * 30}ms` }}
-                    >
-                      <td className="font-medium text-left text-primary px-4 py-3 truncate">
-                        {item.nome}
-                      </td>
-                      <td className="font-semibold py-3 truncate">
-                        {item.descricao}
-                      </td>
-                      <td
-                        className="font-semibold py-3 cursor-pointer hover:text-primary/80"
-                        onClick={() =>
-                          setExpandedRow(expandedRow === index ? null : index)
-                        }
+        {cargos ? (
+          <div className="flex-1 min-h-0 bg-card rounded-xl border border-border flex flex-col">
+            <div className="rounded-xl flex-1 min-h-0 overflow-auto relative no-scrollbar flex flex-col">
+              <table className="w-full table-fixed min-w-xl text-sm">
+                <colgroup>
+                  <col className="w-50" />
+                  <col className="w-auto" />
+                  <col className="w-auto" />
+                  <col className="w-28" />
+                </colgroup>
+                <thead className="sticky top-0 z-10 text-lg bg-card font-semibold text-center">
+                  <tr className="bg-secondary/50">
+                    <td className="px-4 py-2 text-left">Nome</td>
+                    <td className="py-2">Descrição</td>
+                    <td className="py-2">Permissões</td>
+                    <td className="py-2 px-4">Ações</td>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {cargos?.length > 0 &&
+                    cargos.map((item, index) => (
+                      <tr
+                        key={index}
+                        className="animate-fade-in text-center hover:bg-accent/20 even:bg-accent/10"
+                        style={{ animationDelay: `${index * 30}ms` }}
                       >
-                        <div className="flex items-center justify-center gap-3 transition ease-in-out">
-                          Ver permissões{" "}
-                          {expandedRow === index ? (
-                            <ChevronUp className="w-5 h-5" />
+                        <td className="font-medium text-left text-primary px-4 py-3 truncate">
+                          {item.nome}
+                        </td>
+                        <td className="font-semibold py-3 truncate">
+                          {item.descricao.trim() ? (
+                            item.descricao
                           ) : (
-                            <ChevronDown className="w-5 h-5" />
-                          )}{" "}
-                        </div>
-                      </td>
-                      <td className="text-primary/80 py-2">
-                        {
-                          item.id === 1
-                            ? ""
-                            : "Opções" /* Esconder opções do cargo admin */
-                        }
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-            {!cargos.length && (
-              <div className="w-full flex-1 flex flex-col items-center justify-center py-6">
-                <BookSearch className="w-12 h-12 text-primary" />
-                <h3 className="text-lg">
-                  Todos os seus cargos aparecerão aqui
-                </h3>
-              </div>
-            )}
-            {expandedRow !== null && cargos[expandedRow] && (
-              <div className="w-full h-fit py-4 px-4 bg-accent/10 border-t border-border">
-                <div className="flex items-center justify-center flex-wrap gap-2">
-                  {cargos[expandedRow]?.permissions?.length ? (
-                    groupPermissionsByFeature(
-                      cargos[expandedRow].permissions,
-                    ).map((group, i) => (
-                      <div key={i} className="flex gap-1">
-                        <span className="font-bold text-sm text-primary">
-                          {group.displayFeature}:
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {group.accessLevel}
-                          {i === cargos[expandedRow].permissions?.length - 1
-                            ? "wasd"
-                            : ","}{" "}
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <span className="text-center text-muted-foreground mx-auto block">
-                      Nenhuma permissão atribuída a este cargo
-                    </span>
-                  )}
+                            <span className="italic text-muted-foreground">
+                              Sem descrição
+                            </span>
+                          )}
+                        </td>
+                        <td
+                          className="font-semibold py-3 cursor-pointer hover:text-primary/80"
+                          onClick={() =>
+                            setExpandedRow(expandedRow === index ? null : index)
+                          }
+                        >
+                          <div className="flex items-center justify-center gap-3 transition ease-in-out">
+                            Ver permissões{" "}
+                            {expandedRow === index ? (
+                              <ChevronUp className="w-5 h-5" />
+                            ) : (
+                              <ChevronDown className="w-5 h-5" />
+                            )}{" "}
+                          </div>
+                        </td>
+                        <td className="py-2 pl-2 text-center text-primary/80">
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setSelectedCargo(item);
+                                setEditCargoOpen(true);
+                              }}
+                              disabled={item.defaultType}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={() => {
+                                setDeleteAction({
+                                  action: () => handleDeletion.cargos(item.id),
+                                  label: `Eliminar o cargo: "${item.nome}"?`,
+                                });
+                                setDeleteDialogOpen(true);
+                              }}
+                              disabled={item.defaultType}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+              {!cargos.length && (
+                <div className="w-full flex-1 flex flex-col items-center justify-center py-6">
+                  <BookSearch className="w-12 h-12 text-primary" />
+                  <h3 className="text-lg">
+                    Todos os seus cargos aparecerão aqui
+                  </h3>
                 </div>
-              </div>
-            )}
+              )}
+              {expandedRow !== null && cargos[expandedRow] && (
+                <div className="w-full h-fit py-4 px-4 bg-accent/10 border-t border-border">
+                  <div className="flex items-center justify-center flex-wrap gap-2">
+                    {cargos[expandedRow]?.permissoes?.length ? (
+                      groupPermissionsByFeature(
+                        cargos[expandedRow].permissoes,
+                      ).map((group, i) => (
+                        <div key={i} className="flex gap-1">
+                          <span className="font-bold text-sm text-primary">
+                            {group.displayFeature}:
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            {group.accessLevel}
+                            {i === cargos[expandedRow].permissoes?.length - 1
+                              ? ""
+                              : ","}{" "}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <span className="text-center text-muted-foreground mx-auto block">
+                        Nenhuma permissão atribuída a este cargo
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <LoaderSmall />
+        )}
       </Card>
 
       <Card
-        Icon={UserRoundKey}
+        Icon={Component}
         title="Departamentos"
         description="Criar, editar e eliminar departamentos"
         actionBtn={{
           title: "Novo departamento",
           action: () => setAddDepartmentOpen(true),
         }}
+        style="max-h-140"
       >
-        <div className="flex-1 min-h-0 bg-card rounded-xl border border-border flex flex-col">
-          <div className="rounded-xl flex-1 min-h-0 overflow-auto relative no-scrollbar flex flex-col">
-            <table className="w-full table-fixed min-w-lg text-sm">
-              <colgroup>
-                <col className="w-50" />
-                <col className="w-auto" />
-                <col className="w-auto" />
-                <col className="w-50" />
-                <col className="w-28" />
-              </colgroup>
-              <thead className="sticky top-0 z-10 text-lg bg-card font-semibold text-center">
-                <tr className="bg-secondary/50">
-                  <td className="py-2 px-4">Última atualização</td>
-                  <td className="py-2 text-left">Nome</td>
-                  <td className="py-2">Descrição</td>
-                  <td className="py-2">Localizações</td>
-                  <td className="py-2 px-4">Ações</td>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {departamentos?.length > 0 &&
-                  departamentos.map((item, index) => (
-                    <tr
-                      key={index}
-                      className="animate-fade-in text-center hover:bg-accent/20 even:bg-accent/10"
-                      style={{ animationDelay: `${index * 30}ms` }}
-                    >
-                      <td className="font-medium text-left text-primary px-4 py-3 truncate">
-                        {formatDate(item.updatedAt, true)}
-                      </td>
-                      <td className="text-left font-semibold py-3 truncate">
-                        {item.nome}
-                      </td>
-                      <td className="font-semibold py-3 truncate">
-                        {item.descricao}
-                      </td>
-                      <td
-                        className="font-semibold py-3 cursor-pointer hover:text-primary/80"
-                        onClick={() =>
-                          setDepartmentExpandedRow(
-                            departmentExpandedRow === index ? null : index,
-                          )
-                        }
+        {departamentos ? (
+          <div className="flex-1 min-h-0 bg-card rounded-xl border border-border flex flex-col">
+            <div className="rounded-xl flex-1 min-h-0 overflow-auto relative no-scrollbar flex flex-col">
+              <table className="w-full table-fixed min-w-lg text-sm">
+                <colgroup>
+                  <col className="w-50" />
+                  <col className="w-auto" />
+                  <col className="w-auto" />
+                  <col className="w-50" />
+                  <col className="w-28" />
+                </colgroup>
+                <thead className="sticky top-0 z-10 text-lg bg-card font-semibold text-center">
+                  <tr className="bg-secondary/50">
+                    <td className="py-2 px-4">Última atualização</td>
+                    <td className="py-2 text-left">Nome</td>
+                    <td className="py-2">Descrição</td>
+                    <td className="py-2">Localizações</td>
+                    <td className="py-2 px-4">Ações</td>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {departamentos?.length > 0 &&
+                    departamentos.map((item, index) => (
+                      <tr
+                        key={index}
+                        className="animate-fade-in text-center hover:bg-accent/20 even:bg-accent/10"
+                        style={{ animationDelay: `${index * 30}ms` }}
                       >
-                        <div className="flex items-center justify-center gap-3 transition ease-in-out">
-                          Localizações associadas{" "}
-                          {departmentExpandedRow === index ? (
-                            <ChevronUp className="w-5 h-5" />
+                        <td className="font-medium text-left text-primary px-4 py-3 truncate">
+                          {formatDate(item.updatedAt, true)}
+                        </td>
+                        <td className="text-left font-semibold py-3 truncate">
+                          {item.nome}
+                        </td>
+                        <td className="font-semibold py-3 truncate">
+                          {item.descricao.trim() ? (
+                            item.descricao
                           ) : (
-                            <ChevronDown className="w-5 h-5" />
-                          )}{" "}
-                        </div>
-                      </td>
-                      <td className="text-primary/80 py-2">Opções</td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-            {!departamentos.length && (
-              <div className="w-full flex-1 flex flex-col items-center justify-center py-6">
-                <BookSearch className="w-12 h-12 text-primary" />
-                <h3 className="text-lg">
-                  Todos os seus departamentos aparecerão aqui
-                </h3>
-              </div>
-            )}
-            {departmentExpandedRow !== null &&
-              departamentos[departmentExpandedRow] && (
-                <div className="w-full h-fit py-4 px-4 bg-accent/10 border-t border-border">
-                  <div className="flex items-center justify-center flex-wrap gap-2">
-                    {departamentos[departmentExpandedRow].salas.length ? (
-                      departamentos[departmentExpandedRow].salas.map(
-                        (item, i) => (
-                          <div key={i} className="flex gap-1">
-                            <span className="font-bold text-sm text-primary">
-                              {item.nome}
-                              {i ===
-                              departamentos[departmentExpandedRow].salas
-                                .length -
-                                1
-                                ? ""
-                                : ","}
+                            <span className="italic text-muted-foreground">
+                              Sem descrição
                             </span>
+                          )}
+                        </td>
+                        <td
+                          className="font-semibold py-3 cursor-pointer hover:text-primary/80"
+                          onClick={() =>
+                            setDepartmentExpandedRow(
+                              departmentExpandedRow === index ? null : index,
+                            )
+                          }
+                        >
+                          <div className="flex items-center justify-center gap-3 transition ease-in-out">
+                            Localizações associadas{" "}
+                            {departmentExpandedRow === index ? (
+                              <ChevronUp className="w-5 h-5" />
+                            ) : (
+                              <ChevronDown className="w-5 h-5" />
+                            )}{" "}
                           </div>
-                        ),
-                      )
-                    ) : (
-                      <span className="text-center text-muted-foreground mx-auto block">
-                        Nenhuma localização associada a este departamento
-                      </span>
-                    )}
-                  </div>
+                        </td>
+                        <td className="py-2 pl-2 text-center text-primary/80">
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setSelectedDepartment(item);
+                                setEditDepartmentOpen(true);
+                              }}
+                              disabled={item.defaultType}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={() => {
+                                setDeleteAction({
+                                  action: () =>
+                                    handleDeletion.departamento(item.id),
+                                  label: `Eliminar o departamento: "${item.nome}"?`,
+                                });
+                                setDeleteDialogOpen(true);
+                              }}
+                              disabled={item.defaultType}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+              {!departamentos.length && (
+                <div className="w-full flex-1 flex flex-col items-center justify-center py-6">
+                  <BookSearch className="w-12 h-12 text-primary" />
+                  <h3 className="text-lg">
+                    Todos os seus departamentos aparecerão aqui
+                  </h3>
                 </div>
               )}
+              {departmentExpandedRow !== null &&
+                departamentos[departmentExpandedRow] && (
+                  <div className="w-full h-fit py-4 px-4 bg-accent/10 border-t border-border">
+                    <div className="flex items-center justify-center flex-wrap gap-2">
+                      {departamentos[departmentExpandedRow].salas.length ? (
+                        departamentos[departmentExpandedRow].salas.map(
+                          (item, i) => (
+                            <div key={i} className="flex gap-1">
+                              <span className="font-bold text-sm text-primary">
+                                {item.nome}
+                                {i ===
+                                departamentos[departmentExpandedRow].salas
+                                  .length -
+                                  1
+                                  ? ""
+                                  : ","}
+                              </span>
+                            </div>
+                          ),
+                        )
+                      ) : (
+                        <span className="text-center text-muted-foreground mx-auto block">
+                          Nenhuma localização associada a este departamento
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <LoaderSmall />
+        )}
       </Card>
 
       <Card
@@ -515,67 +721,97 @@ export default function Settings() {
           title: "Nova localização",
           action: () => setAddLocationOpen(true),
         }}
+        style="max-h-140"
       >
-        <div className="flex-1 min-h-0 bg-card rounded-xl border border-border flex flex-col">
-          <div className="rounded-xl flex-1 min-h-0 overflow-auto relative no-scrollbar flex flex-col">
-            <table className="w-full table-fixed min-w-lg text-sm">
-              <colgroup>
-                <col className="w-50" />
-                <col className="w-auto" />
-                <col className="w-auto" />
-                <col className="w-auto" />
-                <col className="w-28" />
-              </colgroup>
-              <thead className="sticky top-0 z-10 text-lg bg-card font-semibold text-center">
-                <tr className="bg-secondary/50">
-                  <td className="py-2 px-4">Última atualização</td>
-                  <td className="py-2 text-left">Nome</td>
-                  <td className="py-2">Departamento</td>
-                  <td className="py-2">Tipo</td>
-                  <td className="py-2 px-4">Ações</td>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {localizacoes?.length > 0 &&
-                  localizacoes.map((item, index) => (
-                    <tr
-                      key={index}
-                      className="animate-fade-in text-center hover:bg-accent/20 even:bg-accent/10"
-                      style={{ animationDelay: `${index * 30}ms` }}
-                    >
-                      <td className="text-muted-foreground py-3">
-                        {formatDate(item.updatedAt, true)}
-                      </td>
-                      <td className="font-medium text-left text-primary py-3 truncate">
-                        {item.nome}
-                      </td>
-                      <td className="font-semibold py-3 truncate">
-                        {item.departamento ?? "Sem departamento"}
-                      </td>
-                      <td className="font-semibold py-3 truncate">
-                        {item.tipo}
-                      </td>
-                      <td className="text-primary/80 py-2">
-                        {
-                          item.id === 1
-                            ? ""
-                            : "Opções" /* Esconder opções da localização padrão */
-                        }
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-            {!localizacoes.length && (
-              <div className="w-full flex-1 flex flex-col items-center justify-center py-6">
-                <BookSearch className="w-12 h-12 text-primary" />
-                <h3 className="text-lg">
-                  Todas as suas localizações aparecerão aqui
-                </h3>
-              </div>
-            )}
+        {localizacoes ? (
+          <div className="flex-1 min-h-0 bg-card rounded-xl border border-border flex flex-col">
+            <div className="rounded-xl flex-1 min-h-0 overflow-auto relative no-scrollbar flex flex-col">
+              <table className="w-full table-fixed min-w-lg text-sm">
+                <colgroup>
+                  <col className="w-50" />
+                  <col className="w-auto" />
+                  <col className="w-auto" />
+                  <col className="w-auto" />
+                  <col className="w-28" />
+                </colgroup>
+                <thead className="sticky top-0 z-10 text-lg bg-card font-semibold text-center">
+                  <tr className="bg-secondary/50">
+                    <td className="py-2 px-4">Última atualização</td>
+                    <td className="py-2 text-left">Nome</td>
+                    <td className="py-2">Departamento</td>
+                    <td className="py-2">Tipo</td>
+                    <td className="py-2 px-4">Ações</td>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {localizacoes?.length > 0 &&
+                    localizacoes.map((item, index) => (
+                      <tr
+                        key={index}
+                        className="animate-fade-in text-center hover:bg-accent/20 even:bg-accent/10"
+                        style={{ animationDelay: `${index * 30}ms` }}
+                      >
+                        <td className="text-muted-foreground py-3">
+                          {formatDate(item.updatedAt, true)}
+                        </td>
+                        <td className="font-medium text-left text-primary py-3 truncate">
+                          {item.nome}
+                        </td>
+                        <td className="font-semibold py-3 truncate">
+                          {item.departamento ?? "Sem departamento"}
+                        </td>
+                        <td className="font-semibold py-3 truncate">
+                          {item.tipo}
+                        </td>
+                        <td className="py-2 pl-2 text-center text-primary/80">
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setSelectedLocation(item);
+                                setEditLocationOpen(true);
+                              }}
+                              disabled={item.defaultType}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={() => {
+                                setDeleteAction({
+                                  action: () =>
+                                    handleDeletion.localizacao(item.id),
+                                  label: `Eliminar a localização: "${item.nome}"?`,
+                                });
+                                setDeleteDialogOpen(true);
+                              }}
+                              disabled={item.defaultType}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+              {!localizacoes.length && (
+                <div className="w-full flex-1 flex flex-col items-center justify-center py-6">
+                  <BookSearch className="w-12 h-12 text-primary" />
+                  <h3 className="text-lg">
+                    Todas as suas localizações aparecerão aqui
+                  </h3>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <LoaderSmall />
+        )}
       </Card>
 
       <CreateDepartmentDialog
@@ -585,7 +821,40 @@ export default function Settings() {
       <CreateLocationDialog
         open={AddLocationOpen}
         onOpenChange={setAddLocationOpen}
+        departaments={departamentos ?? []}
+      />
+      <CreateCargoDialog open={AddCargoOpen} onOpenChange={setAddCargoOpen} />
+      <CreateCategoryDialog
+        open={AddCategoryOpen}
+        onOpenChange={setAddCategoryOpen}
+      />
+      <EditCategoryDialog
+        open={editCategoryOpen}
+        onOpenChange={setEditCategoryOpen}
+        category={selectedCategory}
+      />
+      <EditCargoDialog
+        open={editCargoOpen}
+        onOpenChange={setEditCargoOpen}
+        cargo={selectedCargo}
+      />
+      <EditDepartmentDialog
+        open={editDepartmentOpen}
+        onOpenChange={setEditDepartmentOpen}
+        department={selectedDepartment}
+      />
+      <EditLocationDialog
+        open={editLocationOpen}
+        onOpenChange={setEditLocationOpen}
+        location={selectedLocation}
         departaments={departamentos}
+      />
+      <DeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={() => deleteAction.action?.()}
+        title={deleteAction?.label ?? "Eliminar este item?"}
+        description="Atenção! Esta ação não pode ser desfeita."
       />
     </PageContainer>
   );

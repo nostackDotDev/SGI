@@ -19,17 +19,26 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
 import { request } from "@/lib/request";
+import { toast } from "sonner";
 
 const initialFormData = {
   nome: "",
   descricao: "",
+  serialNumber: "",
   quantidade: undefined,
   categoriaId: undefined,
   condicaoId: undefined,
   salaId: undefined,
 };
 
-export function CreateItemDialog({ open, onOpenChange, condicoes }) {
+export function CreateItemDialog({
+  open,
+  onOpenChange,
+  categorias,
+  status,
+  localizacoes,
+  onSuccess,
+}) {
   const [formData, setFormData] = useState(initialFormData);
   const [isLoading, setIsLoading] = useState(false);
   // const [canSubmit, setCanSubmit] = useState(false)
@@ -56,6 +65,7 @@ export function CreateItemDialog({ open, onOpenChange, condicoes }) {
       "POST",
       {
         data: formData,
+        refreshKey: "items",
       },
       (res) => {
         console.log(res);
@@ -66,9 +76,21 @@ export function CreateItemDialog({ open, onOpenChange, condicoes }) {
         }
         resetForm();
         setIsLoading(false);
+
+        toast.success(res?.message || "Item registdo com sucesso", {
+          id: "item-toast",
+          position: "bottom-right",
+        });
+
+        onSuccess && onSuccess();
+        onOpenChange(false);
       },
       (err) => {
         console.error("Error creating new item:", err?.message ?? err);
+        toast.error(err?.message || "Ocorreu um erro ao registar o item", {
+          id: "item-toast",
+          position: "bottom-right",
+        });
         setIsLoading(false);
       },
     );
@@ -132,11 +154,19 @@ export function CreateItemDialog({ open, onOpenChange, condicoes }) {
                     <SelectValue placeholder="Selecionar" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">Eletrônicos</SelectItem>
-                    <SelectItem value="2">Periféricos</SelectItem>
-                    <SelectItem value="3">Áudio</SelectItem>
-                    <SelectItem value="4">Cabos</SelectItem>
-                    <SelectItem value="5">Adaptadores</SelectItem>
+                    {categorias.length ? (
+                      categorias.map((c, i) => (
+                        <SelectItem key={i} value={String(c.id)}>
+                          {c.nome}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <>
+                        <SelectItem key={0} value={undefined}>
+                          Falha ao carregar
+                        </SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -144,16 +174,18 @@ export function CreateItemDialog({ open, onOpenChange, condicoes }) {
               <div className="grid gap-2">
                 <Label htmlFor="location">Status</Label>
                 <Select
-                  value={formData.salaId ?? ""}
-                  onValueChange={(value) => handleInputChange("salaId", value)}
+                  value={formData.condicaoId ?? ""}
+                  onValueChange={(value) =>
+                    handleInputChange("condicaoId", value)
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecionar" />
                   </SelectTrigger>
                   <SelectContent>
-                    {condicoes.length ? (
-                      condicoes.map((c, i) => (
-                        <SelectItem key={i} value={c.id}>
+                    {status.length ? (
+                      status.map((c, i) => (
+                        <SelectItem key={i} value={String(c.id)}>
                           {c.nome}
                         </SelectItem>
                       ))
@@ -175,8 +207,13 @@ export function CreateItemDialog({ open, onOpenChange, condicoes }) {
                 <Input
                   id="serial"
                   placeholder="Ex: XPS-2024-001"
-                  //   value={formData.descricao}
-                  // onChange={(v)=> handleInputChange("descricao", v.currentTarget.value)}
+                  value={formData.serialNumber}
+                  onChange={(v) =>
+                    handleInputChange(
+                      "serialNumber",
+                      v.currentTarget.value.trim(),
+                    )
+                  }
                 />
               </div>
 
@@ -187,7 +224,7 @@ export function CreateItemDialog({ open, onOpenChange, condicoes }) {
                   type="number"
                   min="1"
                   placeholder="0"
-                  defaultValue={formData.quantidade ?? ""}
+                  value={formData.quantidade ?? ""}
                   onChange={(v) =>
                     handleInputChange("quantidade", v.currentTarget.value)
                   }
@@ -197,18 +234,16 @@ export function CreateItemDialog({ open, onOpenChange, condicoes }) {
             <div className="grid gap-2">
               <Label htmlFor="location">Localização</Label>
               <Select
-                value={formData.condicaoId ?? ""}
-                onValueChange={(value) =>
-                  handleInputChange("condicaoId", value)
-                }
+                value={formData.salaId ?? ""}
+                onValueChange={(value) => handleInputChange("salaId", value)}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecionar" />
                 </SelectTrigger>
                 <SelectContent>
-                  {condicoes.length ? (
-                    condicoes.map((c, i) => (
-                      <SelectItem key={i} value={c.id}>
+                  {localizacoes.length ? (
+                    localizacoes.map((c, i) => (
+                      <SelectItem key={i} value={String(c.id)}>
                         {c.nome}
                       </SelectItem>
                     ))

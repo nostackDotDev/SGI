@@ -4,16 +4,61 @@ import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { tenantIsolation } from "../middlewares/tenantIsolation.middleware.js";
 import { requirePermission } from "../middlewares/permissions.middleware.js";
 import { PERMISSIONS } from "../constants/permissions.constants.js";
+import { handlePrismaError } from "../lib/errorHandler.js";
 
 const router = express.Router();
 
 router.use(authMiddleware);
 router.use(tenantIsolation);
+
+router.get(
+  "/default",
+  requirePermission(PERMISSIONS.CARGO_READ),
+  async (req, res) => {
+    const instituicaoId = req.tenantId;
+
+    const defaultCargo = await prisma.cargo.findFirst({
+      where: {
+        instituicaoId,
+        deletedAt: null,
+        defaultType: { equals: true },
+      },
+      include: {
+        permissoes: {
+          include: { permissao: true },
+        },
+      },
+    });
+
+    if (!defaultCargo) {
+      return res
+        .status(404)
+        .json({ data: null, error: "Default cargo not found" });
+    }
+
+    res.json({
+      message: "Default cargo encontrado",
+      data: {
+        id: defaultCargo.id,
+        nome: defaultCargo.nome,
+        descricao: defaultCargo.descricao ?? "",
+        isDefault: true,
+        permissoes: defaultCargo.permissoes.map((cp) => cp.permissao.nome),
+      },
+      error: null,
+    });
+  },
+);
+
 router.get("/", requirePermission(PERMISSIONS.CARGO_READ), async (req, res) => {
   const instituicaoId = req.tenantId;
 
   const cargos = await prisma.cargo.findMany({
-    where: { instituicaoId, deletedAt: null },
+    where: {
+      instituicaoId,
+      deletedAt: null,
+      // defaultType: { equals: false }
+    },
     include: {
       permissoes: {
         include: { permissao: true },
@@ -25,7 +70,8 @@ router.get("/", requirePermission(PERMISSIONS.CARGO_READ), async (req, res) => {
     id: c.id,
     nome: c.nome,
     descricao: c.descricao ?? "",
-    permissions: c.permissoes.map((cp) => cp.permissao.nome),
+    permissoes: c.permissoes.map((cp) => cp.permissao.nome),
+    defaultType: c.defaultType,
   }));
 
   res.json({ data: safeCargos, error: null });
@@ -61,7 +107,8 @@ router.get(
         nome: cargo.nome,
         descricao: cargo.descricao ?? "",
         createdAt: cargo.createdAt,
-        permissions: cargo.permissoes.map((cp) => cp.permissao.nome),
+        permissoes: cargo.permissoes.map((cp) => cp.permissao.nome),
+        defaultType: cargo.defaultType,
       },
       error: null,
     });
@@ -75,25 +122,57 @@ router.post(
     const instituicaoId = req.tenantId;
     const { nome, permissoes, descricao } = req.body;
 
-    if (!nome || !permissoes) {
-      return res
-        .status(400)
-        .json({ data: null, error: "Nome e permissões são obrigatórias" });
+    const permissionNames = Array.isArray(permissoes)
+      ? [
+          ...new Set(
+            permissoes.map((name) => String(name).trim()).filter(Boolean),
+          ),
+        ]
+      : [];
+
+    if (!nome || !permissionNames.length) {
+      return res.status(400).json({
+        data: null,
+        error: "Nome e permissões são obrigatórias",
+      });
     }
 
     try {
+      const foundPermissions = await prisma.permissao.findMany({
+        where: { nome: { in: permissionNames } },
+      });
+
+      const foundNames = foundPermissions.map((permission) => permission.nome);
+      const missingPermissions = permissionNames.filter(
+        (permission) => !foundNames.includes(permission),
+      );
+
+      if (missingPermissions.length) {
+        return res.status(400).json({
+          data: null,
+          error: `Permissão(s) inválida(s): ${missingPermissions.join(", ")}`,
+        });
+      }
+
       const newCargo = await prisma.cargo.create({
         data: {
           nome,
           descricao: descricao || "",
-          permissoes,
           instituicaoId,
+          permissoes: {
+            create: foundPermissions.map((permission) => ({
+              permissao: {
+                connect: { id: permission.id },
+              },
+            })),
+          },
         },
       });
 
       res.status(201).json({ data: newCargo, error: null });
     } catch (error) {
-      res.status(500).json({ data: null, error: error.message });
+      const { status, message } = handlePrismaError(error);
+      res.status(status).json({ data: null, message });
     }
   },
 );
@@ -103,9 +182,9 @@ router.put(
   requirePermission(PERMISSIONS.CARGO_UPDATE),
   async (req, res) => {
     const instituicaoId = req.tenantId;
-    const { nome, descricao } = req.body;
+    const { nome, descricao, permissoes } = req.body;
 
-    if (!nome && !descricao) {
+    if (!nome && !descricao && permissoes === undefined) {
       return res.status(400).json({
         message: "Nenhum campo para atualizar fornecido",
         data: null,
@@ -125,7 +204,84 @@ router.put(
       return res.status(404).json({ data: null, error: "Cargo not found" });
     }
 
+    if (cargo.defaultType) {
+      return res.status(400).json({
+        message: "Não é possível atualizar um cargo padrão",
+        data: null,
+        error: "Cannot update a default cargo",
+      });
+    }
+
     try {
+      if (permissoes !== undefined) {
+        const permissionNames = Array.isArray(permissoes)
+          ? [
+              ...new Set(
+                permissoes.map((name) => String(name).trim()).filter(Boolean),
+              ),
+            ]
+          : [];
+
+        const foundPermissions = await prisma.permissao.findMany({
+          where: { nome: { in: permissionNames } },
+        });
+
+        const foundNames = foundPermissions.map(
+          (permission) => permission.nome,
+        );
+        const missingPermissions = permissionNames.filter(
+          (permission) => !foundNames.includes(permission),
+        );
+
+        if (missingPermissions.length) {
+          return res.status(400).json({
+            data: null,
+            error: `Permissão(s) inválida(s): ${missingPermissions.join(", ")}`,
+          });
+        }
+
+        const currentCargoPermissions = await prisma.cargoPermissao.findMany({
+          where: { cargoId: cargo.id },
+        });
+
+        const permissionsToRemove = currentCargoPermissions.filter(
+          (item) =>
+            !foundPermissions.some(
+              (permission) => permission.id === item.permissaoId,
+            ),
+        );
+
+        const permissionsToAdd = foundPermissions.filter(
+          (permission) =>
+            !currentCargoPermissions.some(
+              (current) => current.permissaoId === permission.id,
+            ),
+        );
+
+        if (permissionsToRemove.length) {
+          await prisma.cargoPermissao.deleteMany({
+            where: {
+              cargoId: cargo.id,
+              permissaoId: {
+                in: permissionsToRemove.map(
+                  (permission) => permission.permissaoId,
+                ),
+              },
+            },
+          });
+        }
+
+        if (permissionsToAdd.length) {
+          await prisma.cargoPermissao.createMany({
+            data: permissionsToAdd.map((permission) => ({
+              cargoId: cargo.id,
+              permissaoId: permission.id,
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
       const updated = await prisma.cargo.update({
         where: { id: cargo.id },
         data: {
@@ -136,7 +292,8 @@ router.put(
 
       res.json({ data: updated, error: null });
     } catch (error) {
-      res.status(500).json({ data: null, error: error.message });
+      const { status, message } = handlePrismaError(error);
+      res.status(status).json({ data: null, message });
     }
   },
 );
@@ -157,6 +314,14 @@ router.delete(
 
     if (!cargo) {
       return res.status(404).json({ data: null, error: "Cargo not found" });
+    }
+
+    if (cargo.defaultType) {
+      return res.status(400).json({
+        message: "Não é possível eliminar um cargo padrão",
+        data: null,
+        error: "Cannot delete a default cargo",
+      });
     }
 
     try {

@@ -4,11 +4,42 @@ import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { tenantIsolation } from "../middlewares/tenantIsolation.middleware.js";
 import { requirePermission } from "../middlewares/permissions.middleware.js";
 import { PERMISSIONS } from "../constants/permissions.constants.js";
+import { handlePrismaError } from "../lib/errorHandler.js";
 
 const router = express.Router();
 
 router.use(authMiddleware);
 router.use(tenantIsolation);
+
+router.get(
+  "/default",
+  requirePermission(PERMISSIONS.CATEGORIA_READ),
+  async (req, res) => {
+    const instituicaoId = req.tenantId;
+
+    const defaultCategoria = await prisma.categoria.findFirst({
+      where: {
+        instituicaoId,
+        deletedAt: null,
+        defaultType: { equals: true },
+      },
+    });
+
+    if (!defaultCategoria) {
+      return res
+        .status(404)
+        .json({ data: null, error: "Default categoria not found" });
+    }
+
+    res.json({
+      data: {
+        ...defaultCategoria,
+        isDefault: true,
+      },
+      error: null,
+    });
+  },
+);
 
 router.get(
   "/",
@@ -17,10 +48,24 @@ router.get(
     const instituicaoId = req.tenantId;
 
     const categorias = await prisma.categoria.findMany({
-      where: { instituicaoId, deletedAt: null },
+      where: {
+        instituicaoId,
+        deletedAt: null,
+        //  defaultType: { equals: false }
+      },
     });
 
-    res.json({ data: categorias, error: null });
+    res.json({
+      data: categorias.map((cat) => ({
+        id: cat.id,
+        nome: cat.nome,
+        descricao: cat.descricao,
+        updatedAt: cat.updatedAt,
+        defaultType: cat.defaultType,
+        instituicaoId: cat.instituicaoId,
+      })),
+      error: null,
+    });
   },
 );
 
@@ -42,7 +87,17 @@ router.get(
       return res.status(404).json({ data: null, error: "Categoria not found" });
     }
 
-    res.json({ data: categoria, error: null });
+    res.json({
+      data: {
+        id: categoria.id,
+        nome: categoria.nome,
+        descricao: categoria.descricao,
+        updatedAt: categoria.updatedAt,
+        defaultType: categoria.defaultType,
+        instituicaoId: categoria.instituicaoId,
+      },
+      error: null,
+    });
   },
 );
 
@@ -68,7 +123,8 @@ router.post(
 
       res.status(201).json({ data: newCategoria, error: null });
     } catch (error) {
-      res.status(500).json({ data: null, error: error.message });
+      const { status, message } = handlePrismaError(error);
+      res.status(status).json({ data: null, message });
     }
   },
 );
@@ -100,6 +156,14 @@ router.put(
       return res.status(404).json({ data: null, error: "Categoria not found" });
     }
 
+    if (categoria.defaultType) {
+      return res.status(400).json({
+        message: "Não é possível atualizar uma categoria padrão",
+        data: null,
+        error: "Cannot update a default categporia",
+      });
+    }
+
     try {
       const updated = await prisma.categoria.update({
         where: { id: categoria.id },
@@ -111,7 +175,8 @@ router.put(
 
       res.json({ data: updated, error: null });
     } catch (error) {
-      res.status(500).json({ data: null, error: error.message });
+      const { status, message } = handlePrismaError(error);
+      res.status(status).json({ data: null, message });
     }
   },
 );
@@ -132,6 +197,21 @@ router.delete(
 
     if (!categoria) {
       return res.status(404).json({ data: null, error: "Categoria not found" });
+    }
+
+    if (categoria.defaultType && categoria.defaultType !== "") {
+      return res.status(400).json({
+        data: null,
+        error: "Cannot delete the default categoria",
+      });
+    }
+
+    if (categoria.defaultType) {
+      return res.status(400).json({
+        message: "Não é possível eliminar uma categoria padrão",
+        data: null,
+        error: "Cannot delete a default categporia",
+      });
     }
 
     try {

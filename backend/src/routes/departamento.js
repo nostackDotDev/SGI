@@ -4,6 +4,7 @@ import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { tenantIsolation } from "../middlewares/tenantIsolation.middleware.js";
 import { requirePermission } from "../middlewares/permissions.middleware.js";
 import { PERMISSIONS } from "../constants/permissions.constants.js";
+import { handlePrismaError } from "../lib/errorHandler.js";
 
 const router = express.Router();
 
@@ -11,11 +12,55 @@ router.use(authMiddleware);
 router.use(tenantIsolation);
 
 router.get(
+  "/default",
+  requirePermission(PERMISSIONS.DEPARTAMENTO_READ),
+  async (req, res) => {
+    const instituicaoId = req.tenantId;
+
+    const defaultDepartamento = await prisma.departamento.findFirst({
+      where: {
+        deletedAt: null,
+        instituicaoId: instituicaoId,
+        defaultType: { equals: true },
+      },
+      include: { instituicao: true, salas: true },
+    });
+
+    if (!defaultDepartamento) {
+      return res
+        .status(404)
+        .json({ data: null, error: "Default departamento not found" });
+    }
+
+    res.json({
+      data: {
+        id: defaultDepartamento.id,
+        nome: defaultDepartamento.nome,
+        descricao: defaultDepartamento.descricao,
+        updatedAt: defaultDepartamento.updatedAt,
+        salas: defaultDepartamento.salas.map((sala) => ({
+          id: sala.id,
+          nome: sala.numeroSala,
+          tipo: sala.tipoSala,
+        })),
+      },
+      error: null,
+      message: "Departamento routes are working!",
+    });
+  },
+);
+
+router.get(
   "/",
   requirePermission(PERMISSIONS.DEPARTAMENTO_READ),
   async (req, res) => {
+    const instituicaoId = req.tenantId;
     const departamentos = await prisma.departamento.findMany({
-      where: { deletedAt: null },
+      where: {
+        deletedAt: null,
+        instituicaoId: instituicaoId,
+        // defaultType: { equals: false },
+      },
       include: { instituicao: true, salas: true },
     });
 
@@ -30,6 +75,7 @@ router.get(
           nome: sala.numeroSala,
           tipo: sala.tipoSala,
         })),
+        defaultType: departamento.defaultType,
       })),
       error: null,
       message: "Departamento routes are working!",
@@ -63,6 +109,7 @@ router.get(
           nome: sala.numeroSala,
           tipo: sala.tipoSala,
         })),
+        defaultType: departamento.defaultType,
       },
       error: null,
     });
@@ -103,7 +150,8 @@ router.post(
 
       res.status(201).json({ data: newDepartamento, error: null });
     } catch (error) {
-      res.status(500).json({ data: null, error: error.message });
+      const { status, message } = handlePrismaError(error);
+      res.status(status).json({ data: null, message });
     }
   },
 );
@@ -133,6 +181,14 @@ router.put(
         .json({ data: null, error: "Departamento not found" });
     }
 
+    if (departamento.defaultType) {
+      return res.status(400).json({
+        message: "Não é possível atualizar um departamento padrão",
+        data: null,
+        error: "Cannot update a default departamento",
+      });
+    }
+
     const instituicao = instituicaoId
       ? await prisma.instituicao.findUnique({
           where: { id: instituicaoId },
@@ -159,16 +215,18 @@ router.put(
           nome: newDepartamento.nome,
           descricao: newDepartamento.descricao,
           updatedAt: newDepartamento.updatedAt,
-          salas: newDepartamento.salas.map((sala) => ({
-            id: sala.id,
-            nome: sala.numeroSala,
-            tipo: sala.tipoSala,
-          })),
+          salas:
+            newDepartamento.salas?.map((sala) => ({
+              id: sala.id,
+              nome: sala.numeroSala,
+              tipo: sala.tipoSala,
+            })) ?? [],
         },
         error: null,
       });
     } catch (error) {
-      res.status(500).json({ data: null, error: error.message });
+      const { status, message } = handlePrismaError(error);
+      res.status(status).json({ data: null, message });
     }
   },
 );
@@ -185,6 +243,14 @@ router.delete(
       return res
         .status(404)
         .json({ data: null, error: "Departamento not found" });
+    }
+
+    if (departamento.defaultType) {
+      return res.status(400).json({
+        message: "Não é possível eliminar um departamento padrão",
+        data: null,
+        error: "Cannot delete a default departamento",
+      });
     }
 
     try {

@@ -3,12 +3,15 @@ import { request } from "@/lib/request";
 import { Boxes, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+
+const initialData = {
+  email: "",
+  password: "",
+};
 
 export default function Login() {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState(initialData);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -26,16 +29,40 @@ export default function Login() {
         data: formData,
       },
       (res) => {
-        const user = { ...res.data.user, instituicao: res.data.instituicao };
-        setUser(user);
-        setIsLoading(false);
-        navigate("/");
+        if (res && !res.error) {
+          const user = { ...res.data.user, instituicao: res.data.instituicao };
+          setUser(user);
+          setFormData(initialData);
+          navigate("/");
+          toast.success(res.message ?? "Login realizado com sucesso!", {
+            id: "fetch-toast",
+            position: "bottom-right",
+          });
+          return;
+        }
+        toast.error(
+          res.message ||
+            "Ocorreu um erro inesperado. Por favor, tente novamente.",
+          {
+            id: "fetch-toast",
+            position: "bottom-right",
+          },
+        );
+        return;
       },
       (err) => {
-        console.error(err);
-        setIsLoading(false);
+        toast.error(
+          err?.message ||
+            "Ocorreu um erro inesperado. Por favor, tente novamente.",
+          {
+            id: "fetch-toast",
+            position: "bottom-right",
+          },
+        );
       },
     );
+
+    setIsLoading(false);
   };
 
   const handleInput = (field, value) => {
@@ -43,13 +70,15 @@ export default function Login() {
   };
 
   return (
-    <main className="w-full h-full flex items-center justify-center gradient-primary">
-      <section className="w-[60vw] max-w-xl bg-card max-h-[94vh] min-h-fit rounded-xl p-6 overflow-y-auto">
+    <main className="w-full h-full min-h-fit flex items-center justify-center gradient-primary py-4">
+      <section className="w-2xl max-w-[90vw] bg-card max-h-[94vh] min-h-fit rounded-xl p-6 overflow-y-auto no-scrollbar">
         <aside className="text-center space-y-1">
-          <i className="block mx-auto w-fit h-fit p-1.5 px-2 rounded-sm bg-success text-muted">
-            <Boxes className="w-10 h-10" />
+          <i className="block mx-auto w-fit h-fit p-1 rounded-sm text-muted-foreground">
+            <img src="/logo.png" className="w-30 aspect-auto" alt="IPIKK" />
           </i>
-          <h1 className="text-2xl font-bold capitalize">inventário escolar</h1>
+          <h1 className="text-2xl font-bold capitalize -mt-5">
+            inventário escolar
+          </h1>
           <p>Faça login para acessar o sistema</p>
         </aside>
         <form
@@ -70,7 +99,7 @@ export default function Login() {
                 name="email"
                 required
                 placeholder="seu@email.com"
-                className="p-2 focus:outline-0"
+                className="p-2 focus:outline-0 rounded-r-md"
                 value={formData.email}
                 onChange={(e) => handleInput("email", e.target.value)}
               />
@@ -80,7 +109,7 @@ export default function Login() {
             <label htmlFor="login-password" className="font-medium">
               Senha
             </label>
-            <div className="w-full h-fit border border-accent rounded-md grid grid-cols-[auto_1fr_auto] hover:shadow-xs shadow-muted-foreground/60 focus-within:border-primary transition-colors ease">
+            <div className="w-full h-fit border border-accent rounded-md grid grid-cols-[auto_1fr_auto] hover:shadow-xs shadow-muted-foreground/60 focus-within:border-primary transition-colors ease relative">
               <i className="w-fit bg-transparent px-2 flex items-center justify-center">
                 <Lock className="w-4 h-4" />
               </i>
@@ -90,13 +119,13 @@ export default function Login() {
                 name="password"
                 required
                 placeholder="****"
-                className="p-2 focus:outline-0"
+                className="p-2 focus:outline-0 rounded-r-md"
                 value={formData.password ?? ""}
                 onChange={(e) => handleInput("password", e.target.value)}
               />
               <i
                 onClick={() => setIsPasswordVisible((e) => !e)}
-                className="w-fit bg-transparent pr-2 flex items-center justify-center cursor-pointer"
+                className="absolute top-3 right-2 w-fit bg-transparent pr-2 flex items-center justify-center cursor-pointer"
               >
                 {isPasswordVisible ? (
                   <EyeOff className="w-4 h-4" />
@@ -106,8 +135,8 @@ export default function Login() {
               </i>
             </div>
           </div>
-          <div className="h-fit flex items-center justify-end">
-            {/* <div className="flex items-end justify-center gap-1">
+          <div className="h-fit flex items-center justify-between">
+            <div className="flex items-center justify-center gap-1">
               <input
                 type="checkbox"
                 name="remeberUser"
@@ -117,18 +146,20 @@ export default function Login() {
               <label htmlFor="rememberUser" className="cursor-pointer">
                 Lembrar-me
               </label>
-            </div> */}
+            </div>
             <span className="text-ring text-shadow-2xs cursor-pointer hover:underline">
               Esqueceu a senha?
             </span>
           </div>
-          <Link
-            to="/signup"
-            replace
-            className="-mt-5 text-right text-ring text-shadow-2xs cursor-pointer hover:underline"
-          >
-            Não possui uma conta? Criar conta
-          </Link>
+          {
+            <Link
+              to="/signup"
+              replace
+              className="-mt-5 text-right text-ring text-shadow-2xs cursor-pointer hover:underline"
+            >
+              Não possui uma conta? Criar conta
+            </Link>
+          }
           <button
             type="submit"
             disabled={isLoading}

@@ -6,6 +6,7 @@ export function tenantIsolation(req, res, next) {
   }
 
   req.tenantId = user.instituicaoId;
+  req.userId = user.id;
 
   next();
 }

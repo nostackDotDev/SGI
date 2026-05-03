@@ -2,7 +2,7 @@ name: Run Database Migrations
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, develop]
     paths:
       - "backend/prisma/**"
       - "backend/package.json"
@@ -10,7 +10,7 @@ on:
       - ".github/workflows/migrate.yml"
 
   pull_request:
-    branches: [main, master]
+    branches: [main, develop]
     paths:
       - "backend/prisma/**"
 

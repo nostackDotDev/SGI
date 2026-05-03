@@ -14,6 +14,7 @@ import registo_routes from "./routes/registo.js";
 import utilizador_routes from "./routes/utilizador.js";
 import condicao_routes from "./routes/condicao.js";
 import authRoutes from "./routes/auth.routes.js";
+import { responseFormatter } from "./middlewares/responseFormatter.middleware.js";
 
 const app = express();
 const port = process.env.PORT || 8001;
@@ -37,6 +38,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
+app.use(responseFormatter);
 
 // public routes
 app.use("/", public_routes);

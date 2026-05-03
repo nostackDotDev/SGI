@@ -18,24 +18,38 @@ export async function signup(data) {
     });
 
     // -----------------------------
-    // 2. Categoria default (POR INSTITUIÇÃO)
+    // 2. Departamento default (POR INSTITUIÇÃO)
+    // -----------------------------
+    const departamento = await tx.departamento.create({
+      data: {
+        nome: "Default",
+        descricao: "Departamento padrão",
+        instituicaoId: instituicao.id,
+        defaultType: true,
+      },
+    });
+
+    // -----------------------------
+    // 3. Categoria default (POR INSTITUIÇÃO)
     // -----------------------------
     const categoria = await tx.categoria.create({
       data: {
         nome: "Default",
         descricao: "Categoria padrão",
         instituicaoId: instituicao.id,
+        defaultType: true,
       },
     });
 
     // -----------------------------
-    // 3. Sala default (POR INSTITUIÇÃO)
+    // 4. Sala default (POR INSTITUIÇÃO)
     // -----------------------------
     const sala = await tx.sala.create({
       data: {
-        numeroSala: "0",
-        tipoSala: "Default",
-        departamentoId: null,
+        numeroSala: "Default",
+        tipoSala: "Armazém padrão",
+        departamentoId: departamento.id,
+        defaultType: true,
       },
     });
 
@@ -46,6 +60,7 @@ export async function signup(data) {
       data: {
         nome: "Super Admin",
         instituicaoId: instituicao.id,
+        defaultType: true,
       },
     });
 
@@ -71,11 +86,13 @@ export async function signup(data) {
         password: hashedPassword,
         instituicaoId: instituicao.id,
         cargoId: cargo.id,
+        defaultType: true,
       },
     });
 
     return {
       instituicao,
+      departamento,
       categoria,
       sala,
       cargo,
@@ -85,7 +102,7 @@ export async function signup(data) {
 }
 
 export async function login(email, password) {
-  const user = await prisma.utilizador.findUnique({
+  const user = await prisma.utilizador.findFirst({
     where: { email },
     include: {
       instituicao: true,
@@ -105,19 +122,40 @@ export async function login(email, password) {
     return null;
   }
 
-  // 3. generate token
-  const token = jwt.sign(
+  // 3. generate access token (1 hour)
+  const accessToken = jwt.sign(
     {
       userId: user.id,
       instituicaoId: user.instituicaoId,
       cargoId: user.cargoId,
     },
     process.env.JWT_SECRET,
-    { expiresIn: "1d" },
+    { expiresIn: "1h" },
   );
 
+  // 4. generate refresh token (7 days)
+  const refreshToken = jwt.sign(
+    {
+      userId: user.id,
+      tokenVersion: 1,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" },
+  );
+
+  // 5. store refresh token in database with expiry
+  const refreshTokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  await prisma.utilizador.update({
+    where: { id: user.id },
+    data: {
+      refreshToken,
+      refreshTokenExpires,
+    },
+  });
+
   return {
-    token,
+    accessToken,
+    refreshToken,
     user: {
       nome: user.nome,
       email: user.email,
@@ -129,4 +167,82 @@ export async function login(email, password) {
       descricao: user.instituicao.descricao,
     },
   };
+}
+
+/**
+ * Refresh the access token using a valid refresh token
+ * Implements token rotation: invalidates old refresh token, issues new one
+ */
+export async function refreshAccessToken(refreshToken) {
+  if (!refreshToken || !process.env.JWT_SECRET) {
+    return null;
+  }
+
+  try {
+    // 1. Verify refresh token signature
+    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+
+    // 2. Find user and validate refresh token matches
+    const user = await prisma.utilizador.findFirst({
+      where: { id: decoded.userId },
+      include: {
+        instituicao: true,
+        cargo: true,
+      },
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    // 3. Validate refresh token stored in DB matches the one sent
+    if (user.refreshToken !== refreshToken) {
+      // Token has been rotated/invalidated
+      return null;
+    }
+
+    // 4. Validate refresh token hasn't expired (double-check with DB)
+    if (user.refreshTokenExpires && user.refreshTokenExpires < new Date()) {
+      return null;
+    }
+
+    // 5. Generate new access token (1 hour)
+    const newAccessToken = jwt.sign(
+      {
+        userId: user.id,
+        instituicaoId: user.instituicaoId,
+        cargoId: user.cargoId,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" },
+    );
+
+    // 6. Generate new refresh token (7 days) for rotation
+    const newRefreshToken = jwt.sign(
+      {
+        userId: user.id,
+        tokenVersion: (decoded.tokenVersion || 0) + 1,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" },
+    );
+
+    // 7. Store new refresh token (invalidates old one)
+    const refreshTokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await prisma.utilizador.update({
+      where: { id: user.id },
+      data: {
+        refreshToken: newRefreshToken,
+        refreshTokenExpires,
+      },
+    });
+
+    return {
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+    };
+  } catch (error) {
+    // Refresh token invalid, expired, or tampered with
+    return null;
+  }
 }

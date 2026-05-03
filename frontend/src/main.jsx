@@ -1,23 +1,31 @@
-import { lazy, StrictMode, Suspense } from "react";
+import { StrictMode, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
 import "./index.css";
 import AppLayout from "./components/layout/AppLayout.jsx";
 
-const Login = lazy(() => import("./pages/Login.jsx"));
+/* const Login = lazy(() => import("./pages/Login.jsx"));
 const SignUp = lazy(() => import("./pages/SignUp.jsx"));
 const Inventory = lazy(() => import("./pages/Inventory.jsx"));
 const Reports = lazy(() => import("./pages/Reports.jsx"));
 const CheckInOut = lazy(() => import("./pages/CheckInOut.jsx"));
 const Dashboard = lazy(() => import("./pages/Dashboard.jsx"));
 const Users = lazy(() => import("./pages/Users.jsx"));
-const Settings = lazy(() => import("./pages/Settings.jsx"));
+const Settings = lazy(() => import("./pages/Settings.jsx")); */
 
 import { Toaster } from "sonner";
 import Loader from "./components/layout/Loader.jsx";
 import { AuthProvider } from "./core/contexts/AuthContext";
 import PublicRoutes from "./components/auth/PublicRoutes.jsx";
 import ProtectedRoutes from "./components/auth/ProtectedRoutes.jsx";
+import Dashboard from "./pages/Dashboard";
+import Inventory from "./pages/Inventory";
+import Reports from "./pages/Reports";
+import CheckInOut from "./pages/CheckInOut";
+import Users from "./pages/Users";
+import Settings from "./pages/Settings";
+import Login from "./pages/Login";
+import SignUp from "./pages/SignUp";
 
 const router = createBrowserRouter([
   {

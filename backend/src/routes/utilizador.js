@@ -1,20 +1,80 @@
 import express from "express";
 import prisma from "../lib/prisma.js";
+import bcrypt from "bcrypt";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { tenantIsolation } from "../middlewares/tenantIsolation.middleware.js";
 import { requirePermission } from "../middlewares/permissions.middleware.js";
 import { PERMISSIONS } from "../constants/permissions.constants.js";
 import { getUserPermissions } from "../services/permissions.service.js";
+import { handlePrismaError } from "../lib/errorHandler.js";
 const router = express.Router();
+
+/**
+ * Helper function to sanitize user response (exclude password)
+ */
+const sanitizeUtilizador = (user) => ({
+  id: user.id,
+  nome: user.nome,
+  email: user.email,
+  descricao: user.descricao ?? "",
+  cargoId: user.cargoId,
+  instituicaoId: user.instituicaoId,
+  updatedAt: user.updatedAt,
+  createdAt: user.createdAt,
+});
 
 router.use(authMiddleware);
 router.use(tenantIsolation);
+
+router.get(
+  "/default",
+  requirePermission(PERMISSIONS.USER_READ),
+  async (req, res) => {
+    const instituicaoId = req.tenantId;
+
+    const defaultUtilizador = await prisma.utilizador.findFirst({
+      where: {
+        instituicaoId,
+        deletedAt: null,
+        defaultType: { equals: true },
+      },
+      include: { cargo: true, instituicao: true, registos: true },
+    });
+
+    if (!defaultUtilizador) {
+      return res.status(404).json({
+        message: "Default utilizador não encontrado",
+        data: null,
+        error: "Default utilizador not found",
+      });
+    }
+
+    const permissions = await getUserPermissions(defaultUtilizador.id);
+    const safeUser = sanitizeUtilizador(defaultUtilizador);
+
+    res.json({
+      message: "Default utilizador encontrado",
+      data: {
+        ...safeUser,
+        isDefault: true,
+        instituicao: defaultUtilizador.instituicao.nome,
+        cargo: defaultUtilizador.cargo.nome,
+        permissions: Array.from(permissions),
+      },
+      error: null,
+    });
+  },
+);
 
 router.get("/", requirePermission(PERMISSIONS.USER_READ), async (req, res) => {
   const instituicaoId = req.tenantId;
 
   const utilizadores = await prisma.utilizador.findMany({
-    where: { instituicaoId, deletedAt: null },
+    where: {
+      instituicaoId,
+      deletedAt: null,
+      //  defaultType: { equals: false }
+    },
     include: { cargo: true, instituicao: true, registos: true },
   });
 
@@ -27,15 +87,16 @@ router.get("/", requirePermission(PERMISSIONS.USER_READ), async (req, res) => {
   }
 
   const safeUtilizadores = await Promise.all(
-    utilizadores.map(async (u) => ({
-      id: u.id,
-      nome: u.nome,
-      email: u.email,
-      descricao: u.descricao ?? "",
-      instituicao: u.instituicao.nome,
-      cargo: u.cargo.nome,
-      permissions: Array.from(await getUserPermissions(u.id)),
-    })),
+    utilizadores.map(async (u) => {
+      const safeUser = sanitizeUtilizador(u);
+      return {
+        ...safeUser,
+        instituicao: u.instituicao.nome,
+        cargo: u.cargo.nome,
+        permissions: Array.from(await getUserPermissions(u.id)),
+        defaultType: u.defaultType,
+      };
+    }),
   );
 
   res.json({
@@ -69,17 +130,16 @@ router.get(
     }
 
     const permissions = await getUserPermissions(utilizador.id);
+    const safeUser = sanitizeUtilizador(utilizador);
 
     res.json({
       message: "Utilizador encontrado",
       data: {
-        id: utilizador.id,
-        nome: utilizador.nome,
-        email: utilizador.email,
-        descricao: utilizador.descricao ?? "",
+        ...safeUser,
         instituicao: utilizador.instituicao.nome,
         cargo: utilizador.cargo.nome,
         permissions: Array.from(permissions),
+        defaultType: utilizador.defaultType,
       },
       error: null,
     });
@@ -100,7 +160,7 @@ router.post(
     }
 
     const cargo = await prisma.cargo.findFirst({
-      where: { id: cargoId, instituicaoId },
+      where: { id: parseInt(cargoId), instituicaoId },
     });
 
     if (!cargo) {
@@ -108,12 +168,15 @@ router.post(
     }
 
     try {
+      // Hash password before storing
+      const hashedPassword = await bcrypt.hash(password, 10);
+
       const newUtilizador = await prisma.utilizador.create({
         data: {
           nome,
           email,
-          password,
-          cargoId,
+          password: hashedPassword,
+          cargoId: parseInt(cargoId),
           instituicaoId,
           descricao: descricao || "",
         },
@@ -121,19 +184,15 @@ router.post(
 
       res.status(201).json({
         message: "Utilizador criado com sucesso",
-        data: {
-          id: newUtilizador.id,
-          nome: newUtilizador.nome,
-          email: newUtilizador.email,
-          descricao: newUtilizador.descricao ?? "",
-        },
+        data: sanitizeUtilizador(newUtilizador),
         error: null,
       });
     } catch (error) {
-      res.status(500).json({
-        message: "Erro ao criar utilizador",
+      const { status, message } = handlePrismaError(error);
+      res.status(status).json({
+        message,
         data: null,
-        error: error.message,
+        error: null,
       });
     }
   },
@@ -172,7 +231,7 @@ router.put(
 
     const cargo = cargoId
       ? await prisma.cargo.findFirst({
-          where: { id: cargoId, instituicaoId },
+          where: { id: parseInt(cargoId), instituicaoId },
         })
       : null;
 
@@ -184,29 +243,47 @@ router.put(
       });
     }
 
+    if (
+      Number(cargoId) !== Number(utilizador.cargoId) &&
+      utilizador.defaultType
+    ) {
+      return res.status(400).json({
+        message: "Não é possível atualizar o cargo do utilizador padrão",
+        data: null,
+        error: "Cannot update the default utilizador cargo",
+      });
+    }
+
     try {
+      // Build update data object, only including provided fields
+      const updateData = {};
+
+      if (nome) updateData.nome = nome;
+      if (email) updateData.email = email;
+      if (cargoId) updateData.cargoId = parseInt(cargoId);
+      if (descricao) updateData.descricao = descricao;
+
+      // Hash password if provided
+      if (password) {
+        updateData.password = await bcrypt.hash(password, 10);
+      }
+
       const updated = await prisma.utilizador.update({
         where: { id: utilizador.id },
-        data: {
-          id: utilizador.id,
-          nome: nome ?? utilizador.nome,
-          email: email ?? utilizador.email,
-          password: password ?? utilizador.password,
-          cargoId: cargoId ?? utilizador.cargoId,
-          descricao: descricao ?? utilizador.descricao,
-        },
+        data: updateData,
       });
 
       res.json({
         message: "Utilizador atualizado com sucesso",
-        data: updated,
+        data: sanitizeUtilizador(updated),
         error: null,
       });
     } catch (error) {
-      res.status(500).json({
-        message: "Erro ao atualizar utilizador",
+      const { status, message } = handlePrismaError(error);
+      res.status(status).json({
+        message,
         data: null,
-        error: error.message,
+        error: null,
       });
     }
   },
@@ -234,6 +311,14 @@ router.delete(
       });
     }
 
+    if (utilizador.defaultType) {
+      return res.status(400).json({
+        message: "Não é possível eliminar o utilizador padrão",
+        data: null,
+        error: "Cannot delete the default utilizador",
+      });
+    }
+
     try {
       const deletedUtilizador = await prisma.utilizador.update({
         where: { id: utilizador.id },
@@ -242,7 +327,7 @@ router.delete(
 
       res.json({
         message: "Utilizador eliminado com sucesso",
-        data: deletedUtilizador,
+        data: sanitizeUtilizador(deletedUtilizador),
         error: null,
       });
     } catch (error) {

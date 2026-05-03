@@ -54,6 +54,7 @@ export function CreateLocationDialog({ open, onOpenChange, departaments }) {
       "POST",
       {
         data: formData,
+        refreshKey: "localizacoes",
       },
       (res) => {
         console.log(res);
@@ -130,7 +131,7 @@ export function CreateLocationDialog({ open, onOpenChange, departaments }) {
                   <SelectContent>
                     {departaments.length ? (
                       departaments.map((d, i) => (
-                        <SelectItem key={i} value={d.id}>
+                        <SelectItem key={i} value={String(d.id)}>
                           {d.nome}
                         </SelectItem>
                       ))

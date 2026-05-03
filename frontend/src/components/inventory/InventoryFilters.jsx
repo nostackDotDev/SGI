@@ -20,7 +20,9 @@ export function InventoryFilters({
   setStatus,
   location,
   setLocation,
-  // setPageSize,
+  categorias,
+  estados,
+  localizacoes,
 }) {
   const debounceSetSearch = (value) => {
     const t = setTimeout(() => {
@@ -51,8 +53,8 @@ export function InventoryFilters({
         </div>
 
         {/* Filters */}
-        <div className="flex gap-4">
-          <div className="grid gap-2">
+        <div className="flex flex-wrap sm:flex-nowrap gap-4">
+          <div className="flex-1 min-w-fit grid gap-2">
             <Label htmlFor="categoryFilter" className="px-2">
               Categoria
             </Label>
@@ -62,16 +64,17 @@ export function InventoryFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas</SelectItem>
-                <SelectItem value="eletronicos">Eletrônicos</SelectItem>
-                <SelectItem value="perifericos">Periféricos</SelectItem>
-                <SelectItem value="audio">Áudio</SelectItem>
-                <SelectItem value="cabos">Cabos</SelectItem>
-                <SelectItem value="adaptadores">Adaptadores</SelectItem>
+                {categorias.length > 0 &&
+                  categorias.map((c, i) => (
+                    <SelectItem key={i} value={String(c.id)}>
+                      {c.nome}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="grid gap-2">
+          <div className="flex-1 min-w-fit grid gap-2">
             <Label htmlFor="statusFilter" className="px-2">
               Status
             </Label>
@@ -81,14 +84,17 @@ export function InventoryFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="disponivel">Disponível</SelectItem>
-                <SelectItem value="emprestado">Emprestado</SelectItem>
-                <SelectItem value="manutencao">Manutenção</SelectItem>
+                {estados.length > 0 &&
+                  estados.map((c, i) => (
+                    <SelectItem key={i} value={String(c.nome)}>
+                      {c.nome}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="grid gap-2">
+          <div className="flex-1 min-w-fit grid gap-2">
             <Label htmlFor="locationFilter" className="px-2">
               Localização
             </Label>
@@ -98,11 +104,12 @@ export function InventoryFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas</SelectItem>
-                <SelectItem value="sala-101">Sala 101</SelectItem>
-                <SelectItem value="sala-102">Sala 102</SelectItem>
-                <SelectItem value="sala-103">Sala 103</SelectItem>
-                <SelectItem value="deposito-a">Depósito A</SelectItem>
-                <SelectItem value="deposito-b">Depósito B</SelectItem>
+                {localizacoes.length > 0 &&
+                  localizacoes.map((c, i) => (
+                    <SelectItem key={i} value={String(c.id)}>
+                      {c.nome}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>

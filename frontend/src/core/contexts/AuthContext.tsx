@@ -56,19 +56,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  /**
+   * Validate current auth state by calling /auth/me
+   * Does NOT cause logout on failure - just clears user state
+   */
   const refreshAuth = () => {
     return new Promise<void>((resolve) => {
+      let completed = false;
+
+      const handleSuccess = () => {
+        if (!completed) {
+          completed = true;
+          resolve();
+        }
+      };
+
+      const handleError = () => {
+        if (!completed) {
+          completed = true;
+          setUserAndStore(null);
+          resolve();
+        }
+      };
+
+      // Set a timeout for auth validation (5 seconds)
+      const timeout = setTimeout(() => {
+        handleError();
+      }, 5000);
+
       request(
         "/auth/me",
         "GET",
         {},
-        () => resolve(),
         () => {
-          setUserAndStore(null);
-          resolve();
+          clearTimeout(timeout);
+          handleSuccess();
+        },
+        () => {
+          clearTimeout(timeout);
+          handleError();
         },
       );
-      setTimeout(() => resolve(), 100); // fallback
     });
   };
 
@@ -84,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           resolve();
         },
         (err) => {
-          console.error(err);
+          console.error("Logout error:", err);
           setUserAndStore(null);
           window.location.href = "/login";
           resolve();
@@ -93,9 +121,85 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  // =========================================================================
+  // INITIAL AUTH CHECK on component mount
+  // =========================================================================
   useEffect(() => {
     refreshAuth().then(() => setLoading(false));
   }, []);
+
+  // =========================================================================
+  // PROACTIVE TOKEN REFRESH - Every 5 minutes, silently refresh token
+  // Prevents sudden 401s for users who remain idle but session is valid
+  // =========================================================================
+  useEffect(() => {
+    if (!user) return; // Skip if not authenticated
+
+    const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+    let proactiveRefreshTimer: NodeJS.Timeout | null = null;
+
+    const scheduleProactiveRefresh = () => {
+      if (proactiveRefreshTimer) clearTimeout(proactiveRefreshTimer);
+
+      proactiveRefreshTimer = setTimeout(() => {
+        // Skip if app is hidden (Visibility API)
+        if (document.hidden) {
+          scheduleProactiveRefresh(); // Reschedule when page becomes visible
+          return;
+        }
+
+        console.debug("[Auth] Proactive token refresh");
+
+        // Attempt refresh silently (non-fatal if fails)
+        request(
+          "/auth/refresh",
+          "POST",
+          {},
+          () => {
+            console.debug("[Auth] Proactive refresh succeeded");
+            scheduleProactiveRefresh(); // Schedule next refresh
+          },
+          (err) => {
+            console.warn("[Auth] Proactive refresh failed:", err);
+            // Non-fatal: log but don't logout (user will refresh on next request)
+            // If reactive refresh also fails, user will be logged out then
+            scheduleProactiveRefresh(); // Schedule next attempt
+          },
+        );
+      }, REFRESH_INTERVAL);
+    };
+
+    scheduleProactiveRefresh();
+
+    return () => {
+      if (proactiveRefreshTimer) clearTimeout(proactiveRefreshTimer);
+    };
+  }, [user]);
+
+  // =========================================================================
+  // SESSION VALIDATION on app focus
+  // When app regains focus after being backgrounded, validate session
+  // This catches token invalidation while app was in background
+  // =========================================================================
+  useEffect(() => {
+    if (!user) return; // Skip if not authenticated
+
+    const handleVisibilityChange = () => {
+      // Only re-validate when becoming visible
+      if (document.hidden) return;
+
+      console.debug("[Auth] App regained focus, validating session");
+      refreshAuth().catch((err) => {
+        console.warn("[Auth] Session validation on focus failed:", err);
+      });
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [user]);
 
   return (
     <AuthContext.Provider
