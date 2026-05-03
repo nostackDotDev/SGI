@@ -232,9 +232,6 @@ model Registo {
   instituicaoId Int
   instituicao   Instituicao @relation(fields: [instituicaoId], references: [id], onDelete: Restrict)
 
-  instituicaoId Int
-  instituicao   Instituicao @relation(fields: [instituicaoId], references: [id], onDelete: Restrict)
-
   @@index([deletedAt])
   @@index([itemId, createdAt])
   @@index([utilizadorId, createdAt])
