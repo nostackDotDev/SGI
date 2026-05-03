@@ -26,11 +26,55 @@ const sanitizeUtilizador = (user) => ({
 router.use(authMiddleware);
 router.use(tenantIsolation);
 
+router.get(
+  "/default",
+  requirePermission(PERMISSIONS.USER_READ),
+  async (req, res) => {
+    const instituicaoId = req.tenantId;
+
+    const defaultUtilizador = await prisma.utilizador.findFirst({
+      where: {
+        instituicaoId,
+        deletedAt: null,
+        defaultType: { equals: true },
+      },
+      include: { cargo: true, instituicao: true, registos: true },
+    });
+
+    if (!defaultUtilizador) {
+      return res.status(404).json({
+        message: "Default utilizador não encontrado",
+        data: null,
+        error: "Default utilizador not found",
+      });
+    }
+
+    const permissions = await getUserPermissions(defaultUtilizador.id);
+    const safeUser = sanitizeUtilizador(defaultUtilizador);
+
+    res.json({
+      message: "Default utilizador encontrado",
+      data: {
+        ...safeUser,
+        isDefault: true,
+        instituicao: defaultUtilizador.instituicao.nome,
+        cargo: defaultUtilizador.cargo.nome,
+        permissions: Array.from(permissions),
+      },
+      error: null,
+    });
+  },
+);
+
 router.get("/", requirePermission(PERMISSIONS.USER_READ), async (req, res) => {
   const instituicaoId = req.tenantId;
 
   const utilizadores = await prisma.utilizador.findMany({
-    where: { instituicaoId, deletedAt: null },
+    where: {
+      instituicaoId,
+      deletedAt: null,
+      //  defaultType: { equals: false }
+    },
     include: { cargo: true, instituicao: true, registos: true },
   });
 
@@ -251,6 +295,14 @@ router.delete(
         message: "Utilizador não encontrado",
         data: null,
         error: "Utilizador not found",
+      });
+    }
+
+    if (utilizador.defaultType && utilizador.defaultType !== "") {
+      return res.status(400).json({
+        message: "Não é possível eliminar o utilizador padrão",
+        data: null,
+        error: "Cannot delete the default utilizador",
       });
     }
 

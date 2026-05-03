@@ -12,13 +12,47 @@ router.use(authMiddleware);
 router.use(tenantIsolation);
 
 router.get(
+  "/default",
+  requirePermission(PERMISSIONS.CATEGORIA_READ),
+  async (req, res) => {
+    const instituicaoId = req.tenantId;
+
+    const defaultCategoria = await prisma.categoria.findFirst({
+      where: {
+        instituicaoId,
+        deletedAt: null,
+        defaultType: { equals: true },
+      },
+    });
+
+    if (!defaultCategoria) {
+      return res
+        .status(404)
+        .json({ data: null, error: "Default categoria not found" });
+    }
+
+    res.json({
+      data: {
+        ...defaultCategoria,
+        isDefault: true,
+      },
+      error: null,
+    });
+  },
+);
+
+router.get(
   "/",
   requirePermission(PERMISSIONS.CATEGORIA_READ),
   async (req, res) => {
     const instituicaoId = req.tenantId;
 
     const categorias = await prisma.categoria.findMany({
-      where: { instituicaoId, deletedAt: null },
+      where: {
+        instituicaoId,
+        deletedAt: null,
+        //  defaultType: { equals: false }
+      },
     });
 
     res.json({ data: categorias, error: null });
@@ -135,6 +169,13 @@ router.delete(
 
     if (!categoria) {
       return res.status(404).json({ data: null, error: "Categoria not found" });
+    }
+
+    if (categoria.defaultType && categoria.defaultType !== "") {
+      return res.status(400).json({
+        data: null,
+        error: "Cannot delete the default categoria",
+      });
     }
 
     try {

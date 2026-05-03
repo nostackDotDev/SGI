@@ -10,11 +10,55 @@ const router = express.Router();
 
 router.use(authMiddleware);
 router.use(tenantIsolation);
+
+router.get(
+  "/default",
+  requirePermission(PERMISSIONS.CARGO_READ),
+  async (req, res) => {
+    const instituicaoId = req.tenantId;
+
+    const defaultCargo = await prisma.cargo.findFirst({
+      where: {
+        instituicaoId,
+        deletedAt: null,
+        defaultType: { equals: true },
+      },
+      include: {
+        permissoes: {
+          include: { permissao: true },
+        },
+      },
+    });
+
+    if (!defaultCargo) {
+      return res
+        .status(404)
+        .json({ data: null, error: "Default cargo not found" });
+    }
+
+    res.json({
+      message: "Default cargo encontrado",
+      data: {
+        id: defaultCargo.id,
+        nome: defaultCargo.nome,
+        descricao: defaultCargo.descricao ?? "",
+        isDefault: true,
+        permissoes: defaultCargo.permissoes.map((cp) => cp.permissao.nome),
+      },
+      error: null,
+    });
+  },
+);
+
 router.get("/", requirePermission(PERMISSIONS.CARGO_READ), async (req, res) => {
   const instituicaoId = req.tenantId;
 
   const cargos = await prisma.cargo.findMany({
-    where: { instituicaoId, deletedAt: null },
+    where: {
+      instituicaoId,
+      deletedAt: null,
+      // defaultType: { equals: false }
+    },
     include: {
       permissoes: {
         include: { permissao: true },
@@ -260,6 +304,13 @@ router.delete(
 
     if (!cargo) {
       return res.status(404).json({ data: null, error: "Cargo not found" });
+    }
+
+    if (cargo.defaultType && cargo.defaultType !== "") {
+      return res.status(400).json({
+        data: null,
+        error: "Cannot delete the default cargo",
+      });
     }
 
     try {

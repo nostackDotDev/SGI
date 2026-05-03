@@ -36,6 +36,7 @@ model Departamento {
   id        Int     @id @default(autoincrement())
   nome      String
   descricao String?
+  defaultType Boolean? @default(false)
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -54,6 +55,7 @@ model Sala {
   id         Int    @id @default(autoincrement())
   numeroSala String
   tipoSala   String
+  defaultType Boolean? @default(false)
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -76,6 +78,7 @@ model Cargo {
   id        Int     @id @default(autoincrement())
   nome      String
   descricao String?
+  defaultType Boolean? @default(false)
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -97,6 +100,7 @@ model Utilizador {
   email     String  @unique
   password  String
   descricao String?
+  defaultType Boolean? @default(false)
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -152,6 +156,7 @@ model Categoria {
   id        Int     @id @default(autoincrement())
   nome      String
   descricao String?
+  defaultType Boolean? @default(false)
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

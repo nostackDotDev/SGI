@@ -80,6 +80,7 @@ export default function Settings() {
       (data) => setCategorias(data.data || []),
       (err) => {
         console.error(err);
+        setCategorias(categorias ?? []);
       },
     );
   };
@@ -92,6 +93,7 @@ export default function Settings() {
       (data) => setCargos(data.data || []),
       (err) => {
         console.error(err);
+        setCargos(cargos ?? []);
       },
     );
   };
@@ -104,6 +106,7 @@ export default function Settings() {
       (data) => setLocalizacoes(data.data || []),
       (err) => {
         console.error(err);
+        setLocalizacoes(localizacoes ?? []);
       },
     );
   };
@@ -113,9 +116,12 @@ export default function Settings() {
       "/departamento",
       "GET",
       {},
-      (data) => setDepartamentos(data.data || []),
+      (data) => {
+        setDepartamentos(data.data ?? []);
+      },
       (err) => {
         console.error(err);
+        setDepartamentos(departamentos ?? []);
       },
     );
   };
