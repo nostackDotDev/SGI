@@ -45,8 +45,7 @@ export default function UsersTable({
       .toLowerCase()
       .includes(filter.searchTerm.toLowerCase().trim());
     const matchesType =
-      levelFilter === "all" ||
-      u.level === (levelFilter === "admin" ? "admin" : "user");
+      levelFilter === "all" || String(u.cargoId) === levelFilter;
     return matchesSearch && matchesType;
   });
 
@@ -79,7 +78,7 @@ export default function UsersTable({
           .toLowerCase()
           .includes(filter.searchTerm.toLowerCase().trim()),
       (entry) =>
-        filter.level === "all" ? entry : entry.level === filter.level,
+        filter.level === "all" ? entry : String(entry.cargoId) === filter.level,
     ];
   }, [filter]);
 
@@ -102,6 +101,14 @@ export default function UsersTable({
     };
     r();
   }, [filters, data]);
+
+  useEffect(() => {
+    console.log({
+      filteredData,
+      paginatedItems,
+      filtered,
+    });
+  }, [filteredData, paginatedItems, filtered]);
 
   return (
     <div className="w-full h-full flex-1 overflow-hidden flex flex-col bg-card rounded-xl border border-border ">
@@ -171,13 +178,19 @@ export default function UsersTable({
 
                     <td className="py-2 px-3 text-center">
                       <div className="flex items-center justify-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={item.defaultType}
+                          className="h-8 w-8"
+                        >
                           <Pencil className="w-4 h-4" />
                         </Button>
 
                         <Button
                           variant="ghost"
                           size="icon"
+                          disabled={item.defaultType}
                           className="h-8 w-8 text-destructive"
                         >
                           <Trash2 className="w-4 h-4" />

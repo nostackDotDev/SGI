@@ -58,6 +58,7 @@ export function CreateUserDialog({ open, onOpenChange, cargos }) {
       "POST",
       {
         data: formData,
+        refreshKey: "utlizadores",
       },
       (res) => {
         console.log(res);

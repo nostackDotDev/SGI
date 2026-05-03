@@ -44,7 +44,7 @@ export async function authMiddleware(req, res, next) {
     return res.status(401).json({
       message: "Unauthorized",
       data: null,
-      error: "Invalid token",
+      error: error?.message ?? error,
     });
   }
 }

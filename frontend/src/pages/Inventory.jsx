@@ -7,6 +7,7 @@ import PageContainer from "@/components/layout/PageContainer";
 import { refreshManager, request } from "@/lib/request";
 import { EditItemDialog } from "@/components/inventory/EditItemDialog";
 import DeleteDialog from "@/components/common/DeleteDialog";
+import Loader from "@/components/layout/Loader";
 
 export default function Inventory() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -26,7 +27,8 @@ export default function Inventory() {
   const [categories, setCategories] = useState([]);
   const [statusOptions, setStatusOptions] = useState([]);
   const [locations, setLocations] = useState([]);
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState(null);
+  const [reason, setReason] = useState("");
 
   const fetchItems = () => {
     request(
@@ -42,10 +44,19 @@ export default function Inventory() {
   };
 
   const deleteItem = (id) => {
+    if (!reason.trim()) {
+      console.warn("Deletion reason is required");
+      return;
+    }
+
     request(
       `/item/${id}`,
       "DELETE",
-      {},
+      {
+        data: {
+          reason,
+        },
+      },
       () => {
         fetchItems();
       },
@@ -124,30 +135,34 @@ export default function Inventory() {
       />
 
       {/* Tabela */}
-      <InventoryTable
-        mockItems={items}
-        currentPage={currentPage}
-        setCurrentPage={setCurrentPage}
-        pageSize={pageSize}
-        filter={{
-          searchTerm: searchTerm,
-          category: category,
-          status: status,
-          location: location,
-        }}
-        onViewItem={(item) => {
-          setSelectedItem(item);
-          setDetailDialogOpen(true);
-        }}
-        onEditItem={(item) => {
-          setSelectedItem(item);
-          setEditDialogOpen(true);
-        }}
-        onDeleteItem={(item) => {
-          setSelectedItem(item);
-          setDeleteDialogOpen(true);
-        }}
-      />
+      {items ? (
+        <InventoryTable
+          mockItems={items}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          pageSize={pageSize}
+          filter={{
+            searchTerm: searchTerm,
+            category: category,
+            status: status,
+            location: location,
+          }}
+          onViewItem={(item) => {
+            setSelectedItem(item);
+            setDetailDialogOpen(true);
+          }}
+          onEditItem={(item) => {
+            setSelectedItem(item);
+            setEditDialogOpen(true);
+          }}
+          onDeleteItem={(item) => {
+            setSelectedItem(item);
+            setDeleteDialogOpen(true);
+          }}
+        />
+      ) : (
+        <Loader />
+      )}
 
       {/* Modais */}
       <CreateItemDialog
@@ -179,6 +194,9 @@ export default function Inventory() {
       <DeleteDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
+        withReason={true}
+        reason={reason}
+        setReason={setReason}
         onConfirm={() => {
           if (selectedItem) {
             deleteItem(selectedItem.id);

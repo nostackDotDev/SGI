@@ -15,7 +15,7 @@ export async function signupController(req, res) {
     return res.status(status).json({
       message,
       data: null,
-      error: error?.message ?? error,
+      error: `Server responded with a status: ${status}. ${error}`,
     });
   }
 }
@@ -30,7 +30,7 @@ export async function loginController(req, res) {
       return res.status(401).json({
         message: "Credenciais inválidas",
         data: null,
-        error: result.error ?? "Unrecognized error found: " + result,
+        error: result?.error ?? "User not found",
       });
     }
 
@@ -64,7 +64,7 @@ export async function loginController(req, res) {
     return res.status(status).json({
       message,
       data: null,
-      error: null,
+      error: "Server responded with a status: " + status + "\n" + error,
     });
   }
 }

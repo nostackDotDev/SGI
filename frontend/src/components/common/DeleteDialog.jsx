@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,11 +21,12 @@ export default function DeleteDialog({
   onConfirm,
   title,
   description,
+  withReason = false,
+  reason,
+  setReason,
 }) {
-  const [reason, setReason] = useState("");
-
   const handleDelete = () => {
-    if (!reason.trim()) {
+    if (withReason && !reason.trim()) {
       return;
     }
     onConfirm();
@@ -47,23 +47,25 @@ export default function DeleteDialog({
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
-        <div className="grid gap-2">
-          <Label htmlFor="reason">Motivo</Label>
-          <Textarea
-            id="reason"
-            placeholder="Motivo para a eliminação do item..."
-            rows={3}
-            value={reason}
-            onChange={(v) => setReason(v.currentTarget.value)}
-            className="h-13 resize-none"
-          />
-        </div>
+        {withReason && (
+          <div className="grid gap-2">
+            <Label htmlFor="reason">Motivo</Label>
+            <Textarea
+              id="reason"
+              placeholder="Motivo para a eliminação do item..."
+              rows={3}
+              value={reason}
+              onChange={(v) => setReason(v.currentTarget.value)}
+              className="h-13 resize-none"
+            />
+          </div>
+        )}
         <AlertDialogFooter>
           <AlertDialogCancel variant="outline">Cancelar</AlertDialogCancel>
           <AlertDialogAction
             variant="destructive"
             onClick={handleDelete}
-            disabled={!reason.trim()}
+            disabled={withReason && !reason.trim()}
           >
             Continuar
           </AlertDialogAction>

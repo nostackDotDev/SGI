@@ -19,6 +19,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
 import { request } from "@/lib/request";
+import { toast } from "sonner";
 
 const initialFormData = {
   nome: "",
@@ -76,11 +77,20 @@ export function CreateItemDialog({
         resetForm();
         setIsLoading(false);
 
+        toast.success(res?.message || "Item registdo com sucesso", {
+          id: "item-toast",
+          position: "bottom-right",
+        });
+
         onSuccess && onSuccess();
         onOpenChange(false);
       },
       (err) => {
         console.error("Error creating new item:", err?.message ?? err);
+        toast.error(err?.message || "Ocorreu um erro ao registar o item", {
+          id: "item-toast",
+          position: "bottom-right",
+        });
         setIsLoading(false);
       },
     );

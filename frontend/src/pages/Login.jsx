@@ -32,7 +32,6 @@ export default function Login() {
         if (res && !res.error) {
           const user = { ...res.data.user, instituicao: res.data.instituicao };
           setUser(user);
-          setIsLoading(false);
           setFormData(initialData);
           navigate("/");
           toast.success(res.message ?? "Login realizado com sucesso!", {
@@ -41,21 +40,29 @@ export default function Login() {
           });
           return;
         }
-        toast.error(res.message || "Ocorreu um erro ao criar a conta", {
-          id: "fetch-toast",
-          position: "bottom-right",
-        });
+        toast.error(
+          res.message ||
+            "Ocorreu um erro inesperado. Por favor, tente novamente.",
+          {
+            id: "fetch-toast",
+            position: "bottom-right",
+          },
+        );
         return;
       },
       (err) => {
-        console.error(err);
-        toast.error(err?.message || "Ocorreu um erro ao criar a conta", {
-          id: "fetch-toast",
-          position: "bottom-right",
-        });
-        setIsLoading(false);
+        toast.error(
+          err?.message ||
+            "Ocorreu um erro inesperado. Por favor, tente novamente.",
+          {
+            id: "fetch-toast",
+            position: "bottom-right",
+          },
+        );
       },
     );
+
+    setIsLoading(false);
   };
 
   const handleInput = (field, value) => {
@@ -128,20 +135,18 @@ export default function Login() {
               </i>
             </div>
           </div>
-          <div className="h-fit flex items-center justify-end">
-            {
-              <div className="flex items-end justify-center gap-1">
-                <input
-                  type="checkbox"
-                  name="remeberUser"
-                  id="rememberUser"
-                  className="rounded-full text-success cursor-pointer"
-                />
-                <label htmlFor="rememberUser" className="cursor-pointer">
-                  Lembrar-me
-                </label>
-              </div>
-            }
+          <div className="h-fit flex items-center justify-between">
+            <div className="flex items-center justify-center gap-1">
+              <input
+                type="checkbox"
+                name="remeberUser"
+                id="rememberUser"
+                className="rounded-full text-success cursor-pointer"
+              />
+              <label htmlFor="rememberUser" className="cursor-pointer">
+                Lembrar-me
+              </label>
+            </div>
             <span className="text-ring text-shadow-2xs cursor-pointer hover:underline">
               Esqueceu a senha?
             </span>

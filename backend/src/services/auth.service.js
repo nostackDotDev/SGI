@@ -25,6 +25,7 @@ export async function signup(data) {
         nome: "Default",
         descricao: "Departamento padrão",
         instituicaoId: instituicao.id,
+        defaultType: true,
       },
     });
 
@@ -36,6 +37,7 @@ export async function signup(data) {
         nome: "Default",
         descricao: "Categoria padrão",
         instituicaoId: instituicao.id,
+        defaultType: true,
       },
     });
 
@@ -47,6 +49,7 @@ export async function signup(data) {
         numeroSala: "Default",
         tipoSala: "Armazém padrão",
         departamentoId: departamento.id,
+        defaultType: true,
       },
     });
 
@@ -57,6 +60,7 @@ export async function signup(data) {
       data: {
         nome: "Super Admin",
         instituicaoId: instituicao.id,
+        defaultType: true,
       },
     });
 
@@ -82,6 +86,7 @@ export async function signup(data) {
         password: hashedPassword,
         instituicaoId: instituicao.id,
         cargoId: cargo.id,
+        defaultType: true,
       },
     });
 

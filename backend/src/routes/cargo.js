@@ -10,11 +10,55 @@ const router = express.Router();
 
 router.use(authMiddleware);
 router.use(tenantIsolation);
+
+router.get(
+  "/default",
+  requirePermission(PERMISSIONS.CARGO_READ),
+  async (req, res) => {
+    const instituicaoId = req.tenantId;
+
+    const defaultCargo = await prisma.cargo.findFirst({
+      where: {
+        instituicaoId,
+        deletedAt: null,
+        defaultType: { equals: true },
+      },
+      include: {
+        permissoes: {
+          include: { permissao: true },
+        },
+      },
+    });
+
+    if (!defaultCargo) {
+      return res
+        .status(404)
+        .json({ data: null, error: "Default cargo not found" });
+    }
+
+    res.json({
+      message: "Default cargo encontrado",
+      data: {
+        id: defaultCargo.id,
+        nome: defaultCargo.nome,
+        descricao: defaultCargo.descricao ?? "",
+        isDefault: true,
+        permissoes: defaultCargo.permissoes.map((cp) => cp.permissao.nome),
+      },
+      error: null,
+    });
+  },
+);
+
 router.get("/", requirePermission(PERMISSIONS.CARGO_READ), async (req, res) => {
   const instituicaoId = req.tenantId;
 
   const cargos = await prisma.cargo.findMany({
-    where: { instituicaoId, deletedAt: null },
+    where: {
+      instituicaoId,
+      deletedAt: null,
+      // defaultType: { equals: false }
+    },
     include: {
       permissoes: {
         include: { permissao: true },
@@ -27,6 +71,7 @@ router.get("/", requirePermission(PERMISSIONS.CARGO_READ), async (req, res) => {
     nome: c.nome,
     descricao: c.descricao ?? "",
     permissoes: c.permissoes.map((cp) => cp.permissao.nome),
+    defaultType: c.defaultType,
   }));
 
   res.json({ data: safeCargos, error: null });
@@ -63,6 +108,7 @@ router.get(
         descricao: cargo.descricao ?? "",
         createdAt: cargo.createdAt,
         permissoes: cargo.permissoes.map((cp) => cp.permissao.nome),
+        defaultType: cargo.defaultType,
       },
       error: null,
     });
@@ -156,6 +202,14 @@ router.put(
 
     if (!cargo) {
       return res.status(404).json({ data: null, error: "Cargo not found" });
+    }
+
+    if (cargo.defaultType) {
+      return res.status(400).json({
+        message: "Não é possível atualizar um cargo padrão",
+        data: null,
+        error: "Cannot update a default cargo",
+      });
     }
 
     try {
@@ -260,6 +314,14 @@ router.delete(
 
     if (!cargo) {
       return res.status(404).json({ data: null, error: "Cargo not found" });
+    }
+
+    if (cargo.defaultType) {
+      return res.status(400).json({
+        message: "Não é possível eliminar um cargo padrão",
+        data: null,
+        error: "Cannot delete a default cargo",
+      });
     }
 
     try {

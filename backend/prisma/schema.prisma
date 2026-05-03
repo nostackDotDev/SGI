@@ -36,6 +36,7 @@ model Departamento {
   id        Int     @id @default(autoincrement())
   nome      String
   descricao String?
+  defaultType Boolean? @default(false)
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -54,6 +55,7 @@ model Sala {
   id         Int    @id @default(autoincrement())
   numeroSala String
   tipoSala   String
+  defaultType Boolean? @default(false)
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -76,6 +78,7 @@ model Cargo {
   id        Int     @id @default(autoincrement())
   nome      String
   descricao String?
+  defaultType Boolean? @default(false)
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -97,6 +100,7 @@ model Utilizador {
   email     String  @unique
   password  String
   descricao String?
+  defaultType Boolean? @default(false)
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -152,6 +156,7 @@ model Categoria {
   id        Int     @id @default(autoincrement())
   nome      String
   descricao String?
+  defaultType Boolean? @default(false)
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -190,7 +195,7 @@ model Item {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  serialNumber String? @unique
+  serialNumber String?
 
   categoriaId Int?
   categoria   Categoria? @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
@@ -216,6 +221,8 @@ model Registo {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
+  type      String
+  reason    String?
 
   itemId Int
   item   Item @relation(fields: [itemId], references: [id], onDelete: Restrict)
@@ -225,7 +232,11 @@ model Registo {
   instituicaoId Int
   instituicao   Instituicao @relation(fields: [instituicaoId], references: [id], onDelete: Restrict)
 
+  instituicaoId Int
+  instituicao   Instituicao @relation(fields: [instituicaoId], references: [id], onDelete: Restrict)
+
   @@index([deletedAt])
   @@index([itemId, createdAt])
   @@index([utilizadorId, createdAt])
+  @@index([type, utilizadorId])
 }
