@@ -20,15 +20,17 @@ const app = express();
 const port = process.env.PORT || 8001;
 dotenv.config();
 
-const allowedOrigins = [process.env.FRONTEND_URL];
+const allowedOrigins =
+  process.env.FRONTEND_URLS?.split(",").map((origin) => origin.trim())
+    .filter(Boolean);
 
 const corsOptions = {
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
+      return callback(null, true);
     }
+    return callback(new Error("Not allowed by CORS"));
+
   },
   credentials: true,
   optionsSuccessStatus: 200,

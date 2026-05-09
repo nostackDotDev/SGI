@@ -227,8 +227,10 @@ model Registo {
   itemId Int
   item   Item @relation(fields: [itemId], references: [id], onDelete: Restrict)
 
-  utilizadorId Int
-  utilizador   Utilizador @relation(fields: [utilizadorId], references: [id], onDelete: Restrict)
+  utilizadorId  Int
+  utilizador    Utilizador  @relation(fields: [utilizadorId], references: [id], onDelete: Restrict)
+  instituicaoId Int
+  instituicao   Instituicao @relation(fields: [instituicaoId], references: [id], onDelete: Restrict)
 
   instituicaoId Int
   instituicao   Instituicao @relation(fields: [instituicaoId], references: [id], onDelete: Restrict)
