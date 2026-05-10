@@ -5,7 +5,7 @@
 
 */
 -- AlterTable
-ALTER TABLE `registo` ADD COLUMN `type` VARCHAR(191) NOT NULL;
+ALTER TABLE `Registo` ADD COLUMN `type` VARCHAR(191) NOT NULL;
 
 -- CreateIndex
 CREATE INDEX `Registo_type_utilizadorId_idx` ON `Registo`(`type`, `utilizadorId`);

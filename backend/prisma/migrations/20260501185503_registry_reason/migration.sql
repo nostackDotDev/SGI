@@ -1,2 +1,2 @@
 -- AlterTable
-ALTER TABLE `registo` ADD COLUMN `reason` VARCHAR(191) NULL;
+ALTER TABLE `Registo` ADD COLUMN `reason` VARCHAR(191) NULL;

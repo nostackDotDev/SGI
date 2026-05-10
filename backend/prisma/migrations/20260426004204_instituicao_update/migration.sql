@@ -6,7 +6,7 @@
 
 */
 -- AlterTable
-ALTER TABLE `instituicao` ADD COLUMN `email` VARCHAR(191) NULL,
+ALTER TABLE `Instituicao` ADD COLUMN `email` VARCHAR(191) NULL,
     ADD COLUMN `nif` VARCHAR(191) NULL,
     ADD COLUMN `telefone` VARCHAR(191) NULL;
 
