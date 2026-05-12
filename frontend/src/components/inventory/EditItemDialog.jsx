@@ -51,6 +51,7 @@ export function EditItemDialog({
   status,
   localizacoes,
   item,
+  onSuccess,
 }) {
   const [formData, setFormData] = useState(initialFormData);
   const [isLoading, setIsLoading] = useState(false);
@@ -95,6 +96,7 @@ export function EditItemDialog({
           condicaoId: formData.condicaoId,
           salaId: formData.salaId,
         },
+        refreshKey: "items",
       },
       (res) => {
         console.log(res);
@@ -107,6 +109,7 @@ export function EditItemDialog({
           });
           return;
         }
+        onSuccess?.();
         toast.success(res.message ?? "Item atualizado com sucesso!", {
           id: "fetch-toast",
           position: "bottom-right",

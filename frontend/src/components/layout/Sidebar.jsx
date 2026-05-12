@@ -1,101 +1,179 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   LayoutDashboard,
   Package,
-  ArrowLeftRight,
+  ArrowRightLeft,
   BarChart3,
   Users,
   Settings,
-  ChevronLeft,
-  Box,
+  Zap,
+  ChevronDown,
+  User,
+  LogOut,
 } from "lucide-react";
-import { cn } from "../../lib/utils";
-import { Button } from "../ui/button";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarHeader,
+  SidebarFooter,
+  useSidebar,
+} from "@/components/ui/sidebar";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/core/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { Button } from "../ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 const navItems = [
-  { icon: LayoutDashboard, label: "Início", path: "/inicio" },
-  { icon: Package, label: "Inventário", path: "/inventario" },
-  { icon: ArrowLeftRight, label: "Movimentações", path: "/movimentacoes" },
-  { icon: BarChart3, label: "Relatórios", path: "/relatorios" },
-  { icon: Users, label: "Usuários", path: "/usuarios" },
-  { icon: Settings, label: "Configurações", path: "/configuracoes" },
+  { title: "Início", url: "/inicio", icon: LayoutDashboard },
+  { title: "Inventário", url: "/inventario", icon: Package },
+  { title: "Movimentações", url: "/movimentacoes", icon: ArrowRightLeft },
+  { title: "Relatórios", url: "/relatorios", icon: BarChart3 },
+  { title: "Usuários", url: "/usuarios", icon: Users },
+  { title: "Definições", url: "/configuracoes", icon: Settings },
 ];
 
-export function Sidebar({ collapsed, onToggle }) {
-  const location = useLocation();
-  const { user } = useAuth();
+export function AppSidebar() {
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+  };
+
+  const { state } = useSidebar();
+  const collapsed = state === "collapsed";
+  const currentPath = useLocation().pathname;
+
+  const isActive = (path) =>
+    path === "/" ? currentPath === "/" : currentPath.startsWith(path);
+
+  const initials = user?.nome
+    ? user.nome
+        .split(" ")
+        .map((item) => item[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+    : "US";
 
   return (
-    <>
-      {/* Mobile overlay */}
-      <div
-        className={cn(
-          "fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm lg:hidden transition-opacity duration-300",
-          collapsed ? "opacity-0 pointer-events-none" : "opacity-100",
-        )}
-        onClick={onToggle}
-      />
-
-      {/* Sidebar */}
-      <aside
-        className={cn(
-          "fixed top-0 left-0 z-50 h-full bg-sidebar-background border-r border-sidebar-border transition-all duration-300 ease-in-out",
-          collapsed
-            ? "-translate-x-full lg:translate-x-0 lg:w-18"
-            : "translate-x-0 w-64",
-        )}
-      >
-        {/* Logo */}
-        <div className="h-16 flex items-center justify-start px-4 border-b border-sidebar-border gap-2">
-          <div className="flex items-center gap-3">
-            <i className="block mx-auto w-fit h-fit p-1 rounded-sm text-muted-foreground">
-              <img src="/logo.png" className="w-12 aspect-auto" alt="IPIKK" />
-            </i>
-            {!collapsed && (
-              <span className="font-semibold text-foreground animate-slide-in italic">
-                {user.instituicao.nome ?? "Instituição"}
-              </span>
-            )}
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="p-4">
+        <Link to="/" className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary">
+            <Zap className="h-4 w-4 text-white" />
           </div>
-        </div>
+          {!collapsed && (
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="font-heading text-sm font-semibold text-foreground"
+            >
+              IPIKK
+            </motion.span>
+          )}
+        </Link>
+      </SidebarHeader>
 
-        {/* Navigation */}
-        <nav className="p-3 space-y-1">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all duration-200",
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
-                )}
-                title={item.label}
-              >
-                <item.icon
-                  className={cn("w-5 h-5 shrink-0", isActive && "text-primary")}
-                />
-                {!collapsed && (
-                  <span className="animate-slide-in">{item.label}</span>
-                )}
-              </NavLink>
-            );
-          })}
-        </nav>
+      <SidebarContent className="px-2">
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navItems.map((item) => {
+                const active = isActive(item.url);
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={active}
+                      className={
+                        active
+                          ? "bg-primary/10 text-primary hover:bg-primary/15"
+                          : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                      }
+                    >
+                      <Link to={item.url} className="flex items-center gap-2.5">
+                        <item.icon className="h-4 w-4" />
+                        {!collapsed && (
+                          <span className="text-sm">{item.title}</span>
+                        )}
+                        {active && !collapsed && (
+                          <motion.div
+                            layoutId="sidebar-active"
+                            className="absolute left-0 h-6 w-0.5 rounded-r gradient-primary"
+                          />
+                        )}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
 
-        {/* Footer */}
-        {!collapsed && (
-          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-sidebar-border">
-            <div className="text-xs text-muted-foreground text-center">
-              &copy; 2026 SGI
+      <SidebarFooter className="p-4">
+        {/* User menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="flex gap-2 items-center justify-start cursor-pointer py-6 px-2"
+            >
+              <Avatar className="w-8 h-8">
+                <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svgseeadmin" />
+                <AvatarFallback>{initials}</AvatarFallback>
+              </Avatar>
+              {!collapsed && (
+                <span className="hidden sm:inline-block font-medium">
+                  {user?.nome ?? "Usuário"}
+                </span>
+              )}
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <div className="px-3 py-2">
+              <p className="font-medium">{user?.cargo ?? "Cargo"}</p>
+              <p className="text-sm text-muted-foreground">
+                {user?.email ?? ""}
+              </p>
             </div>
-          </div>
-        )}
-      </aside>
-    </>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="cursor-pointer">
+              <User className="w-4 h-4 mr-2" />
+              Perfil
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => (window.location.href = "/configuracoes")}
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Configurações
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="cursor-pointer text-destructive hover:bg-destructive/90 hover:text-muted"
+              onClick={handleLogout}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SidebarFooter>
+    </Sidebar>
   );
 }

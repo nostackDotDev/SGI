@@ -20,6 +20,7 @@ import {
   BookSearch,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 const statusConfig = {
   1: {
@@ -138,7 +139,12 @@ export function InventoryTable({
   }, [filters, mockItems]);
 
   return (
-    <div className="bg-card rounded-xl border border-border shadow-card overflow-hidden grid grid-rows-[1fr_auto] animate-in duration-300 ease-in">
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.2 }}
+      className="rounded-xl border border-border overflow-hidden grid grid-rows-[1fr_auto] glass-card"
+    >
       <div className="overflow-auto relative no-scrollbar flex flex-col">
         <table className="w-full min-w-3xl table-fixed text-sm">
           <colgroup>
@@ -150,8 +156,8 @@ export function InventoryTable({
             {/* <col className="w-21" /> */}
             <col className="w-32" />
           </colgroup>
-          <thead className="sticky top-0 z-10 text-lg bg-card">
-            <tr className="bg-secondary/50">
+          <thead className="sticky top-0 z-10 bg-card backdrop-blur-2xl shadow-xs">
+            <tr className="border-b border-border/40">
               <td>
                 <Checkbox
                   className="mx-auto cursor-pointer"
@@ -162,33 +168,41 @@ export function InventoryTable({
                   onCheckedChange={toggleSelectAll}
                 />
               </td>
-              <td className="py-2 font-semibold">Nome</td>
-              <td className="py-2 font-semibold truncate">Categoria</td>
-              <td className="py-2 font-semibold text-center">Status</td>
-              <td className="py-2 font-semibold truncate text-center">
+              <td className="py-3 px-5 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+                Nome
+              </td>
+              <td className="py-3 px-5 text-sm font-medium uppercase tracking-wider text-muted-foreground truncate">
+                Categoria
+              </td>
+              <td className="py-3 px-5 text-sm font-medium uppercase tracking-wider text-muted-foreground text-center">
+                Status
+              </td>
+              <td className="py-3 px-5 text-sm font-medium uppercase tracking-wider text-muted-foreground truncate text-center">
                 Localização
               </td>
-              <td className="py-2 font-semibold text-center">Ações</td>
+              <td className="py-2 text-sm font-medium uppercase tracking-wider text-muted-foreground text-center">
+                Ações
+              </td>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {paginatedItems.map((item, index) => (
-              <tr
+              <motion.tr
                 key={index}
-                className={cn(
-                  "animate-fade-in transition-colors hover:bg-accent/20 even:bg-accent/10",
-                  selectedItems.includes(item.id) && "bg-accent/30",
-                )}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.25 + index * 0.03 }}
+                className="group transition-colors hover:bg-accent/20 even:bg-accent/10"
                 style={{ animationDelay: `${index * 30}ms` }}
               >
-                <td className="py-2">
+                <td className="py-2 px-5">
                   <Checkbox
                     className="mx-auto cursor-pointer"
                     checked={selectedItems.includes(item.id)}
                     onCheckedChange={() => toggleSelectItem(item.id)}
                   />
                 </td>
-                <td className="py-2">
+                <td className="py-2 px-5">
                   <div>
                     <p className="font-medium truncate">{item.nome}</p>
                     <p className="text-xs text-muted-foreground">
@@ -196,21 +210,23 @@ export function InventoryTable({
                     </p>
                   </div>
                 </td>
-                <td className="py-2 text-muted-foreground">
+                <td className="py-2 px-5 text-muted-foreground">
                   {item.category.label}
                 </td>
-                <td className="py-2 text-center">
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "font-medium",
-                      statusConfig[item.status.value]?.className,
-                    )}
-                  >
-                    {item.status.label}
-                  </Badge>
+                <td className="py-2 px-5">
+                  <div className="flex items-center justify-center">
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "font-medium",
+                        statusConfig[item.status.value]?.className,
+                      )}
+                    >
+                      {item.status.label}
+                    </Badge>
+                  </div>
                 </td>
-                <td className="py-2 text-muted-foreground text-center">
+                <td className="py-2 px-5 text-muted-foreground text-center">
                   {item.location.label}
                 </td>
                 <td className="py-2 pl-2 text-center">
@@ -244,7 +260,7 @@ export function InventoryTable({
                     </Button>
                   </div>
                 </td>
-              </tr>
+              </motion.tr>
             ))}
           </tbody>
         </table>
@@ -324,6 +340,6 @@ export function InventoryTable({
           </Button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

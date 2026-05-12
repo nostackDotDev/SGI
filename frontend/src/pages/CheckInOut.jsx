@@ -16,108 +16,27 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { BookSearch, Search, SearchX } from "lucide-react";
+import { BookSearch, CalendarIcon, Search, SearchX } from "lucide-react";
 import PageContainer from "@/components/layout/PageContainer";
 import CheckInOutTable from "@/components/checkInOut/CheckInOutTable";
-import { request } from "@/lib/request";
+import { refreshManager, request } from "@/lib/request";
 import Loader from "@/components/layout/Loader";
-
-// const mockMovements = [
-//   {
-//     id: "1",
-//     date: "2026-03-08",
-//     article: "Notebook Dell XPS 15",
-//     type: "entrada",
-//     quantity: 10,
-//     user: "João Silva",
-//     reason: "Entrega fornecedor",
-//   },
-//   {
-//     id: "2",
-//     date: "2026-03-07",
-//     article: 'Monitor LG 27"',
-//     type: "saida",
-//     quantity: 3,
-//     user: "Maria Santos",
-//     reason: "Distribuição escritório",
-//   },
-//   {
-//     id: "3",
-//     date: "2026-03-05",
-//     article: "Teclado Mecânico",
-//     type: "saida",
-//     quantity: 5,
-//     user: "João Silva",
-//     reason: "Transferência filial",
-//   },
-//   {
-//     id: "4",
-//     date: "2026-03-09",
-//     article: "Mouse Wireless",
-//     type: "saida",
-//     quantity: 2,
-//     user: "Pedro Costa",
-//     reason: "Empréstimo equipe",
-//   },
-//   {
-//     id: "5",
-//     date: "2026-03-03",
-//     article: "Webcam HD",
-//     type: "entrada",
-//     quantity: 15,
-//     user: "Maria Santos",
-//     reason: "Compra novo estoque",
-//   },
-//   {
-//     id: "6",
-//     date: "2026-03-08",
-//     article: "Headset Profissional",
-//     type: "entrada",
-//     quantity: 20,
-//     user: "Ana Oliveira",
-//     reason: "Reabastecimento",
-//   },
-//   {
-//     id: "7",
-//     date: "2026-03-09",
-//     article: "Cabo HDMI 2m",
-//     type: "saida",
-//     quantity: 10,
-//     user: "João Silva",
-//     reason: "Uso semanal",
-//   },
-//   {
-//     id: "8",
-//     date: "2026-03-01",
-//     article: "Adaptador USB-C",
-//     type: "saida",
-//     quantity: 1,
-//     user: "Pedro Costa",
-//     reason: "Reparo",
-//   },
-//   {
-//     id: "9",
-//     date: "2026-03-06",
-//     article: 'Monitor LG 27"',
-//     type: "entrada",
-//     quantity: 8,
-//     user: "Ana Oliveira",
-//     reason: "Entrega fornecedor",
-//   },
-//   {
-//     id: "10",
-//     date: "2026-03-02",
-//     article: "Notebook Dell XPS 15",
-//     type: "saida",
-//     quantity: 1,
-//     user: "Maria Santos",
-//     reason: "Fora de serviço",
-//   },
-// ];
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 export default function CheckInOut() {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [dateRange, setDateRange] = useState(undefined);
   const [records, setRecords] = useState(null);
 
   const refreshRecords = () => {
@@ -132,7 +51,11 @@ export default function CheckInOut() {
     );
   };
 
-  useEffect(() => refreshRecords(), []);
+  useEffect(() => {
+    refreshManager.register("registos", refreshRecords);
+    refreshRecords();
+    return () => refreshManager.unregister("registos");
+  }, []);
 
   return (
     <PageContainer className="grid grid-rows-[auto_1fr] gap-6">
@@ -145,27 +68,78 @@ export default function CheckInOut() {
 
       <div className="flex flex-col gap-4 overflow-hidden">
         {/* Filters */}
-        <div className="card-elevated p-6 flex flex-col sm:flex-row gap-4 px-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Pesquisar por item, data ou utilizador..."
-              className="pl-9 h-11"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+        <div className="card-elevated p-6 flex flex-col sm:flex-row sm:items-end gap-4 px-4">
+          <div className="space-y-2 flex-1">
+            <Label htmlFor="search-filter">Pesquisar</Label>
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                id="search-filter"
+                placeholder="Pesquisar por item, data ou utilizador..."
+                className="pl-9 h-11 w-full"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
           </div>
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-full sm:w-45 py-5">
-              <SelectValue placeholder="Todos os tipos" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os tipos</SelectItem>
-              <SelectItem value="in">Entradas</SelectItem>
-              <SelectItem value="out">Saídas</SelectItem>
-              <SelectItem value="transfer">Transferências</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="space-y-2">
+            <Label htmlFor="type-filter">Tipo</Label>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger id="type-filter" className="w-full sm:w-45 py-5">
+                <SelectValue placeholder="Todos os tipos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os tipos</SelectItem>
+                <SelectItem value="in">Entradas</SelectItem>
+                <SelectItem value="out">Saídas</SelectItem>
+                <SelectItem value="transfer">Transferências</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {/* Date Range */}
+          <div className="space-y-2">
+            <Label htmlFor="date-filter">Período</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  id="date-filter"
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal py-5",
+                    !dateRange && "text-muted-foreground",
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateRange?.from ? (
+                    dateRange.to ? (
+                      <>
+                        {format(dateRange.from, "dd/MM/yy", { locale: ptBR })} -{" "}
+                        {format(dateRange.to, "dd/MM/yy", { locale: ptBR })}
+                      </>
+                    ) : (
+                      format(dateRange.from, "PPP", { locale: ptBR })
+                    )
+                  ) : (
+                    "Selecione o período"
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="center">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={dateRange?.from}
+                  selected={dateRange}
+                  onSelect={setDateRange}
+                  numberOfMonths={2}
+                  locale={ptBR}
+                  showOutsideDays={false}
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
 
         {/* Table */}
@@ -176,6 +150,7 @@ export default function CheckInOut() {
               searchTerm,
               type: typeFilter,
             }}
+            pageSize={15}
           />
         ) : (
           <Loader />

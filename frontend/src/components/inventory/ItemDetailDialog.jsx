@@ -52,7 +52,14 @@ const mockHistory = [
   { type: "check-in", user: "Pedro Costa", date: "01/12/2024", notes: "" },
 ];
 
-export function ItemDetailDialog({ open, onOpenChange, item, onEdit }) {
+export function ItemDetailDialog({
+  open,
+  onOpenChange,
+  item,
+  onRegisterDeletion,
+  onRegisterCheckout,
+  onRegisterCheckin,
+}) {
   if (!item) return null;
 
   return (
@@ -156,18 +163,32 @@ export function ItemDetailDialog({ open, onOpenChange, item, onEdit }) {
           {/* Actions */}
           <div className="flex gap-3">
             {item.status.value === 1 ? (
-              <Button className="flex-1">
+              <Button className="flex-1" onClick={onRegisterCheckout}>
                 <ArrowUpRight className="w-4 h-4 mr-2" />
                 Registrar Saída
               </Button>
             ) : item.status.value === 3 ? (
-              <Button variant="secondary" className="flex-1">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => {
+                  onOpenChange(false);
+                  onRegisterCheckin();
+                }}
+              >
                 <ArrowDownLeft className="w-4 h-4 mr-2" />
                 Registrar Devolução
               </Button>
             ) : null}
-            <Button variant="outline" onClick={onEdit} className="flex-1">
-              Editar Item
+            <Button
+              variant="destructive"
+              onClick={() => {
+                onOpenChange(false);
+                onRegisterDeletion();
+              }}
+              className="flex-1"
+            >
+              Registrar Remoção
             </Button>
           </div>
         </div>

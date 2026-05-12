@@ -55,13 +55,10 @@ router.get(
         type: reg.type,
         date: reg.createdAt,
         reason: reg.reason,
+        quantidade: reg.quantidade,
         item: {
           id: reg.item.id,
           nome: reg.item.nome,
-          descricao: reg.item.descricao ?? "",
-          quantidade: reg.item.quantidade,
-          categoriaId: reg.item.categoriaId,
-          salaId: reg.item.salaId,
         },
         utilizador: {
           id: reg.utilizador.id,
@@ -95,21 +92,18 @@ router.get(
 
     res.json({
       data: {
-        id: registo.id,
-        type: registo.type,
-        date: registo.createdAt,
-        reason: registo.reason,
+        id: reg.id,
+        type: reg.type,
+        date: reg.createdAt,
+        reason: reg.reason,
+        quantidade: reg.quantidade,
         item: {
-          id: registo.item.id,
-          nome: registo.item.nome,
-          descricao: registo.item.descricao ?? "",
-          quantidade: registo.item.quantidade,
-          categoriaId: registo.item.categoriaId,
-          salaId: registo.item.salaId,
+          id: reg.item.id,
+          nome: reg.item.nome,
         },
         utilizador: {
-          id: registo.utilizador.id,
-          nome: registo.utilizador.nome,
+          id: reg.utilizador.id,
+          nome: reg.utilizador.nome,
         },
       },
       error: null,

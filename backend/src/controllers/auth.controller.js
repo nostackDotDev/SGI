@@ -64,7 +64,7 @@ export async function loginController(req, res) {
     console.error("Signup error:", error);
     const { status, message } = handlePrismaError(error);
     return res.status(status).json({
-      message,
+      message: "Ocorreu um erro inesperado. Por favor, tente novamente",
       data: null,
       error: "Server responded with a status: " + status + "\n" + error,
     });

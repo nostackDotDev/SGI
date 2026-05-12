@@ -1,5 +1,16 @@
 import prisma from "../lib/prisma.js";
 
+const VALID_MOVEMENT_TYPES = [
+  "in",
+  "out",
+  "transfer",
+  "return",
+  "reduction",
+  "exit",
+  "borrow",
+  "repair",
+];
+
 export class RecordService {
   /**
    * Create a new movement registry
@@ -19,6 +30,8 @@ export class RecordService {
     type: string;
     reason?: string;
   }) {
+    this.validateMovementType(type);
+
     return prisma.registo.create({
       data: {
         quantidade,
@@ -29,5 +42,23 @@ export class RecordService {
         reason,
       },
     });
+  }
+
+  /**
+   * Validate that the movement type is supported
+   */
+  static validateMovementType(type: string): void {
+    if (!VALID_MOVEMENT_TYPES.includes(type)) {
+      throw new Error(
+        `Tipo de movimento inválido. Tipos suportados: ${VALID_MOVEMENT_TYPES.join(", ")}`,
+      );
+    }
+  }
+
+  /**
+   * Get valid movement types
+   */
+  static getValidMovementTypes(): string[] {
+    return VALID_MOVEMENT_TYPES;
   }
 }

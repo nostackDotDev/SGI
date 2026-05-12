@@ -26,6 +26,7 @@ import Users from "./pages/Users";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
+import { SidebarProvider } from "./components/ui/sidebar";
 
 const router = createBrowserRouter([
   {
@@ -79,7 +80,9 @@ const router = createBrowserRouter([
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <AuthProvider>
-      <RouterProvider router={router} />
+      <SidebarProvider>
+        <RouterProvider router={router} />
+      </SidebarProvider>
     </AuthProvider>
     <Toaster closeButton />
   </StrictMode>,

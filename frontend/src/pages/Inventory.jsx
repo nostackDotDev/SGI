@@ -8,12 +8,16 @@ import { refreshManager, request } from "@/lib/request";
 import { EditItemDialog } from "@/components/inventory/EditItemDialog";
 import DeleteDialog from "@/components/common/DeleteDialog";
 import Loader from "@/components/layout/Loader";
+import { RegisterReturnDialog } from "@/components/inventory/RegisterReturnDialog";
+import { RegisterRemovalDialog } from "@/components/inventory/RegisterRemovalDialog";
 
 export default function Inventory() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [registerReturnOpen, setRegisterReturnOpen] = useState(false);
+  const [registerExitOpen, setRegisterExitOpen] = useState(false);
 
   const [selectedItem, setSelectedItem] = useState(null);
 
@@ -30,7 +34,7 @@ export default function Inventory() {
   const [items, setItems] = useState(null);
   const [reason, setReason] = useState("");
 
-  const fetchItems = () => {
+  const refreshItems = () => {
     request(
       "/item",
       "GET",
@@ -58,7 +62,7 @@ export default function Inventory() {
         },
       },
       () => {
-        fetchItems();
+        refreshItems();
       },
       (err) => {
         console.error(err);
@@ -67,18 +71,16 @@ export default function Inventory() {
   };
 
   useEffect(() => {
-    const refreshItems = () => {
-      request(
-        "/categoria",
-        "GET",
-        {},
-        (data) => setCategories(data.data || []),
-        (err) => {
-          setCategories([]);
-          console.error(err);
-        },
-      );
-    };
+    request(
+      "/categoria",
+      "GET",
+      {},
+      (data) => setCategories(data.data || []),
+      (err) => {
+        setCategories([]);
+        console.error(err);
+      },
+    );
 
     refreshManager.register("items", refreshItems);
     refreshItems();
@@ -104,7 +106,9 @@ export default function Inventory() {
       },
     );
 
-    fetchItems();
+    return () => {
+      refreshManager.unregister("items", refreshItems);
+    };
   }, []);
 
   return (
@@ -171,7 +175,7 @@ export default function Inventory() {
         categorias={categories}
         status={statusOptions}
         localizacoes={locations}
-        onSuccess={fetchItems}
+        onSuccess={refreshItems}
       />
       <EditItemDialog
         open={editDialogOpen}
@@ -181,15 +185,29 @@ export default function Inventory() {
         categorias={categories}
         status={statusOptions}
         localizacoes={locations}
+        onSuccess={refreshItems}
       />
       <ItemDetailDialog
+        key={selectedItem?.id ?? undefined}
         open={detailDialogOpen}
         onOpenChange={setDetailDialogOpen}
         item={selectedItem}
-        onEdit={() => {
-          setDetailDialogOpen(false);
-          setEditDialogOpen(true);
-        }}
+        onRegisterCheckin={() => setRegisterReturnOpen(true)}
+        onRegisterCheckout={() => {}}
+        onRegisterDeletion={() => setRegisterExitOpen(true)}
+      />
+      <RegisterReturnDialog
+        open={registerReturnOpen}
+        onOpenChange={setRegisterReturnOpen}
+        item={selectedItem}
+        localizacoes={locations}
+        onSuccess={refreshItems}
+      />
+      <RegisterRemovalDialog
+        open={registerExitOpen}
+        onOpenChange={setRegisterExitOpen}
+        item={selectedItem}
+        onSuccess={refreshItems}
       />
       <DeleteDialog
         open={deleteDialogOpen}
