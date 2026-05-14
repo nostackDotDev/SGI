@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -32,74 +32,91 @@ import {
   TrendingUp,
   AlertTriangle,
   Search,
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { cn, syncScroll } from "@/lib/utils";
+import { ptBR, se } from "date-fns/locale";
+import { cn, formatDate, syncScroll } from "@/lib/utils";
 import PageContainer from "@/components/layout/PageContainer";
+import { request } from "@/lib/request";
+import { toast } from "sonner";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import { ReportPDFDocument } from "@/components/reports/ReportPDFDocument";
+import { useAuth } from "@/core/contexts/AuthContext";
 
 const reportTypes = [
-  { value: "inventory", label: "Resumo do Inventário", icon: Package },
+  { value: "inventory_summary", label: "Resumo do Inventário", icon: Package },
   // { value: "usage", label: "Histórico de Uso", icon: TrendingUp },
   // { value: "low-stock", label: "Estoque Baixo", icon: AlertTriangle },
 ];
 
-const mockReportData = [
-  {
-    category: "Eletrônicos",
-    total: 45,
-    available: 38,
-    checkedOut: 5,
-    maintenance: 2,
-  },
-  {
-    category: "Periféricos",
-    total: 120,
-    available: 105,
-    checkedOut: 12,
-    maintenance: 3,
-  },
-  {
-    category: "Áudio",
-    total: 30,
-    available: 25,
-    checkedOut: 4,
-    maintenance: 1,
-  },
-  {
-    category: "Cabos",
-    total: 200,
-    available: 180,
-    checkedOut: 15,
-    maintenance: 5,
-  },
-  {
-    category: "Adaptadores",
-    total: 80,
-    available: 72,
-    checkedOut: 6,
-    maintenance: 2,
-  },
-];
-
 export default function Reports() {
+  const { user, institution } = useAuth();
+  const [report, setReport] = useState(null);
   const [reportType, setReportType] = useState("none");
   const [dateRange, setDateRange] = useState(undefined);
   const [canGenerateReport, setCanGenerateReport] = useState(false);
-
+  const [isReportLoading, setIsReportLoading] = useState(false);
   const topScrollRef = useRef(null);
   const bottomScrollRef = useRef(null);
+  const pdfLinkRef = useRef(null);
 
+  const canGenerate = useMemo(
+    () => reportType !== "none" && dateRange,
+    [reportType, dateRange],
+  );
+
+  const generateReport = () => {
+    setIsReportLoading(true);
+    request(
+      "/relatorio/create",
+      "POST",
+      {
+        data: {
+          type: reportType,
+          startDate: dateRange.from,
+          endDate: dateRange.to,
+        },
+      },
+      (res) => {
+        setReport(res.data || null);
+        setIsReportLoading(false);
+        toast.success(res.message || "Relatório gerado com sucesso", {
+          id: "fetch-toast",
+          position: "bottom-right",
+        });
+      },
+      (err) => {
+        console.error(err);
+        setIsReportLoading(false);
+        toast.error(err?.message || "Ocorreu um erro ao gerar o relatório", {
+          id: "fetch-toast",
+          position: "bottom-right",
+        });
+        setReport(report ?? null);
+      },
+    );
+  };
   useEffect(() => {
     const f = () => {
       setCanGenerateReport(false);
-      if (reportType !== "none" && dateRange !== undefined) {
+
+      if (canGenerate) {
         setCanGenerateReport(true);
         return;
       }
+
+      if (reportType === "none") setReport(null);
+      return;
     };
     f();
-  }, [reportType, dateRange]);
+  }, [canGenerate]);
+
+  const reportDisabled = useMemo(() => {
+    if (isReportLoading) return true;
+    if (!report) return true;
+    return false;
+  }, [isReportLoading, report]);
 
   return (
     <PageContainer className="grid grid-rows-[auto_auto_1fr] gap-6">
@@ -184,7 +201,11 @@ export default function Reports() {
           {/* Generate Button */}
           <div className="self-end space-y-2">
             {/* <Label className="invisible">Gerar</Label> */}
-            <Button className="w-full py-5" disabled={!canGenerateReport}>
+            <Button
+              className="w-full py-5"
+              disabled={!canGenerateReport}
+              onClick={generateReport}
+            >
               <BarChart3 className="w-4 h-4" />
               Gerar Relatório
             </Button>
@@ -196,34 +217,63 @@ export default function Reports() {
       <div className=" bg-card rounded-xl border border-border shadow-card flex flex-col min-h-120 overflow-hidden">
         <div className="w-full p-6 px-4 border-b border-border flex items-center justify-between">
           <div>
-            <h3 className="font-semibold text-lg">Resumo do Inventário</h3>
+            <h3 className="font-semibold text-lg">
+              {reportTypes.find((t) => t.value === reportType)?.label ||
+                "Tipo de Relatório"}
+            </h3>
             <p className="text-sm text-muted-foreground">
-              Gerado em{" "}
-              {format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+              Gerado em: {formatDate(report?.generatedAt) || "N/A"}
             </p>
           </div>
-          <div className="flex gap-2">
+          {report ? (
+            <PDFDownloadLink
+              document={
+                <ReportPDFDocument
+                  report={report}
+                  institution={user?.instituicao}
+                  user={user}
+                />
+              }
+              fileName={`relatorio_${report.id || "#"}.pdf`}
+              className="w-fit h-fit bg-transparent transition-transform hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {({ loading }) =>
+                loading ? (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="lg"
+                    disabled
+                    className="transition-transform px-6"
+                  >
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Gerando PDF...
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="lg"
+                    className="transition-transform px-6"
+                  >
+                    <FileText className="w-4 h-4" />
+                    Exportar PDF
+                  </Button>
+                )
+              }
+            </PDFDownloadLink>
+          ) : (
             <Button
               type="button"
-              variant="outline"
+              variant="destructive"
               size="lg"
               disabled
-              className="bg-destructive text-muted hover:bg-destructive hover:text-muted transition-transform hover:scale-105 px-6"
+              className="transition-transform px-6"
             >
               <FileText className="w-4 h-4" />
-              PDF
+              Exportar PDF
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              disabled
-              className="bg-success text-muted hover:bg-success hover:text-muted transition-transform hover:scale-105 px-6"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              Excel
-            </Button>
-          </div>
+          )}
         </div>
 
         <div className="flex flex-col flex-1 min-h-0 min-w-0">
@@ -247,22 +297,22 @@ export default function Reports() {
                 </tr>
               </thead>
               <tbody className="h-full">
-                {mockReportData.map((row, index) => (
+                {report?.categories.map((row, index) => (
                   <tr
                     key={index}
                     className="animate-fade-in transition-colors hover:bg-accent/20 even:bg-accent/10"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    <td className="font-medium py-3 px-4">{row.category}</td>
+                    <td className="font-medium py-3 px-4">{row.nome}</td>
                     <td className="text-right py-3">{row.total}</td>
                     <td className="text-right py-3 text-success">
                       {row.available}
                     </td>
                     <td className="text-right py-3 text-warning">
-                      {row.checkedOut}
+                      {row.borrowed}
                     </td>
                     <td className="text-right py-3 px-4 text-destructive">
-                      {row.maintenance}
+                      {row.repair}
                     </td>
                   </tr>
                 ))}
@@ -278,26 +328,15 @@ export default function Reports() {
               <thead>
                 <tr className="border-t border-border font-semibold bg-accent/30 hover:bg-accent/10">
                   <td className="py-4 px-4">Total Geral</td>
-                  <td className="text-right">
-                    {mockReportData.reduce((acc, row) => acc + row.total, 0)}
-                  </td>
+                  <td className="text-right">{report?.totals.total || 0}</td>
                   <td className="text-right text-success">
-                    {mockReportData.reduce(
-                      (acc, row) => acc + row.available,
-                      0,
-                    )}
+                    {report?.totals.available || 0}
                   </td>
                   <td className="text-right text-warning">
-                    {mockReportData.reduce(
-                      (acc, row) => acc + row.checkedOut,
-                      0,
-                    )}
+                    {report?.totals.borrowed || 0}
                   </td>
                   <td className="text-right px-4 text-destructive">
-                    {mockReportData.reduce(
-                      (acc, row) => acc + row.maintenance,
-                      0,
-                    )}
+                    {report?.totals.repair || 0}
                   </td>
                 </tr>
               </thead>
@@ -305,12 +344,12 @@ export default function Reports() {
           </div>
         </div>
 
-        <div className="p-4 self-end">
+        {/* <div className="p-4 self-end">
           <Button type="button" size="lg" className="py-6 px-4">
             <Download className="w-4 h-4 mr-2" />
             Exportar Relatório
           </Button>
-        </div>
+        </div> */}
       </div>
     </PageContainer>
   );

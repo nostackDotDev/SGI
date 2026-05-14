@@ -48,6 +48,7 @@ export const groupPermissionsByFeature = (permissions: string[]) => {
     INSTITUICAO: "Instituição",
     CONDICAO: "Condição",
     REGISTO: "Registos",
+    RELATORIO: "Relatórios",
   };
 
   // Determine access level for each feature

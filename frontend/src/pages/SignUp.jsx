@@ -92,8 +92,8 @@ export default function SignUp() {
   };
 
   return (
-    <main className="w-full h-full min-h-fit flex items-center justify-center gradient-primary py-4">
-      <section className="w-6xl max-w-[90vw] max-h-[94vh] min-h-fit rounded-xl card-elevated p-6 overflow-y-auto no-scrollbar">
+    <main className="flex-1 w-full min-h-screen h-fit flex items-center justify-center gradient-primary py-4">
+      <section className="w-6xl max-w-[90vw] max-h-[94vh] min-h-fit rounded-xl card-elevated p-6 overflow-y-auto no-scrollbar border border-border shadow-sm bg-card drop-shadow-2xl">
         <aside className="text-center pb-3">
           <i className="block mx-auto w-fit h-fit p-1 rounded-sm text-muted-foreground">
             <img src="/logo.png" className="w-30 aspect-auto" alt="IPIKK" />

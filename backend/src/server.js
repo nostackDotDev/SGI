@@ -13,6 +13,7 @@ import item_routes from "./routes/item.js";
 import registo_routes from "./routes/registo.js";
 import utilizador_routes from "./routes/utilizador.js";
 import condicao_routes from "./routes/condicao.js";
+import relatorio_routes from "./routes/relatorio.js";
 import authRoutes from "./routes/auth.routes.js";
 import { responseFormatter } from "./middlewares/responseFormatter.middleware.js";
 
@@ -54,6 +55,7 @@ app.use("/instituicao", instituicao_routes);
 app.use("/localizacao", localizacao_routes);
 app.use("/item", item_routes);
 app.use("/registo", registo_routes);
+app.use("/relatorio", relatorio_routes);
 app.use("/utilizador", utilizador_routes);
 app.use("/condicao", condicao_routes);
 

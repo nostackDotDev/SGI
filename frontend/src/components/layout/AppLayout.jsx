@@ -1,6 +1,5 @@
 import { Suspense, useEffect } from "react";
 import { Header } from "./Header";
-import { cn } from "@/lib/utils";
 import { useLocation, useNavigate } from "react-router-dom";
 import Loader from "./Loader";
 import { useAuth } from "@/core/contexts/AuthContext";

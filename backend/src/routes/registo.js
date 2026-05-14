@@ -53,8 +53,8 @@ router.get(
       data: registos.map((reg) => ({
         id: reg.id,
         type: reg.type,
-        date: reg.createdAt,
-        reason: reg.reason,
+        date: registo.createdAt,
+        reason: registo.reason,
         quantidade: reg.quantidade,
         item: {
           id: reg.item.id,
@@ -74,7 +74,7 @@ router.get(
   "/:id",
   requirePermission(PERMISSIONS.REGISTO_READ),
   async (req, res) => {
-    const registo = await prisma.registo.findUnique({
+    const registo = await prisma.registo.findFirst({
       where: {
         id: parseInt(req.params.id),
         utilizador: {
@@ -92,9 +92,9 @@ router.get(
 
     res.json({
       data: {
-        id: reg.id,
-        type: reg.type,
-        date: reg.createdAt,
+        id: registo.id,
+        type: registo.type,
+        date: registo.createdAt,
         reason: reg.reason,
         quantidade: reg.quantidade,
         item: {
@@ -123,7 +123,7 @@ router.post(
         .json({ data: null, error: "Todos os campos são obrigatórios" });
     }
 
-    const item = await prisma.item.findUnique({
+    const item = await prisma.item.findFirst({
       where: {
         id: itemId,
         sala: {
@@ -179,7 +179,7 @@ router.put(
       });
     }
 
-    const registo = await prisma.registo.findUnique({
+    const registo = await prisma.registo.findFirst({
       where: {
         id: parseInt(req.params.id),
         utilizador: {
@@ -193,7 +193,7 @@ router.put(
     }
 
     const item = itemId
-      ? await prisma.item.findUnique({
+      ? await prisma.item.findFirst({
           where: {
             id: itemId,
             sala: {
@@ -245,7 +245,7 @@ router.delete(
   "/:id",
   requirePermission(PERMISSIONS.REGISTO_DELETE),
   async (req, res) => {
-    const registo = await prisma.registo.findUnique({
+    const registo = await prisma.registo.findFirst({
       where: {
         id: parseInt(req.params.id),
         utilizador: {

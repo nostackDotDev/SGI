@@ -37,4 +37,6 @@ export const PERMISSION_LABELS: PermissionLabelMap = {
   REGISTO_CREATE: "Criar registos",
   REGISTO_UPDATE: "Atualizar registos",
   REGISTO_DELETE: "Excluir registos",
+  RELATORIO_READ: "Visualizar relatórios",
+  RELATORIO_CREATE: "Criar relatórios",
 };

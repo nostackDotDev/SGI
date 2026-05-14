@@ -70,8 +70,8 @@ export default function Login() {
   };
 
   return (
-    <main className="w-full h-full min-h-fit flex items-center justify-center gradient-primary py-4">
-      <section className="w-2xl max-w-[90vw] bg-card max-h-[94vh] min-h-fit rounded-xl p-6 overflow-y-auto no-scrollbar">
+    <main className="flex-1 w-full h-full min-h-fit flex items-center justify-center gradient-primary py-4">
+      <section className="w-2xl max-w-[90vw] max-h-[94vh] min-h-fit rounded-xl p-6 overflow-y-auto no-scrollbar border border-border shadow-sm bg-card drop-shadow-2xl">
         <aside className="text-center space-y-1">
           <i className="block mx-auto w-fit h-fit p-1 rounded-sm text-muted-foreground">
             <img src="/logo.png" className="w-30 aspect-auto" alt="IPIKK" />
@@ -89,7 +89,7 @@ export default function Login() {
             <label htmlFor="login-email" className="font-medium">
               E-mail
             </label>
-            <div className="w-full h-fit border border-accent rounded-md grid grid-cols-[auto_1fr] hover:shadow-xs shadow-muted-foreground/60 focus-within:border-primary transition-colors ease">
+            <div className="w-full h-fit border border-accent rounded-md grid grid-cols-[auto_1fr] shadow shadow-primary/30 focus-within:border-primary transition-colors ease">
               <i className="w-fit bg-transparent px-2 flex items-center justify-center">
                 <Mail className="w-4 h-4" />
               </i>
@@ -109,7 +109,7 @@ export default function Login() {
             <label htmlFor="login-password" className="font-medium">
               Senha
             </label>
-            <div className="w-full h-fit border border-accent rounded-md grid grid-cols-[auto_1fr_auto] hover:shadow-xs shadow-muted-foreground/60 focus-within:border-primary transition-colors ease relative">
+            <div className="w-full h-fit border border-accent rounded-md grid grid-cols-[auto_1fr_auto] shadow shadow-primary/30 focus-within:border-primary transition-colors ease relative">
               <i className="w-fit bg-transparent px-2 flex items-center justify-center">
                 <Lock className="w-4 h-4" />
               </i>
@@ -135,31 +135,18 @@ export default function Login() {
               </i>
             </div>
           </div>
-          <div className="h-fit flex items-center justify-between">
-            <div className="flex items-center justify-center gap-1">
-              <input
-                type="checkbox"
-                name="remeberUser"
-                id="rememberUser"
-                className="rounded-full text-success cursor-pointer"
-              />
-              <label htmlFor="rememberUser" className="cursor-pointer">
-                Lembrar-me
-              </label>
-            </div>
+          <div className="h-fit flex items-center justify-end">
             <span className="text-ring text-shadow-2xs cursor-pointer hover:underline">
               Esqueceu a senha?
             </span>
           </div>
-          {
-            <Link
-              to="/signup"
-              replace
-              className="-mt-5 text-right text-ring text-shadow-2xs cursor-pointer hover:underline"
-            >
-              Não possui uma conta? Criar conta
-            </Link>
-          }
+          {/* <Link
+            to="/signup"
+            replace
+            className="-mt-5 text-right text-ring text-shadow-2xs cursor-pointer hover:underline"
+          >
+            Não possui uma conta? Criar conta
+          </Link> */}
           <button
             type="submit"
             disabled={isLoading}
