@@ -26,6 +26,10 @@ const typeConfig = {
     label: "Restauração",
     className: "bg-primary/10 text-primary border-primary/20",
   },
+  exit: {
+    label: "Saída",
+    className: "bg-destructive/10 text-destructive border-destructive/20",
+  },
 };
 
 export default function CheckInOutTable({ data, filters, pageSize }) {

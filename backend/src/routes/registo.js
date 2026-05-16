@@ -160,6 +160,46 @@ router.get(
   },
 );
 
+router.get(
+  "/item/:id",
+  requirePermission(PERMISSIONS.REGISTO_READ),
+  async (req, res) => {
+    const registos = await prisma.registo.findMany({
+      where: {
+        utilizador: {
+          instituicaoId: req.tenantId,
+        },
+        itemId: parseInt(req.params.id),
+      },
+      include: {
+        item: true,
+        utilizador: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    if (!registos || registos.deletedAt)
+      return res.status(404).json({ data: null, error: "Registo not found" });
+
+    res.json({
+      data: registos.map((reg) => ({
+        id: reg.id,
+        type: reg.type,
+        date: reg.createdAt,
+        reason: reg.reason,
+        quantidade: reg.quantidade,
+        utilizador: {
+          id: reg.utilizador.id,
+          nome: reg.utilizador.nome,
+        },
+      })),
+      error: null,
+    });
+  },
+);
+
 router.post(
   "/create",
   requirePermission(PERMISSIONS.REGISTO_CREATE),

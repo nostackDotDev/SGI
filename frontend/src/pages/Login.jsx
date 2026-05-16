@@ -29,40 +29,33 @@ export default function Login() {
         data: formData,
       },
       (res) => {
-        if (res && !res.error) {
-          const user = { ...res.data.user, instituicao: res.data.instituicao };
-          setUser(user);
-          setFormData(initialData);
-          navigate("/");
-          toast.success(res.message ?? "Login realizado com sucesso!", {
+        console.log(res);
+        if (!res || res.error) {
+          console.log("Failed to login:", res.error);
+          toast.warning(res.message || "Ocorreu um erro ao fazer login", {
             id: "fetch-toast",
             position: "bottom-right",
           });
+          setIsLoading(false);
           return;
         }
-        toast.error(
-          res.message ||
-            "Ocorreu um erro inesperado. Por favor, tente novamente.",
-          {
-            id: "fetch-toast",
-            position: "bottom-right",
-          },
-        );
-        return;
+        const user = { ...res.data.user, instituicao: res.data.instituicao };
+        setUser(user);
+        toast.success(res.message || "Login realizado com sucesso", {
+          id: "fetch-toast",
+          position: "bottom-right",
+        });
+        setIsLoading(false);
       },
       (err) => {
-        toast.error(
-          err?.message ||
-            "Ocorreu um erro inesperado. Por favor, tente novamente.",
-          {
-            id: "fetch-toast",
-            position: "bottom-right",
-          },
-        );
+        console.error("Error logging in:", err?.message ?? err);
+        toast.error(err?.message || "Ocorreu um erro ao fazer login", {
+          id: "fetch-toast",
+          position: "bottom-right",
+        });
+        setIsLoading(false);
       },
     );
-
-    setIsLoading(false);
   };
 
   const handleInput = (field, value) => {
