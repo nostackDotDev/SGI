@@ -24,11 +24,18 @@ import { Badge } from "../ui/badge";
 
 const initialFormData = {
   id: undefined,
+  salaId: undefined,
   quantidade: undefined,
   reason: "",
 };
 
-export function RegisterRemovalDialog({ open, onOpenChange, item, onSuccess }) {
+export function RegisterRestoreDialog({
+  open,
+  onOpenChange,
+  localizacoes,
+  item,
+  onSuccess,
+}) {
   const [formData, setFormData] = useState(initialFormData);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -38,6 +45,7 @@ export function RegisterRemovalDialog({ open, onOpenChange, item, onSuccess }) {
         setFormData({
           id: item.id,
           quantidade: undefined,
+          salaId: undefined,
           reason: "",
         });
       } else {
@@ -56,31 +64,32 @@ export function RegisterRemovalDialog({ open, onOpenChange, item, onSuccess }) {
     setIsLoading(true);
 
     request(
-      `/item/exit/${item.id}`,
+      `/item/return/${item.id}`,
       "POST",
       {
         data: {
           quantidade: formData.quantidade
             ? Number(formData.quantidade)
             : undefined,
+          salaId: formData.salaId ? Number(formData.salaId) : undefined,
           reason: formData.reason || undefined,
-          transferType: "out",
+          transferType: "restore",
         },
         refreshKey: "items",
       },
       (res) => {
         console.log(res);
         if (!res || res.error) {
-          console.log("Failed to register exit:", res.error);
+          console.log("Failed to register restore:", res.error);
           setIsLoading(false);
-          toast.warning(res.message ?? "Falha ao registar remoção!", {
+          toast.warning(res.message ?? "Falha ao registar restauração!", {
             id: "fetch-toast",
             position: "bottom-right",
           });
           return;
         }
         onSuccess?.();
-        toast.success(res.message ?? "Remoção registada com sucesso!", {
+        toast.success(res.message ?? "Restauração registada com sucesso!", {
           id: "fetch-toast",
           position: "bottom-right",
         });
@@ -88,8 +97,8 @@ export function RegisterRemovalDialog({ open, onOpenChange, item, onSuccess }) {
         setIsLoading(false);
       },
       (err) => {
-        console.error("Error registering exit:", err?.message ?? err);
-        toast.error(err?.message ?? "Falha ao registar remoção!", {
+        console.error("Error registering restore:", err?.message ?? err);
+        toast.error(err?.message ?? "Falha ao registar restauração!", {
           id: "fetch-toast",
           position: "bottom-right",
         });
@@ -104,8 +113,13 @@ export function RegisterRemovalDialog({ open, onOpenChange, item, onSuccess }) {
   };
   const isDisabled =
     !formData.quantidade ||
-    Number(formData.quantidade) > item?.quantity ||
-    formData.reason?.trim()?.length < 3;
+    !formData.salaId ||
+    Number(formData.salaId) === item?.location.value ||
+    Number(formData.quantidade) > item?.quantity;
+
+  useEffect(() => {
+    console.log("Form data or item changed:", { formData, item });
+  }, [item, formData]);
 
   if (!item) return null;
 
@@ -113,16 +127,16 @@ export function RegisterRemovalDialog({ open, onOpenChange, item, onSuccess }) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-125 max-h-7/9 overflow-y-auto no-scrollbar">
         <DialogHeader className="">
-          <DialogTitle>Registar Remoção</DialogTitle>
+          <DialogTitle>Registar Restauração</DialogTitle>
           <DialogDescription>
-            Registar a remoção de {item.nome} do inventário
+            Registar a restauração de {item.nome} ao inventário
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <div className="flex items-center justify-between gap-2">
-                <Label htmlFor="quantity">Quantidade a remover</Label>
+                <Label htmlFor="quantity">Quantidade a restaurar</Label>
                 <Badge variant="secondary" className="px-2 py-3">
                   Disponível: {item.quantity}
                 </Badge>
@@ -142,13 +156,38 @@ export function RegisterRemovalDialog({ open, onOpenChange, item, onSuccess }) {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="reason">Motivo</Label>
+              <Label htmlFor="location">Devolver para</Label>
+              <Select
+                value={String(formData.salaId ?? "")}
+                onValueChange={(value) => handleInputChange("salaId", value)}
+              >
+                <SelectTrigger className="w-full" required>
+                  <SelectValue placeholder="Selecionar local" />
+                </SelectTrigger>
+                <SelectContent>
+                  {localizacoes.length ? (
+                    localizacoes.map((c, i) => (
+                      <SelectItem key={i} value={String(c.id)}>
+                        {c.nome}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <>
+                      <SelectItem key={0} value={undefined}>
+                        Falha ao carregar
+                      </SelectItem>
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="reason">Motivo (opcional)</Label>
               <Textarea
                 id="reason"
                 placeholder="Ex: Devolvido em bom estado, sem danos"
                 value={formData.reason}
-                required
-                minLength={3}
                 onChange={(e) =>
                   handleInputChange("reason", e.currentTarget.value)
                 }
@@ -167,7 +206,7 @@ export function RegisterRemovalDialog({ open, onOpenChange, item, onSuccess }) {
               disabled={isLoading || isDisabled}
               className=""
             >
-              Registar remoção
+              Registar Restauração
             </Button>
           </DialogFooter>
         </form>

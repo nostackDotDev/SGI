@@ -27,8 +27,9 @@ router.get(
     // If date range is invalid, return empty array
     if (isInvalid) {
       return res.json({
+        message: "Período inválido",
         data: [],
-        error: null,
+        error: "Invalid date range",
       });
     }
 
@@ -50,11 +51,59 @@ router.get(
     });
 
     res.json({
+      message: "Registos carregados com sucesso",
       data: registos.map((reg) => ({
         id: reg.id,
         type: reg.type,
-        date: registo.createdAt,
-        reason: registo.reason,
+        date: reg.createdAt,
+        reason: reg.reason,
+        quantidade: reg.quantidade,
+        item: {
+          id: reg.item.id,
+          nome: reg.item.nome,
+        },
+        utilizador: {
+          id: reg.utilizador.id,
+          nome: reg.utilizador.nome,
+        },
+      })),
+      // filters: {
+      //   startDate: parsedStart ?? undefined,
+      //   endDate: parsedEnd ?? undefined,
+      // },
+      error: null,
+    });
+  },
+);
+
+router.get(
+  "/latest",
+  requirePermission(PERMISSIONS.REGISTO_READ),
+  async (req, res) => {
+    const registos = await prisma.registo.findMany({
+      where: {
+        deletedAt: null,
+        utilizador: {
+          instituicaoId: req.tenantId,
+        },
+      },
+      include: {
+        item: true,
+        utilizador: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 10,
+    });
+
+    res.json({
+      message: "Últimas movimentações carregadas com sucesso",
+      data: registos.map((reg) => ({
+        id: reg.id,
+        type: reg.type,
+        date: reg.createdAt,
+        reason: reg.reason,
         quantidade: reg.quantidade,
         item: {
           id: reg.item.id,
@@ -95,15 +144,15 @@ router.get(
         id: registo.id,
         type: registo.type,
         date: registo.createdAt,
-        reason: reg.reason,
-        quantidade: reg.quantidade,
+        reason: registo.reason,
+        quantidade: registo.quantidade,
         item: {
-          id: reg.item.id,
-          nome: reg.item.nome,
+          id: registo.item.id,
+          nome: registo.item.nome,
         },
         utilizador: {
-          id: reg.utilizador.id,
-          nome: reg.utilizador.nome,
+          id: registo.utilizador.id,
+          nome: registo.utilizador.nome,
         },
       },
       error: null,

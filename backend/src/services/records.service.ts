@@ -9,6 +9,7 @@ const VALID_MOVEMENT_TYPES = [
   "exit",
   "borrow",
   "repair",
+  "restore",
 ];
 
 export class RecordService {

@@ -78,7 +78,7 @@ export async function refreshController(req, res) {
 
     if (!refreshToken) {
       return res.status(401).json({
-        message: "Unauthorized",
+        message: "Não autorizado",
         data: null,
         error: "No refresh token provided",
       });
@@ -103,7 +103,7 @@ export async function refreshController(req, res) {
       });
 
       return res.status(401).json({
-        message: "Unauthorized",
+        message: "Não autorizado",
         data: null,
         error: "Refresh token invalid or expired",
       });

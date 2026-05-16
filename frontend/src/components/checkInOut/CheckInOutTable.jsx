@@ -18,6 +18,14 @@ const typeConfig = {
     label: "Saída",
     className: "bg-destructive/10 text-destructive border-destructive/20",
   },
+  return: {
+    label: "Devolução",
+    className: "bg-primary/10 text-primary border-primary/20",
+  },
+  restore: {
+    label: "Restauração",
+    className: "bg-primary/10 text-primary border-primary/20",
+  },
 };
 
 export default function CheckInOutTable({ data, filters, pageSize }) {
@@ -104,7 +112,7 @@ export default function CheckInOutTable({ data, filters, pageSize }) {
                 style={{ animationDelay: `${index * 30}ms` }}
               >
                 <td className="text-muted-foreground px-5 py-3.5 font-mono">
-                  {formatDate(entry.date)}
+                  {formatDate(entry.date, true)}
                 </td>
                 <td className="text-sm font-medium px-5 py-3.5">
                   {entry.item.nome}

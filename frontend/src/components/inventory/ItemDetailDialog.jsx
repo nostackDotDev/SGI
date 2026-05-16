@@ -15,6 +15,7 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   Clock,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -58,7 +59,8 @@ export function ItemDetailDialog({
   item,
   onRegisterDeletion,
   onRegisterCheckout,
-  onRegisterCheckin,
+  onRegisterReturn,
+  onRegisterRestore,
 }) {
   if (!item) return null;
 
@@ -173,13 +175,25 @@ export function ItemDetailDialog({
                 className="flex-1"
                 onClick={() => {
                   onOpenChange(false);
-                  onRegisterCheckin();
+                  onRegisterReturn();
                 }}
               >
                 <ArrowDownLeft className="w-4 h-4 mr-2" />
                 Registrar Devolução
               </Button>
-            ) : null}
+            ) : (
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => {
+                  onOpenChange(false);
+                  onRegisterRestore();
+                }}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Registrar Restauração
+              </Button>
+            )}
             <Button
               variant="destructive"
               onClick={() => {

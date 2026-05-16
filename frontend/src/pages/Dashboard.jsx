@@ -1,8 +1,19 @@
 import { MetricCard } from "@/components/common/MetricCard";
 import { SearchBar } from "@/components/dashboard/SearchBar";
 import PageContainer from "@/components/layout/PageContainer";
+import { request } from "@/lib/request";
+import { formatDate } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { Package, Activity, AlertTriangle, TrendingUp } from "lucide-react";
+import {
+  Package,
+  Activity,
+  AlertTriangle,
+  TrendingUp,
+  Cog,
+  PackageMinus,
+  MonitorCheck,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -23,45 +34,73 @@ const chartData = [
   { month: "Jun", entradas: 55, saidas: 58 },
 ];
 
-const recentActivity = [
-  {
-    item: "Notebook Dell XPS 15",
-    user: "João Silva",
-    action: "Retirado",
-    time: "há 5 min",
-    color: "text-warning",
-  },
-  {
-    item: 'Monitor LG 27"',
-    user: "Maria Santos",
-    action: "Devolvido",
-    time: "há 15 min",
-    color: "text-success",
-  },
-  {
-    item: "Teclado Mecânico",
-    user: "Pedro Costa",
-    action: "Retirado",
-    time: "há 30 min",
-    color: "text-warning",
-  },
-  {
-    item: "Mouse Wireless",
-    user: "Ana Oliveira",
-    action: "Devolvido",
-    time: "há 1 hora",
-    color: "text-success",
-  },
-  {
-    item: "Webcam HD",
-    user: "Carlos Lima",
-    action: "Retirado",
-    time: "há 2 horas",
-    color: "text-warning",
-  },
-];
+const typeConfig = {
+  in: "Entrada",
+  transfer: "Transferência",
+  out: "Saída",
+  return: "Devolução",
+  borrow: "Empréstimo",
+  repair: "Reparação",
+  exit: "Saída",
+  reduction: "Redução",
+};
 
 export default function Dashboard() {
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [summary, setSummary] = useState({
+    total: 0,
+    available: 0,
+    repair: 0,
+    removed: 0,
+  });
+
+  const fetchRecentActivity = async () =>
+    await request(
+      "/registo/latest",
+      "GET",
+      {},
+      (data) => {
+        setRecentActivity(data?.data || []);
+      },
+      (err) => {
+        console.error(err);
+        setRecentActivity(recentActivity || []);
+      },
+    );
+
+  const fetchSummary = async () =>
+    await request(
+      "/dashboard",
+      "GET",
+      {},
+      (data) => {
+        setSummary(
+          data?.data?.summary || {
+            total: 0,
+            available: 0,
+            repair: 0,
+            removed: 0,
+          },
+        );
+      },
+      (err) => {
+        console.error(err);
+        setSummary(
+          summary || {
+            total: 0,
+            available: 0,
+            repair: 0,
+            removed: 0,
+          },
+        );
+      },
+    );
+
+  useEffect(() => {
+    fetchRecentActivity();
+    fetchSummary();
+  }, []);
+
   return (
     <PageContainer className="flex flex-col gap-8 px-0 pt-0">
       {/* Hero Section */}
@@ -90,36 +129,36 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <MetricCard
             title="Total de Equipamentos"
-            value="1,247"
-            change="+12% este mês"
+            value={summary.total}
+            // change="+12% este mês"
             changeType="positive"
             icon={Package}
             iconColor="text-primary"
             delay={0}
           />
           <MetricCard
-            title="Em Uso"
-            value="89"
-            change="-8% este mês"
-            changeType="negative"
-            icon={TrendingUp}
-            iconColor="text-purple-accent"
+            title="Disponíveis"
+            value={summary.available}
+            // change="-8% este mês"
+            // changeType="negative"
+            icon={MonitorCheck}
+            iconColor="text-success"
             delay={0.1}
           />
           <MetricCard
-            title="Alertas"
-            value="4"
-            icon={AlertTriangle}
+            title="Em manutenção"
+            value={summary.repair}
+            icon={Cog}
             iconColor="text-warning"
             delay={0.2}
           />
           <MetricCard
-            title="Atividade Hoje"
-            value="23"
-            change="+15%"
+            title="Removidos"
+            value={summary.removed}
+            // change="+15%"
             changeType="positive"
-            icon={Activity}
-            iconColor="text-success"
+            icon={PackageMinus}
+            iconColor="text-destructive"
             delay={0.3}
           />
         </div>
@@ -194,9 +233,9 @@ export default function Dashboard() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.5 }}
-            className="glass-card rounded-xl p-6"
+            className="glass-card rounded-xl max-h-96 overflow-y-auto no-scrollbar flex flex-col relative"
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between sticky top-0 left-0 right-0 px-6 py-4 bg-background/80 backdrop-blur-sm border-b border-background/50 z-2">
               <h2 className="font-heading text-base font-semibold text-foreground">
                 Atividade Recente
               </h2>
@@ -207,32 +246,41 @@ export default function Dashboard() {
                 Ver tudo
               </a>
             </div>
-            <div className="mt-4 space-y-4">
-              {recentActivity.map((item, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.6 + i * 0.05 }}
-                  className="flex items-start gap-3"
-                >
-                  <div
-                    className={`mt-0.5 h-2 w-2 rounded-full ${item.color === "text-success" ? "bg-success" : "bg-warning"}`}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
-                      {item.item}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.action} por{" "}
-                      <span className="text-foreground/80">{item.user}</span>
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-[10px] text-muted-foreground/60">
-                    {item.time}
-                  </span>
-                </motion.div>
-              ))}
+            <div className="mt-4 space-y-4 flex-1 min-h-0 px-4 p-6 pt-0">
+              {recentActivity?.length > 0 ? (
+                recentActivity.map((item, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: 0.6 + i * 0.05 }}
+                    className="flex items-start gap-3 relative"
+                  >
+                    <div className="absolute top-1/2 h-2 w-2 rounded-full bg-success" />
+                    <div className="flex-1 min-w-0 pl-4">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {item.item.nome}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {typeConfig[item.type] || item.type}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end justify-center gap-1">
+                      <span className="shrink-0 text-[10px] text-muted-foreground/60">
+                        {formatDate(item.date, true)}
+                      </span>
+
+                      <span className="text-foreground/80">
+                        {item.utilizador.nome}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Nenhuma atividade recente encontrada.
+                </p>
+              )}
             </div>
           </motion.div>
         </div>

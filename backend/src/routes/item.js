@@ -73,6 +73,7 @@ router.get("/", requirePermission(PERMISSIONS.ITEM_READ), async (req, res) => {
     error: null,
   });
 });
+
 router.get(
   "/:id",
   requirePermission(PERMISSIONS.ITEM_READ),
@@ -523,27 +524,30 @@ router.post(
   "/return/:id",
   requirePermission(PERMISSIONS.ITEM_UPDATE),
   async (req, res) => {
-    const { quantidade, salaId, reason } = req.body;
+    const { quantidade, salaId, reason, transferType } = req.body;
     const itemId = parseInt(req.params.id);
 
     try {
       // Fetch item with relations
       const item = await prisma.item.findUnique({
-        where: { id: itemId },
+        where: { id: itemId, deletedAt: null },
         include: { condicao: true, sala: true },
       });
 
-      if (!item || item.deletedAt) {
+      if (!item) {
         return res
           .status(404)
           .json({ data: null, error: "Item não encontrado" });
       }
 
       // Validate status is "Emprestado"
-      if (item.condicao.nome !== "Emprestado") {
+      if (
+        item.condicao.nome !== "Emprestado" &&
+        item.condicao.nome !== "Em manutenção"
+      ) {
         return res.status(400).json({
           data: null,
-          error: `Apenas itens com status "Emprestado" podem ser devolvidos. Status atual: ${item.condicao.nome}`,
+          error: `Apenas itens com status "Emprestado" ou "Em manutenção" podem ser devolvidos/restaurados. Status atual: ${item.condicao.nome}`,
         });
       }
 
@@ -603,7 +607,7 @@ router.post(
         itemId: itemId,
         quantidade: Number(quantidade),
         utilizadorId: req.userId,
-        type: "return",
+        type: transferType || "return",
         reason,
       });
 

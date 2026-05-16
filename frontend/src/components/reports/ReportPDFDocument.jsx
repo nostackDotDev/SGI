@@ -3,16 +3,17 @@ import {
   Page,
   Text,
   View,
-  Font,
+  // Font,
   StyleSheet,
+  Image,
 } from "@react-pdf/renderer";
 import { formatDate } from "@/lib/utils";
 
 // Register fonts (optional, uses default if not available)
-Font.register({
-  family: "Helvetica",
-  src: "https://fonts.gstatic.com/s/openscans/v20/ga6iaw1J5X0T9RV6j9bNVlZ2dG1S.woff2",
-});
+// Font.register({
+//   family: "Helvetica",
+//   src: "https://fonts.gstatic.com/s/openscans/v20/ga6iaw1J5X0T9RV6j9bNVlZ2dG1S.woff2",
+// });
 
 const styles = StyleSheet.create({
   page: {
@@ -169,23 +170,21 @@ const styles = StyleSheet.create({
 });
 
 function ReportPDFHeader({ institution, user, generatedAt }) {
-  const getInitials = (name) => {
-    return (
-      name
-        ?.split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2) || "SG"
-    );
-  };
-
+  const logo = `${window.location.origin}/logo2.jpg`;
   return (
     <View style={styles.header}>
       <View style={styles.headerLeft}>
-        <View style={styles.avatar}>
-          <Text>{getInitials(institution?.nome || "SGI")}</Text>
-        </View>
+        <Image
+          src={{
+            uri: logo,
+          }}
+          style={{
+            width: 50,
+            height: 50,
+          }}
+          fixed
+          cache
+        />
         <View style={styles.headerInfo}>
           <Text style={styles.institutionName}>
             {institution?.nome || "SGI"}
@@ -197,7 +196,7 @@ function ReportPDFHeader({ institution, user, generatedAt }) {
       </View>
       <View style={styles.headerRight}>
         <Text style={{ fontSize: 9 }}>
-          {formatDate(generatedAt || new Date())}
+          {formatDate(generatedAt || new Date(), true)}
         </Text>
         <Text style={styles.generatedBy}>
           Gerado por: {user?.nome || "Utilizador"}
@@ -304,7 +303,7 @@ export function ReportPDFDocument({ report, institution, user }) {
 }
 
 function MovementsPages({ records, institution, user, generatedAt }) {
-  const recordsPerPage = 20;
+  const recordsPerPage = 15; // Adjust as needed based on layout and font size
   const pages = [];
 
   for (let i = 0; i < records.length; i += recordsPerPage) {
@@ -387,7 +386,7 @@ function MovementsPages({ records, institution, user, generatedAt }) {
       </View>
 
       {/* Footer */}
-      <View style={styles.footer}>
+      {/* <View style={styles.footer}>
         <Text>Gerado com SGI</Text>
         <Text
           style={styles.pageNumber}
@@ -395,7 +394,7 @@ function MovementsPages({ records, institution, user, generatedAt }) {
             `${pageNumber} de ${totalPages}`
           }
         />
-      </View>
+      </View> */}
     </Page>
   ));
 }

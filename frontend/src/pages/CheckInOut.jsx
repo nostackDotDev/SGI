@@ -43,7 +43,12 @@ export default function CheckInOut() {
     request(
       "/registo",
       "GET",
-      {},
+      {
+        params: {
+          startDate: dateRange?.from,
+          endDate: dateRange?.to,
+        },
+      },
       (data) => setRecords(data.data || []),
       (err) => {
         console.error(err);
@@ -56,6 +61,10 @@ export default function CheckInOut() {
     refreshRecords();
     return () => refreshManager.unregister("registos");
   }, []);
+
+  useEffect(() => {
+    refreshRecords();
+  }, [dateRange]);
 
   return (
     <PageContainer className="grid grid-rows-[auto_1fr] gap-6">
@@ -145,7 +154,7 @@ export default function CheckInOut() {
         {/* Table */}
         {records ? (
           <CheckInOutTable
-            data={records}
+            data={records.sort((a, b) => new Date(b?.date) - new Date(a?.date))}
             filters={{
               searchTerm,
               type: typeFilter,

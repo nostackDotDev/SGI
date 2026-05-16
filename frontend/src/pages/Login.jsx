@@ -74,11 +74,9 @@ export default function Login() {
       <section className="w-2xl max-w-[90vw] max-h-[94vh] min-h-fit rounded-xl p-6 overflow-y-auto no-scrollbar border border-border shadow-sm bg-card drop-shadow-2xl">
         <aside className="text-center space-y-1">
           <i className="block mx-auto w-fit h-fit p-1 rounded-sm text-muted-foreground">
-            <img src="/logo.png" className="w-30 aspect-auto" alt="IPIKK" />
+            <img src="/logo.webp" className="w-30 aspect-auto" alt="IPIKK" />
           </i>
-          <h1 className="text-2xl font-bold capitalize -mt-5">
-            inventário escolar
-          </h1>
+          <h1 className="text-2xl font-bold capitalize">inventário escolar</h1>
           <p>Faça login para acessar o sistema</p>
         </aside>
         <form

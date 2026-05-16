@@ -55,27 +55,95 @@ async function buildReport({ type, startDate, endDate, tenantId }) {
     throw new Error(`Unsupported report type: ${type}`);
   }
 
-  const categories = await prisma.categoria.findMany({
+  // Parse and validate date range
+  const {
+    startDate: parsedStart,
+    endDate: parsedEnd,
+    isInvalid,
+  } = parseDateRange(startDate, endDate);
+
+  // If date range is invalid, return empty array
+  if (isInvalid) {
+    return res.json({
+      message: "Período inválido",
+      data: [],
+      error: "Invalid date range",
+    });
+  }
+
+  /* 
+const items = await prisma.item.findMany({
     where: {
-      instituicaoId: tenantId,
+      registos: {
+        every: {
+          createdAt: {
+        gte: startDate,
+        lte: endDate,
+      },
+        }
+      }
+    }
+  })
+*/
+
+  // Get all registos in the date range with all related data
+  const registos = await prisma.registo.findMany({
+    where: {
       deletedAt: null,
+      utilizador: {
+        instituicaoId: tenantId,
+      },
+      createdAt: {
+        gte: parsedStart,
+        lte: parsedEnd,
+      },
     },
     include: {
-      itens: {
-        where: {
-          deletedAt: null,
-        },
+      item: {
         include: {
+          categoria: true,
           condicao: true,
         },
       },
+      utilizador: true,
     },
     orderBy: {
-      nome: "asc",
+      createdAt: "desc",
     },
   });
 
-  const categorySummaries = categories.map((category) => {
+  // Build categories summary directly from records
+  // Group items by category from records
+  const itemsByCategory = {};
+
+  for (const registo of registos) {
+    if (!registo.item || registo.item.deletedAt) continue;
+
+    const categoria = registo.item.categoria;
+    if (!categoria) continue;
+
+    const categoryKey = categoria.id;
+
+    if (!itemsByCategory[categoryKey]) {
+      itemsByCategory[categoryKey] = {
+        id: categoria.id,
+        nome: categoria.nome,
+        descricao: categoria.descricao,
+        items: {},
+      };
+    }
+
+    const itemKey = registo.item.id;
+    if (!itemsByCategory[categoryKey].items[itemKey]) {
+      itemsByCategory[categoryKey].items[itemKey] = {
+        id: registo.item.id,
+        quantidade: registo.item.quantidade || 0,
+        condicaoNome: registo.item.condicao?.nome,
+      };
+    }
+  }
+
+  const categorySummaries = Object.values(itemsByCategory).map((category) => {
     const summary = {
       id: category.id,
       nome: category.nome,
@@ -86,10 +154,10 @@ async function buildReport({ type, startDate, endDate, tenantId }) {
       repair: 0,
     };
 
-    for (const item of category.itens) {
+    for (const item of Object.values(category.items)) {
       const amount = item.quantidade || 0;
       summary.total += amount;
-      const key = getConditionKey(item.condicao?.nome);
+      const key = getConditionKey(item.condicaoNome);
       if (key) {
         summary[key] += amount;
       }
@@ -113,26 +181,6 @@ async function buildReport({ type, startDate, endDate, tenantId }) {
       repair: 0,
     },
   );
-
-  const registos = await prisma.registo.findMany({
-    where: {
-      deletedAt: null,
-      utilizador: {
-        instituicaoId: tenantId,
-      },
-      createdAt: {
-        gte: startDate,
-        lte: endDate,
-      },
-    },
-    include: {
-      item: true,
-      utilizador: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
 
   return {
     categories: categorySummaries,

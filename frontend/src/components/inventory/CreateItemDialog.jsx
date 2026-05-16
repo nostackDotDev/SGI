@@ -17,9 +17,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { request } from "@/lib/request";
 import { toast } from "sonner";
+import { getFormState } from "@/lib/utils";
 
 const initialFormData = {
   nome: "",
@@ -101,6 +102,15 @@ export function CreateItemDialog({
     onOpenChange(false);
   };
 
+  const { canSubmit } = getFormState(initialFormData, formData, [
+    "nome",
+    "categoriaId",
+    "condicaoId",
+    "quantidade",
+    "salaId",
+    "serialNumber",
+  ]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-125 max-h-7/9 overflow-y-auto no-scrollbar">
@@ -154,15 +164,23 @@ export function CreateItemDialog({
                     <SelectValue placeholder="Selecionar" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categorias.length ? (
-                      categorias.map((c, i) => (
-                        <SelectItem key={i} value={String(c.id)}>
-                          {c.nome}
-                        </SelectItem>
-                      ))
+                    {categorias ? (
+                      categorias.length ? (
+                        categorias.map((c, i) => (
+                          <SelectItem key={`cat-${i}`} value={String(c.id)}>
+                            {c.nome}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <>
+                          <SelectItem key={"cat-0"} value={undefined}>
+                            Sem categorias existentes
+                          </SelectItem>
+                        </>
+                      )
                     ) : (
                       <>
-                        <SelectItem key={0} value={undefined}>
+                        <SelectItem key={"cat-0"} value={undefined}>
                           Falha ao carregar
                         </SelectItem>
                       </>
@@ -185,13 +203,13 @@ export function CreateItemDialog({
                   <SelectContent>
                     {status.length ? (
                       status.map((c, i) => (
-                        <SelectItem key={i} value={String(c.id)}>
+                        <SelectItem key={`status-${i}`} value={String(c.id)}>
                           {c.nome}
                         </SelectItem>
                       ))
                     ) : (
                       <>
-                        <SelectItem key={0} value={undefined}>
+                        <SelectItem key={"status-0"} value={undefined}>
                           Falha ao carregar
                         </SelectItem>
                       </>
@@ -243,13 +261,13 @@ export function CreateItemDialog({
                 <SelectContent>
                   {localizacoes.length ? (
                     localizacoes.map((c, i) => (
-                      <SelectItem key={i} value={String(c.id)}>
+                      <SelectItem key={`loc-${i}`} value={String(c.id)}>
                         {c.nome}
                       </SelectItem>
                     ))
                   ) : (
                     <>
-                      <SelectItem key={0} value={undefined}>
+                      <SelectItem key={"loc-0"} value={undefined}>
                         Falha ao carregar
                       </SelectItem>
                     </>
@@ -263,7 +281,11 @@ export function CreateItemDialog({
             <Button type="reset" variant="outline" onClick={resetForm}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={isLoading} className="">
+            <Button
+              type="submit"
+              disabled={isLoading || !canSubmit}
+              className=""
+            >
               Adicionar Item
             </Button>
           </DialogFooter>

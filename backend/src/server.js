@@ -15,15 +15,16 @@ import utilizador_routes from "./routes/utilizador.js";
 import condicao_routes from "./routes/condicao.js";
 import relatorio_routes from "./routes/relatorio.js";
 import authRoutes from "./routes/auth.routes.js";
+import dashboard_routes from "./routes/dashboard.js";
 import { responseFormatter } from "./middlewares/responseFormatter.middleware.js";
 
 const app = express();
 const port = process.env.PORT || 8001;
 dotenv.config();
 
-const allowedOrigins =
-  process.env.FRONTEND_URLS?.split(",").map((origin) => origin.trim())
-    .filter(Boolean);
+const allowedOrigins = process.env.FRONTEND_URLS?.split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 const corsOptions = {
   origin: (origin, callback) => {
@@ -31,7 +32,6 @@ const corsOptions = {
       return callback(null, true);
     }
     return callback(new Error("Not allowed by CORS"));
-
   },
   credentials: true,
   optionsSuccessStatus: 200,
@@ -58,6 +58,7 @@ app.use("/registo", registo_routes);
 app.use("/relatorio", relatorio_routes);
 app.use("/utilizador", utilizador_routes);
 app.use("/condicao", condicao_routes);
+app.use("/dashboard", dashboard_routes);
 
 app.listen(port, "0.0.0.0", () => {
   console.log("Running on port " + port);

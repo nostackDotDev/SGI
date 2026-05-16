@@ -12,8 +12,15 @@ import {
 import { CreateUserDialog } from "@/components/users/CreateUserDialog";
 import UsersTable from "@/components/users/UsersTable.jsx";
 import { refreshManager, request } from "@/lib/request";
-import { Mail, MoreHorizontal, Plus, Search, Shield } from "lucide-react";
-import { useEffect, useState } from "react";
+import {
+  Mail,
+  MoreHorizontal,
+  Plus,
+  Search,
+  Settings2,
+  Shield,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
@@ -185,11 +192,11 @@ export default function Users() {
                 </div>
 
                 <div className="mt-4 flex gap-2">
-                  <button className="glass flex-1 flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                    <Mail className="h-3 w-3" />
-                    Mensagem
+                  <button className="glass flex-1 rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer flex items-center justify-center gap-1.5">
+                    <Settings2 className="w-4 h-4" />
+                    Permissões
                   </button>
-                  <button className="glass flex-1 rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  <button className="glass flex-1 rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
                     Perfil
                   </button>
                 </div>

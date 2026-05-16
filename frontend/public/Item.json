@@ -1,0 +1,14 @@
+[
+{"type":"header","version":"5.2.1","comment":"Export to JSON plugin for PHPMyAdmin"},
+{"type":"database","name":"sgi"},
+{"type":"table","name":"Item","database":"sgi","data":
+[
+{"id":"1","nome":"item qualquer","descricao":"wasd\n","quantidade":"1","createdAt":"2026-05-10 22:51:08.594","updatedAt":"2026-05-12 22:20:09.126","deletedAt":"2026-05-12 22:20:09.125","categoriaId":"1","condicaoId":"3","salaId":"2","serialNumber":"serial"},
+{"id":"2","nome":"item 2","descricao":"","quantidade":"12345","createdAt":"2026-05-10 22:54:36.726","updatedAt":"2026-05-10 23:05:52.187","deletedAt":"2026-05-10 23:05:52.186","categoriaId":"1","condicaoId":"2","salaId":"1","serialNumber":"tr"},
+{"id":"3","nome":"item 2","descricao":"","quantidade":"1","createdAt":"2026-05-11 19:36:14.088","updatedAt":"2026-05-12 18:11:53.095","deletedAt":"2026-05-12 18:11:53.094","categoriaId":"1","condicaoId":"2","salaId":"2","serialNumber":"qwer"},
+{"id":"6","nome":"item qualquer","descricao":"wasd\n","quantidade":"8","createdAt":"2026-05-12 21:11:32.833","updatedAt":"2026-05-12 22:53:22.742","deletedAt":null,"categoriaId":"1","condicaoId":"3","salaId":"1","serialNumber":"serial"},
+{"id":"8","nome":"Item 1","descricao":"","quantidade":"5","createdAt":"2026-05-15 21:09:25.891","updatedAt":"2026-05-15 21:09:41.480","deletedAt":null,"categoriaId":"1","condicaoId":"3","salaId":"1","serialNumber":"serial"},
+{"id":"9","nome":"Item 2","descricao":"","quantidade":"21","createdAt":"2026-05-15 22:55:36.312","updatedAt":"2026-05-15 22:55:47.317","deletedAt":null,"categoriaId":"1","condicaoId":"2","salaId":"2","serialNumber":"qwert"}
+]
+}
+]

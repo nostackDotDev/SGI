@@ -59,7 +59,7 @@ export default function Reports() {
   const [isReportLoading, setIsReportLoading] = useState(false);
   const topScrollRef = useRef(null);
   const bottomScrollRef = useRef(null);
-  const pdfLinkRef = useRef(null);
+  // const pdfLinkRef = useRef(null);
 
   const canGenerate = useMemo(
     () => reportType !== "none" && dateRange,
@@ -234,7 +234,7 @@ export default function Reports() {
                   user={user}
                 />
               }
-              fileName={`relatorio_${report.id || "#"}.pdf`}
+              fileName={`relatorio${report.id}_${new Date().toLocaleString().replace("_", "-").replace(", ", "_")}.pdf`}
               className="w-fit h-fit bg-transparent transition-transform hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {({ loading }) =>
