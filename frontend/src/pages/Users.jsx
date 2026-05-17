@@ -15,16 +15,19 @@ import { refreshManager, request } from "@/lib/request";
 import {
   Mail,
   MoreHorizontal,
+  Pencil,
   Plus,
   Search,
   Settings2,
   Shield,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { PERMISSIONS } from "@/core/constants/permissions";
+import { PermissionDisabled } from "@/components/auth/PermissionDisabled";
 
 export default function Users() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,9 +42,7 @@ export default function Users() {
     request(
       "/utilizador",
       "GET",
-      {
-        // refreshKey: "utlizadores",
-      },
+      {},
       (data) => setUsers(data.data || []),
       (err) => {
         setUsers([]);
@@ -62,14 +63,14 @@ export default function Users() {
     );
 
   useEffect(() => {
-    // refreshManager.register("utlizadores", refreshUsers);
+    refreshManager.register("utlizadores", refreshUsers);
     refreshManager.register("cargos", refreshCargos);
 
     refreshUsers();
     refreshCargos();
 
     return () => {
-      // refreshManager.unregister("utlizadores", refreshUsers);
+      refreshManager.unregister("utlizadores", refreshUsers);
       refreshManager.unregister("cargos", refreshCargos);
     };
   }, []);
@@ -128,13 +129,15 @@ export default function Users() {
                 ))}
             </SelectContent>
           </Select>
-          <Button
-            className="w-full py-5 sm:w-auto"
-            onClick={() => setAddUserOpen(true)}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Utilizador
-          </Button>
+          <PermissionDisabled permission={PERMISSIONS.USER_CREATE}>
+            <Button
+              className="w-full py-5 sm:w-auto"
+              onClick={() => setAddUserOpen(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Utilizador
+            </Button>
+          </PermissionDisabled>
         </div>
 
         {/* Users Cards */}
@@ -196,8 +199,9 @@ export default function Users() {
                     <Settings2 className="w-4 h-4" />
                     Permissões
                   </button>
-                  <button className="glass flex-1 rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-                    Perfil
+                  <button className="glass flex-1 rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer flex items-center justify-center gap-1.5">
+                    <Pencil className="w-4 h-4" />
+                    Editar
                   </button>
                 </div>
               </motion.div>

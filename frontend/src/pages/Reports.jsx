@@ -43,6 +43,8 @@ import { toast } from "sonner";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { ReportPDFDocument } from "@/components/reports/ReportPDFDocument";
 import { useAuth } from "@/core/contexts/AuthContext";
+import { PermissionDisabled } from "@/components/auth/PermissionDisabled";
+import { PERMISSIONS } from "@/core/constants/permissions";
 
 const reportTypes = [
   { value: "inventory_summary", label: "Resumo do Inventário", icon: Package },
@@ -201,14 +203,16 @@ export default function Reports() {
           {/* Generate Button */}
           <div className="self-end space-y-2">
             {/* <Label className="invisible">Gerar</Label> */}
-            <Button
-              className="w-full py-5"
-              disabled={!canGenerateReport}
-              onClick={generateReport}
-            >
-              <BarChart3 className="w-4 h-4" />
-              Gerar Relatório
-            </Button>
+            <PermissionDisabled permission={PERMISSIONS.RELATORIO_EXPORT}>
+              <Button
+                className="w-full py-5"
+                disabled={!canGenerateReport}
+                onClick={generateReport}
+              >
+                <BarChart3 className="w-4 h-4" />
+                Gerar Relatório
+              </Button>
+            </PermissionDisabled>
           </div>
         </div>
       </div>
@@ -222,7 +226,7 @@ export default function Reports() {
                 "Tipo de Relatório"}
             </h3>
             <p className="text-sm text-muted-foreground">
-              Gerado em: {formatDate(report?.generatedAt) || "N/A"}
+              Gerado em: {formatDate(report?.generatedAt, true) || "N/A"}
             </p>
           </div>
           {report ? (
@@ -250,15 +254,17 @@ export default function Reports() {
                     Gerando PDF...
                   </Button>
                 ) : (
-                  <Button
-                    type="button"
-                    variant="default"
-                    size="lg"
-                    className="transition-transform px-6"
-                  >
-                    <FileText className="w-4 h-4" />
-                    Exportar PDF
-                  </Button>
+                  <PermissionDisabled permission={PERMISSIONS.RELATORIO_EXPORT}>
+                    <Button
+                      type="button"
+                      variant="default"
+                      size="lg"
+                      className="transition-transform px-6"
+                    >
+                      <FileText className="w-4 h-4" />
+                      Exportar PDF
+                    </Button>
+                  </PermissionDisabled>
                 )
               }
             </PDFDownloadLink>

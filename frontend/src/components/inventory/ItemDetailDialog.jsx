@@ -33,28 +33,6 @@ const statusConfig = {
   },
 };
 
-const mockHistory = [
-  {
-    type: "check-out",
-    user: "João Silva",
-    date: "15/12/2024",
-    notes: "Uso em apresentação",
-  },
-  {
-    type: "check-in",
-    user: "Maria Santos",
-    date: "10/12/2024",
-    notes: "Devolvido em bom estado",
-  },
-  {
-    type: "check-out",
-    user: "Maria Santos",
-    date: "05/12/2024",
-    notes: "Projeto X",
-  },
-  { type: "check-in", user: "Pedro Costa", date: "01/12/2024", notes: "" },
-];
-
 export function ItemDetailDialog({
   open,
   onOpenChange,

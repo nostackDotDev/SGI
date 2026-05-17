@@ -27,6 +27,7 @@ import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import { SidebarProvider } from "./components/ui/sidebar";
+import { TooltipProvider } from "./components/ui/tooltip";
 
 const router = createBrowserRouter([
   {
@@ -66,7 +67,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/signup",
+        path: "/restrictedsignup",
         element: (
           <Suspense fallback={<Loader />}>
             <SignUp />
@@ -81,7 +82,9 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <AuthProvider>
       <SidebarProvider>
-        <RouterProvider router={router} />
+        <TooltipProvider>
+          <RouterProvider router={router} />
+        </TooltipProvider>
       </SidebarProvider>
     </AuthProvider>
     <Toaster closeButton />

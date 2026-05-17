@@ -122,7 +122,42 @@ export async function login(email, password) {
     return null;
   }
 
-  // 3. generate access token (1 hour)
+  // 3. get user permissions
+  const permissionsSet = new Set();
+
+  // Add cargo permissions
+  if (user.cargo) {
+    const cargoWithPermissions = await prisma.cargo.findUnique({
+      where: { id: user.cargo.id },
+      include: {
+        permissoes: {
+          include: { permissao: true },
+        },
+      },
+    });
+
+    if (cargoWithPermissions) {
+      cargoWithPermissions.permissoes.forEach((cp) => {
+        permissionsSet.add(cp.permissao.nome);
+      });
+    }
+  }
+
+  // Add/remove user-specific permission overrides
+  const userPermissions = await prisma.utilizadorPermissao.findMany({
+    where: { utilizadorId: user.id },
+    include: { permissao: true },
+  });
+
+  userPermissions.forEach((up) => {
+    if (up.permitido) {
+      permissionsSet.add(up.permissao.nome);
+    } else {
+      permissionsSet.delete(up.permissao.nome);
+    }
+  });
+
+  // 4. generate access token (1 hour)
   const accessToken = jwt.sign(
     {
       userId: user.id,
@@ -133,7 +168,7 @@ export async function login(email, password) {
     { expiresIn: "1h" },
   );
 
-  // 4. generate refresh token (7 days)
+  // 5. generate refresh token (7 days)
   const refreshToken = jwt.sign(
     {
       userId: user.id,
@@ -143,7 +178,7 @@ export async function login(email, password) {
     { expiresIn: "7d" },
   );
 
-  // 5. store refresh token in database with expiry
+  // 6. store refresh token in database with expiry
   const refreshTokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   await prisma.utilizador.update({
     where: { id: user.id },
@@ -157,9 +192,11 @@ export async function login(email, password) {
     accessToken,
     refreshToken,
     user: {
+      id: user.id,
       nome: user.nome,
       email: user.email,
       cargo: user.cargo.nome,
+      permissoes: Array.from(permissionsSet),
     },
     instituicao: {
       nome: user.instituicao.nome,

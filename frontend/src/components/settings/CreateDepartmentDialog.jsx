@@ -20,6 +20,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
 import { request } from "@/lib/request";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { getFormState } from "@/lib/utils";
 
 const initialFormData = {
   nome: "",
@@ -29,7 +31,6 @@ const initialFormData = {
 export function CreateDepartmentDialog({ open, onOpenChange }) {
   const [formData, setFormData] = useState(initialFormData);
   const [isLoading, setIsLoading] = useState(false);
-  // const [canSubmit, setCanSubmit] = useState(false)
 
   useEffect(() => {
     const f = () => {
@@ -59,13 +60,22 @@ export function CreateDepartmentDialog({ open, onOpenChange }) {
         console.log(res);
         if (!res || res.error) {
           console.log("Failed to create new department:", res.error);
+          toast.error(res.error || "Falha ao criar departamento", {
+            id: "create-department",
+          });
           setIsLoading(false);
           return;
         }
         resetForm();
+        toast.success("Departamento criado com sucesso", {
+          id: "create-department",
+        });
         setIsLoading(false);
       },
       (err) => {
+        toast.error(err?.message ?? "Falha ao criar departamento", {
+          id: "create-department",
+        });
         console.error("Error creating new department:", err?.message ?? err);
         setIsLoading(false);
       },
@@ -76,6 +86,8 @@ export function CreateDepartmentDialog({ open, onOpenChange }) {
     setFormData(initialFormData);
     onOpenChange(false);
   };
+
+  const { canSubmit } = getFormState(formData, initialFormData, ["nome"]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -123,7 +135,7 @@ export function CreateDepartmentDialog({ open, onOpenChange }) {
             </Button>
             <Button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !canSubmit}
               className="flex items-center justify-center gap-2"
             >
               Adicionar Departamento{" "}

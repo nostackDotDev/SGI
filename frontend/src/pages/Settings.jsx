@@ -39,6 +39,8 @@ import { EditLocationDialog } from "@/components/settings/EditLocationDialog";
 import Loader, { LoaderSmall } from "@/components/layout/Loader";
 import DeleteDialog from "@/components/common/DeleteDialog";
 import { toast } from "sonner";
+import { PermissionDisabled } from "@/components/auth/PermissionDisabled";
+import { PERMISSIONS } from "@/core/constants/permissions";
 
 export default function Settings() {
   const { user } = useAuth();
@@ -330,6 +332,7 @@ export default function Settings() {
           title: "Nova categoria",
           action: () => setAddCategoryOpen(true),
         }}
+        actionPermission={PERMISSIONS.CATEGORIA_CREATE}
         style="max-h-140"
       >
         {categorias ? (
@@ -375,34 +378,42 @@ export default function Settings() {
                         </td>
                         <td className="py-2 pl-2 text-center text-primary/80">
                           <div className="flex items-center justify-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => {
-                                setSelectedCategory(item);
-                                setEditCategoryOpen(true);
-                              }}
-                              disabled={item.defaultType}
+                            <PermissionDisabled
+                              permission={PERMISSIONS.CATEGORIA_UPDATE}
                             >
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive hover:text-destructive"
-                              onClick={() => {
-                                setDeleteAction({
-                                  action: () =>
-                                    handleDeletion.category(item.id),
-                                  label: `Eliminar a categoria: "${item.nome}"?`,
-                                });
-                                setDeleteDialogOpen(true);
-                              }}
-                              disabled={item.defaultType}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => {
+                                  setSelectedCategory(item);
+                                  setEditCategoryOpen(true);
+                                }}
+                                disabled={item.defaultType}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                            </PermissionDisabled>
+                            <PermissionDisabled
+                              permission={PERMISSIONS.CATEGORIA_DELETE}
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                onClick={() => {
+                                  setDeleteAction({
+                                    action: () =>
+                                      handleDeletion.category(item.id),
+                                    label: `Eliminar a categoria: "${item.nome}"?`,
+                                  });
+                                  setDeleteDialogOpen(true);
+                                }}
+                                disabled={item.defaultType}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </PermissionDisabled>
                           </div>
                         </td>
                       </tr>
@@ -432,6 +443,7 @@ export default function Settings() {
           title: "Novo cargo",
           action: () => setAddCargoOpen(true),
         }}
+        actionPermission={PERMISSIONS.CARGO_CREATE}
         style="max-h-140"
       >
         {cargos ? (
@@ -489,33 +501,42 @@ export default function Settings() {
                         </td>
                         <td className="py-2 pl-2 text-center text-primary/80">
                           <div className="flex items-center justify-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => {
-                                setSelectedCargo(item);
-                                setEditCargoOpen(true);
-                              }}
-                              disabled={item.defaultType}
+                            <PermissionDisabled
+                              permission={PERMISSIONS.CARGO_UPDATE}
                             >
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive hover:text-destructive"
-                              onClick={() => {
-                                setDeleteAction({
-                                  action: () => handleDeletion.cargos(item.id),
-                                  label: `Eliminar o cargo: "${item.nome}"?`,
-                                });
-                                setDeleteDialogOpen(true);
-                              }}
-                              disabled={item.defaultType}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => {
+                                  setSelectedCargo(item);
+                                  setEditCargoOpen(true);
+                                }}
+                                disabled={item.defaultType}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                            </PermissionDisabled>
+                            <PermissionDisabled
+                              permission={PERMISSIONS.CARGO_DELETE}
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                onClick={() => {
+                                  setDeleteAction({
+                                    action: () =>
+                                      handleDeletion.cargos(item.id),
+                                    label: `Eliminar o cargo: "${item.nome}"?`,
+                                  });
+                                  setDeleteDialogOpen(true);
+                                }}
+                                disabled={item.defaultType}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </PermissionDisabled>
                           </div>
                         </td>
                       </tr>
@@ -572,6 +593,7 @@ export default function Settings() {
           title: "Novo departamento",
           action: () => setAddDepartmentOpen(true),
         }}
+        actionPermission={PERMISSIONS.DEPARTAMENTO_CREATE}
         style="max-h-140"
       >
         {departamentos ? (
@@ -636,34 +658,42 @@ export default function Settings() {
                         </td>
                         <td className="py-2 pl-2 text-center text-primary/80">
                           <div className="flex items-center justify-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => {
-                                setSelectedDepartment(item);
-                                setEditDepartmentOpen(true);
-                              }}
-                              disabled={item.defaultType}
+                            <PermissionDisabled
+                              permission={PERMISSIONS.DEPARTAMENTO_UPDATE}
                             >
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive hover:text-destructive"
-                              onClick={() => {
-                                setDeleteAction({
-                                  action: () =>
-                                    handleDeletion.departamento(item.id),
-                                  label: `Eliminar o departamento: "${item.nome}"?`,
-                                });
-                                setDeleteDialogOpen(true);
-                              }}
-                              disabled={item.defaultType}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => {
+                                  setSelectedDepartment(item);
+                                  setEditDepartmentOpen(true);
+                                }}
+                                disabled={item.defaultType}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                            </PermissionDisabled>
+                            <PermissionDisabled
+                              permission={PERMISSIONS.DEPARTAMENTO_DELETE}
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                onClick={() => {
+                                  setDeleteAction({
+                                    action: () =>
+                                      handleDeletion.departamento(item.id),
+                                    label: `Eliminar o departamento: "${item.nome}"?`,
+                                  });
+                                  setDeleteDialogOpen(true);
+                                }}
+                                disabled={item.defaultType}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </PermissionDisabled>
                           </div>
                         </td>
                       </tr>
@@ -721,6 +751,7 @@ export default function Settings() {
           title: "Nova localização",
           action: () => setAddLocationOpen(true),
         }}
+        actionPermission={PERMISSIONS.SALA_CREATE}
         style="max-h-140"
       >
         {localizacoes ? (
@@ -765,34 +796,42 @@ export default function Settings() {
                         </td>
                         <td className="py-2 pl-2 text-center text-primary/80">
                           <div className="flex items-center justify-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => {
-                                setSelectedLocation(item);
-                                setEditLocationOpen(true);
-                              }}
-                              disabled={item.defaultType}
+                            <PermissionDisabled
+                              permission={PERMISSIONS.SALA_UPDATE}
                             >
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive hover:text-destructive"
-                              onClick={() => {
-                                setDeleteAction({
-                                  action: () =>
-                                    handleDeletion.localizacao(item.id),
-                                  label: `Eliminar a localização: "${item.nome}"?`,
-                                });
-                                setDeleteDialogOpen(true);
-                              }}
-                              disabled={item.defaultType}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => {
+                                  setSelectedLocation(item);
+                                  setEditLocationOpen(true);
+                                }}
+                                disabled={item.defaultType}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                            </PermissionDisabled>
+                            <PermissionDisabled
+                              permission={PERMISSIONS.SALA_DELETE}
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                onClick={() => {
+                                  setDeleteAction({
+                                    action: () =>
+                                      handleDeletion.localizacao(item.id),
+                                    label: `Eliminar a localização: "${item.nome}"?`,
+                                  });
+                                  setDeleteDialogOpen(true);
+                                }}
+                                disabled={item.defaultType}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </PermissionDisabled>
                           </div>
                         </td>
                       </tr>
@@ -860,7 +899,15 @@ export default function Settings() {
   );
 }
 
-const Card = ({ children, title, description, Icon, actionBtn, style }) => {
+const Card = ({
+  children,
+  title,
+  description,
+  Icon,
+  actionBtn,
+  actionPermission,
+  style,
+}) => {
   return (
     <section
       className={cn(
@@ -879,13 +926,15 @@ const Card = ({ children, title, description, Icon, actionBtn, style }) => {
           </div>
         </div>
         {actionBtn && (
-          <Button
-            variant="outline"
-            className="w-fit min-h-fit h-11 py-1 px-6 rounded-lg flex items-center cursor-pointer"
-            onClick={actionBtn.action ?? undefined}
-          >
-            {actionBtn.title ?? ""}
-          </Button>
+          <PermissionDisabled permission={actionPermission}>
+            <Button
+              variant="outline"
+              className="w-fit min-h-fit h-11 py-1 px-6 rounded-lg flex items-center cursor-pointer"
+              onClick={actionBtn.action ?? undefined}
+            >
+              {actionBtn.title ?? ""}
+            </Button>
+          </PermissionDisabled>
         )}
       </div>
       <span className="w-full h-0.5 bg-border" />

@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { request } from "@/lib/request";
 import { toast } from "sonner";
 import { getFormState } from "@/lib/utils";
@@ -174,7 +174,7 @@ export function CreateItemDialog({
                       ) : (
                         <>
                           <SelectItem key={"cat-0"} value={undefined}>
-                            Sem categorias existentes
+                            Não existem categorias
                           </SelectItem>
                         </>
                       )
@@ -259,15 +259,21 @@ export function CreateItemDialog({
                   <SelectValue placeholder="Selecionar" />
                 </SelectTrigger>
                 <SelectContent>
-                  {localizacoes.length ? (
-                    localizacoes.map((c, i) => (
-                      <SelectItem key={`loc-${i}`} value={String(c.id)}>
-                        {c.nome}
+                  {localizacoes ? (
+                    localizacoes.length ? (
+                      localizacoes.map((c, i) => (
+                        <SelectItem key={`loc-${i}`} value={String(c.id)}>
+                          {c.nome}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem key={"loc-0"} value={undefined}>
+                        Não existem localizações
                       </SelectItem>
-                    ))
+                    )
                   ) : (
                     <>
-                      <SelectItem key={"loc-0"} value={undefined}>
+                      <SelectItem key={"loc-00"} value={undefined}>
                         Falha ao carregar
                       </SelectItem>
                     </>

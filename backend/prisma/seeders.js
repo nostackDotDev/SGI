@@ -66,6 +66,7 @@ async function main() {
     // Relatórios
     "RELATORIO_READ",
     "RELATORIO_CREATE",
+    "RELATORIO_EXPORT",
   ];
 
   for (const nome of permissoes) {

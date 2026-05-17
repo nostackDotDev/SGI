@@ -56,6 +56,7 @@ export default function Login() {
         setIsLoading(false);
       },
     );
+    setIsLoading(false);
   };
 
   const handleInput = (field, value) => {

@@ -190,6 +190,42 @@ const items = await prisma.item.findMany({
 }
 
 router.get(
+  "/",
+  requirePermission(PERMISSIONS.RELATORIO_READ),
+  async (req, res) => {
+    const reports = await prisma.relatorio.findMany({
+      where: { utilizadorId: req.userId },
+    });
+
+    if (!reports || reports.length === 0) {
+      return res
+        .status(404)
+        .json({ data: null, error: "Relatório não encontrado" });
+    }
+
+    try {
+      return res.json(
+        reports.map((report) => ({
+          data: {
+            id: report.id,
+            type: report.type,
+            generatedAt: report.createdAt,
+            startDate: report.startDate,
+            endDate: report.endDate,
+            categories: JSON.parse(report.categories),
+            totals: JSON.parse(report.totals),
+            records: JSON.parse(report.records),
+          },
+          error: null,
+        })),
+      );
+    } catch (error) {
+      return res.status(500).json({ data: null, error: error.message });
+    }
+  },
+);
+
+router.get(
   "/:id",
   requirePermission(PERMISSIONS.RELATORIO_READ),
   async (req, res) => {
@@ -226,42 +262,6 @@ router.get(
         },
         error: null,
       });
-    } catch (error) {
-      return res.status(500).json({ data: null, error: error.message });
-    }
-  },
-);
-
-router.get(
-  "/",
-  requirePermission(PERMISSIONS.RELATORIO_READ),
-  async (req, res) => {
-    const reports = await prisma.relatorio.findMany({
-      where: { utilizadorId: req.userId },
-    });
-
-    if (!reports || reports.length === 0) {
-      return res
-        .status(404)
-        .json({ data: null, error: "Relatório não encontrado" });
-    }
-
-    try {
-      return res.json(
-        reports.map((report) => ({
-          data: {
-            id: report.id,
-            type: report.type,
-            generatedAt: report.createdAt,
-            startDate: report.startDate,
-            endDate: report.endDate,
-            categories: JSON.parse(report.categories),
-            totals: JSON.parse(report.totals),
-            records: JSON.parse(report.records),
-          },
-          error: null,
-        })),
-      );
     } catch (error) {
       return res.status(500).json({ data: null, error: error.message });
     }

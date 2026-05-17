@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
 import { request } from "@/lib/request";
 import { toast } from "sonner";
+import { getFormState } from "@/lib/utils";
 
 const initialFormData = {
   id: undefined,
@@ -25,15 +26,18 @@ export function EditDepartmentDialog({ open, onOpenChange, department }) {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (open && department) {
-      setFormData({
-        id: department.id,
-        nome: department.nome ?? "",
-        descricao: department.descricao ?? "",
-      });
-    } else {
-      setFormData(initialFormData);
-    }
+    const f = () => {
+      if (open && department) {
+        setFormData({
+          id: department.id,
+          nome: department.nome ?? "",
+          descricao: department.descricao ?? "",
+        });
+      }
+    };
+    f();
+
+    return () => setFormData(initialFormData);
   }, [open, department]);
 
   const handleInputChange = (field, value) => {
@@ -88,6 +92,8 @@ export function EditDepartmentDialog({ open, onOpenChange, department }) {
     onOpenChange(false);
   };
 
+  const { canSubmit } = getFormState(formData, initialFormData, ["nome"]);
+
   if (!department) return null;
 
   return (
@@ -135,7 +141,7 @@ export function EditDepartmentDialog({ open, onOpenChange, department }) {
               Cancelar
             </Button>
 
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading || !canSubmit}>
               Atualizar Departamento
             </Button>
           </DialogFooter>
