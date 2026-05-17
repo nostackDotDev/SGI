@@ -21,12 +21,15 @@ export function EditCategoryDialog({ open, onOpenChange, category }) {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (open && category) {
-      setFormData({
-        nome: category.nome || "",
-        descricao: category.descricao || "",
-      });
-    }
+    const f = () => {
+      if (open && category) {
+        setFormData({
+          nome: category.nome || "",
+          descricao: category.descricao || "",
+        });
+      }
+    };
+    f();
   }, [open, category]);
 
   const handleSubmit = (e) => {
@@ -37,8 +40,7 @@ export function EditCategoryDialog({ open, onOpenChange, category }) {
       `/categoria/update/${category.id}`,
       "PUT",
       {
-        nome: formData.nome,
-        descricao: formData.descricao,
+        data: formData,
       },
       () => {
         refreshManager.refresh("categorias");

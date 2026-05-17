@@ -17,14 +17,17 @@ export async function authMiddleware(req, res, next) {
     const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
 
     const user = await prisma.utilizador.findFirst({
-      where: { id: decoded.userId },
+      where: {
+        id: decoded.userId,
+        deletedAt: null, // SECURITY: Check user not soft-deleted
+      },
     });
 
     if (!user) {
       return res.status(401).json({
         message: "Unauthorized",
         data: null,
-        error: "User not found",
+        error: "User not found or has been deleted",
       });
     }
 
@@ -38,7 +41,6 @@ export async function authMiddleware(req, res, next) {
     // Clear invalid access token
     res.clearCookie("accessToken", {
       httpOnly: true,
-      // secure: process.env.NODE_ENV === "production",
       secure: true,
       sameSite: "none",
     });

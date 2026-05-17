@@ -83,7 +83,7 @@ export function Header({ onMenuClick, collapsed }) {
                 <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
               <span className="hidden sm:inline-block font-medium">
-                {user?.nome ?? "Usuário"}
+                {user?.nome ?? "Utilizador"}
               </span>
               <ChevronDown className="w-4 h-4 text-muted-foreground" />
             </Button>

@@ -409,7 +409,7 @@ export default function Settings() {
                                   });
                                   setDeleteDialogOpen(true);
                                 }}
-                                disabled={item.defaultType}
+                                disabled={item.defaultType || !item.empty}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>

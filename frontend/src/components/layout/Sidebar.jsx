@@ -40,7 +40,7 @@ const navItems = [
   { title: "Inventário", url: "/inventario", icon: Package },
   { title: "Movimentações", url: "/movimentacoes", icon: ArrowRightLeft },
   { title: "Relatórios", url: "/relatorios", icon: BarChart3 },
-  { title: "Usuários", url: "/usuarios", icon: Users },
+  { title: "Utilizadores", url: "/usuarios", icon: Users },
   { title: "Definições", url: "/configuracoes", icon: Settings },
 ];
 
@@ -136,7 +136,7 @@ export function AppSidebar() {
               </Avatar>
               {!collapsed && (
                 <span className="hidden sm:inline-block font-medium">
-                  {user?.nome ?? "Usuário"}
+                  {user?.nome ?? "Utilizador"}
                 </span>
               )}
               <ChevronDown className="w-4 h-4 text-muted-foreground" />

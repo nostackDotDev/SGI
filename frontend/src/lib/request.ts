@@ -19,14 +19,15 @@ const axiosInstance: AxiosInstance = axios.create({
 // ============================================================================
 
 let isRefreshing = false;
-const refreshSubscribers: Array<(token: string) => void> = [];
+let refreshError: any = null;
+const refreshSubscribers: Array<(error: any) => void> = [];
 
-const subscribeToRefresh = (callback: (token: string) => void) => {
+const subscribeToRefresh = (callback: (error: any) => void) => {
   refreshSubscribers.push(callback);
 };
 
-const notifyRefreshSubscribers = () => {
-  refreshSubscribers.forEach((callback) => callback(""));
+const notifyRefreshSubscribers = (error?: any) => {
+  refreshSubscribers.forEach((callback) => callback(error));
   refreshSubscribers.length = 0;
 };
 
@@ -34,12 +35,15 @@ const refreshAccessToken = async (): Promise<boolean> => {
   try {
     const response = await axiosInstance.post("/auth/refresh");
     // Cookies automatically updated by server
-    notifyRefreshSubscribers();
+    refreshError = null;
+    notifyRefreshSubscribers(null); // Success - pass null error
     return true;
   } catch (error) {
     console.error("Token refresh failed:", error);
     // Refresh failed - clear auth state
     localStorage.removeItem("user");
+    refreshError = error;
+    notifyRefreshSubscribers(error); // Failure - pass error to queued requests
     return false;
   }
 };
@@ -69,7 +73,12 @@ axiosInstance.interceptors.response.use(
           if (refreshSuccess) {
             isRefreshing = false;
             // Retry original request with new token
-            return axiosInstance(originalRequest);
+            try {
+              return await axiosInstance(originalRequest);
+            } catch (retryError) {
+              // Retry failed even after refresh succeeded
+              return Promise.reject(retryError);
+            }
           }
 
           refreshAttempts++;
@@ -82,15 +91,26 @@ axiosInstance.interceptors.response.use(
           }
         }
 
-        // All refresh attempts failed
+        // All refresh attempts failed - release lock so future requests can try
         isRefreshing = false;
+        refreshError = error;
         localStorage.removeItem("user");
-        window.location.href = "/login";
+        // Redirect to login after a tick to avoid race conditions with error callbacks
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 0);
+        return Promise.reject(error);
       } else {
         // Refresh is already in-flight, queue this request
-        return new Promise((resolve) => {
-          subscribeToRefresh(() => {
-            resolve(axiosInstance(originalRequest));
+        return new Promise((resolve, reject) => {
+          subscribeToRefresh((error) => {
+            if (error) {
+              // Refresh failed - reject queued request with the refresh error
+              reject(error);
+            } else {
+              // Refresh succeeded - retry this request
+              axiosInstance(originalRequest).then(resolve).catch(reject);
+            }
           });
         });
       }
@@ -170,6 +190,7 @@ export function request<T = any>(
       ...requestOptions,
     })
     .then((response) => {
+      // Always call success callback - let the component decide what to do
       if (onSuccess) onSuccess(response.data);
 
       // Trigger refresh if refreshKey is provided
@@ -182,6 +203,18 @@ export function request<T = any>(
       }
     })
     .catch((error) => {
+      // Don't process error callback if we're being redirected to login
+      // This prevents cascading error handlers during logout
+      if (
+        window.location.pathname.includes("/login") &&
+        error.response?.status !== 401
+      ) {
+        console.debug(
+          "[Request] Error suppressed during logout - user is being redirected to login",
+        );
+        return;
+      }
+
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 401) {
           // Token invalid/expired, clear localStorage

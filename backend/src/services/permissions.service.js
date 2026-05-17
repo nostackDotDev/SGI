@@ -19,6 +19,11 @@ export async function getUserPermissions(userId) {
 
   if (!user) throw new Error("User not found");
 
+  // SECURITY: Reject deleted users
+  if (user.deletedAt) {
+    throw new Error("User has been deleted");
+  }
+
   // Start with cargo permissions
   const finalPerms = new Set();
 

@@ -177,6 +177,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   // =========================================================================
+  // CROSS-TAB LOGOUT SYNCHRONIZATION
+  // When user logs out from another tab, logout all tabs
+  // =========================================================================
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      // When 'user' is removed from localStorage (logout from another tab)
+      if (e.key === "user" && e.newValue === null) {
+        console.debug("[Auth] Logout detected from another tab, logging out");
+        setUserAndStore(null);
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
+
+  // =========================================================================
   // SESSION VALIDATION on app focus
   // When app regains focus after being backgrounded, validate session
   // This catches token invalidation while app was in background
@@ -221,8 +241,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export const useAuth = () => {
+function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
   return ctx;
-};
+}
+
+export { useAuth };

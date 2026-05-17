@@ -221,7 +221,10 @@ export async function refreshAccessToken(refreshToken) {
 
     // 2. Find user and validate refresh token matches
     const user = await prisma.utilizador.findFirst({
-      where: { id: decoded.userId },
+      where: {
+        id: decoded.userId,
+        deletedAt: null, // SECURITY: Reject deleted users
+      },
       include: {
         instituicao: true,
         cargo: true,

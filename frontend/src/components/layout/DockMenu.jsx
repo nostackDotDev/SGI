@@ -12,7 +12,7 @@ const dockItems = [
   { label: "Inventário", icon: Package, to: "/inventario" },
   { label: "Transferências", icon: ArrowRightLeft, to: "/movimentacoes" },
   { label: "Relatórios", icon: BarChart3, to: "/relatorios" },
-  { label: "Usuários", icon: Users, to: "/usuarios" },
+  { label: "Utilizadores", icon: Users, to: "/usuarios" },
   { label: "Definições", icon: Settings, to: "/configuracoes" },
 ];
 

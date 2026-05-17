@@ -79,14 +79,14 @@ const router = createBrowserRouter([
 ]);
 
 createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <AuthProvider>
-      <SidebarProvider>
-        <TooltipProvider>
-          <RouterProvider router={router} />
-        </TooltipProvider>
-      </SidebarProvider>
-    </AuthProvider>
+  // <StrictMode>
+  <AuthProvider>
+    <SidebarProvider>
+      <TooltipProvider>
+        <RouterProvider router={router} />
+      </TooltipProvider>
+    </SidebarProvider>
     <Toaster closeButton />
-  </StrictMode>,
+  </AuthProvider>,
+  // </StrictMode>,
 );
