@@ -73,6 +73,7 @@ router.get("/", requirePermission(PERMISSIONS.ITEM_READ), async (req, res) => {
     error: null,
   });
 });
+
 router.get(
   "/:id",
   requirePermission(PERMISSIONS.ITEM_READ),
@@ -217,15 +218,115 @@ router.put(
       condicaoId,
       salaId,
       reason,
+      transferType,
     } = req.body;
 
     const item = await prisma.item.findUnique({
       where: { id: parseInt(req.params.id) },
+      include: { condicao: true },
     });
 
+    if (!item || item.deletedAt) {
+      return res.status(404).json({ data: null, error: "Item not found" });
+    }
+
+    // Handle return transfer type separately
+    if (transferType === "return") {
+      try {
+        // Validate status is "Emprestado"
+        if (item.condicao.nome !== "Emprestado") {
+          return res.status(400).json({
+            data: null,
+            error: `Apenas itens com status "Emprestado" podem ser devolvidos. Status atual: ${item.condicao.nome}`,
+          });
+        }
+
+        // Validate quantity for return
+        if (!quantidade) {
+          return res.status(400).json({
+            data: null,
+            error: "Quantidade de devolução é obrigatória",
+          });
+        }
+
+        ItemService.validateQuantityTransfer(item.quantidade, quantidade);
+
+        // Validate new location exists
+        if (!salaId) {
+          return res.status(400).json({
+            data: null,
+            error: "Localização de devolução é obrigatória",
+          });
+        }
+
+        const newSala = await prisma.sala.findUnique({
+          where: { id: parseInt(salaId) },
+        });
+
+        if (!newSala) {
+          return res.status(404).json({
+            data: null,
+            error: "Localização de devolução não encontrada",
+          });
+        }
+
+        // Get "Disponível" condition ID
+        const disponivel = await prisma.condicao.findFirst({
+          where: { nome: "Disponível" },
+        });
+
+        if (!disponivel) {
+          return res.status(500).json({
+            data: null,
+            error: 'Condição "Disponível" não configurada no sistema',
+          });
+        }
+
+        // Create/update item at new location with returned quantity with "Disponível" status
+        // If item with same (nome, serialNumber, salaId) exists, update its quantity
+        // Otherwise, create a new item
+        const returnedItem = await ItemService.upsertItemAtLocation(
+          item.id,
+          parseInt(salaId),
+          disponivel.id,
+          quantidade,
+        );
+
+        // Reduce original item quantity and auto soft-delete if reaches 0
+        const updatedOriginal = await ItemService.reduceAndDeleteIfZero(
+          item.id,
+          quantidade,
+        );
+
+        // Create registo record on original item
+        const registo = await RecordService.createRecord({
+          instituicaoId: req.tenantId,
+          itemId: item.id,
+          quantidade: Number(quantidade),
+          utilizadorId: req.userId,
+          type: "return",
+          reason,
+        });
+
+        return res.json({
+          message: "Devolução registada com sucesso",
+          data: { originalItem: updatedOriginal, returnedItem, registo },
+          error: null,
+        });
+      } catch (error) {
+        console.error("Error in return transfer:", error);
+        return res.status(400).json({
+          data: null,
+          message: error.message || "Erro ao registar devolução",
+          error: error.message,
+        });
+      }
+    }
+
+    // Validate that at least one field differs from current values (for non-transfer updates)
     if (
       (!nome || String(nome) === String(item.nome)) &&
-      (!descricao || String(descricao) === String(item.descricao)) &&
+      String(descricao) === String(item.descricao) &&
       (!quantidade || String(quantidade) === String(item.quantidade)) &&
       (!serialNumber || String(serialNumber) === String(item.serialNumber)) &&
       (!categoriaId || String(categoriaId) === String(item.categoriaId)) &&
@@ -237,10 +338,6 @@ router.put(
         data: null,
         error: "At least one field must be provided for update",
       });
-    }
-
-    if (!item || item.deletedAt) {
-      return res.status(404).json({ data: null, error: "Item not found" });
     }
 
     const categoria = categoriaId
@@ -288,19 +385,23 @@ router.put(
         salaId,
       });
 
-      // Create registo record only if location (salaId) changed
+      // Create registo record only if location (salaId) changed (regular transfer)
       if (salaId && String(salaId) !== String(item.salaId)) {
         const registo = await RecordService.createRecord({
           instituicaoId: req.tenantId,
           itemId: newItem.id,
           quantidade: newItem.quantidade,
           utilizadorId: req.userId,
-          type: "transfer",
+          type: transferType ?? "transfer",
           reason,
         });
       }
 
-      res.json({ data: newItem, error: null });
+      res.json({
+        data: { ...newItem },
+        error: null,
+        message: "Item atualizado com sucesso",
+      });
     } catch (error) {
       const { status, message } = handlePrismaError(error);
       res.status(status).json({ data: null, message });
@@ -341,6 +442,256 @@ router.delete(
       res.json({ data: deletedItem, error: null });
     } catch (error) {
       res.status(500).json({ data: null, error: error.message });
+    }
+  },
+);
+
+/**
+ * POST /item/reduction/:id
+ * Reduce item quantity at current location
+ * Only works for items with "Disponível" status
+ */
+router.post(
+  "/reduction/:id",
+  requirePermission(PERMISSIONS.ITEM_UPDATE),
+  async (req, res) => {
+    const { quantidade, reason } = req.body;
+    const itemId = parseInt(req.params.id);
+
+    try {
+      // Fetch item with status
+      const item = await prisma.item.findUnique({
+        where: { id: itemId },
+        include: { condicao: true },
+      });
+
+      if (!item || item.deletedAt) {
+        return res
+          .status(404)
+          .json({ data: null, error: "Item não encontrado" });
+      }
+
+      // Validate status is "Disponível"
+      if (item.condicao.nome !== "Disponível") {
+        return res.status(400).json({
+          message: `Apenas itens com status "Disponível" podem ter reduções. Status atual: ${item.condicao.nome}`,
+          data: null,
+          error: `Apenas itens com status "Disponível" podem ter reduções. Status atual: ${item.condicao.nome}`,
+        });
+      }
+
+      // Validate quantity
+      ItemService.validateQuantityTransfer(item.quantidade, quantidade);
+
+      // Reduce quantity and auto soft-delete if reaches 0
+      const updatedItem = await ItemService.reduceAndDeleteIfZero(
+        itemId,
+        quantidade,
+      );
+
+      // Create registo record
+      const registo = await RecordService.createRecord({
+        instituicaoId: req.tenantId,
+        itemId: itemId,
+        quantidade: Number(quantidade),
+        utilizadorId: req.userId,
+        type: "reduction",
+        reason,
+      });
+
+      res.json({
+        message: "Redução registada com sucesso",
+        data: { item: updatedItem, registo },
+        error: null,
+      });
+    } catch (error) {
+      console.error("Error in reduction:", error);
+      res.status(400).json({
+        data: null,
+        message: error.message || "Erro ao registar redução",
+        error: error.message,
+      });
+    }
+  },
+);
+
+/**
+ * POST /item/return/:id
+ * Return borrowed items from "Emprestado" status
+ * Creates new item with "Disponível" status at specified location
+ */
+router.post(
+  "/return/:id",
+  requirePermission(PERMISSIONS.ITEM_UPDATE),
+  async (req, res) => {
+    const { quantidade, salaId, reason, transferType } = req.body;
+    const itemId = parseInt(req.params.id);
+
+    try {
+      // Fetch item with relations
+      const item = await prisma.item.findUnique({
+        where: { id: itemId, deletedAt: null },
+        include: { condicao: true, sala: true },
+      });
+
+      if (!item) {
+        return res
+          .status(404)
+          .json({ data: null, error: "Item não encontrado" });
+      }
+
+      // Validate status is "Emprestado"
+      if (
+        item.condicao.nome !== "Emprestado" &&
+        item.condicao.nome !== "Em manutenção"
+      ) {
+        return res.status(400).json({
+          data: null,
+          error: `Apenas itens com status "Emprestado" ou "Em manutenção" podem ser devolvidos/restaurados. Status atual: ${item.condicao.nome}`,
+        });
+      }
+
+      // Validate quantity
+      ItemService.validateQuantityTransfer(item.quantidade, quantidade);
+
+      // Validate new location exists
+      if (!salaId) {
+        return res.status(400).json({
+          data: null,
+          error: "Localização de devolução é obrigatória",
+        });
+      }
+
+      const newSala = await prisma.sala.findUnique({
+        where: { id: parseInt(salaId) },
+      });
+
+      if (!newSala) {
+        return res.status(404).json({
+          data: null,
+          error: "Localização de devolução não encontrada",
+        });
+      }
+
+      // Get "Disponível" condition ID
+      const disponivel = await prisma.condicao.findFirst({
+        where: { nome: "Disponível" },
+      });
+
+      if (!disponivel) {
+        return res.status(500).json({
+          data: null,
+          error: 'Condição "Disponível" não configurada no sistema',
+        });
+      }
+
+      // Create/update item at new location with returned quantity with "Disponível" status
+      // If item with same (nome, serialNumber, salaId) exists, update its quantity
+      // Otherwise, create a new item
+      const returnedItem = await ItemService.upsertItemAtLocation(
+        itemId,
+        parseInt(salaId),
+        disponivel.id,
+        quantidade,
+      );
+
+      // Reduce original item quantity and auto soft-delete if reaches 0
+      const updatedOriginal = await ItemService.reduceAndDeleteIfZero(
+        itemId,
+        quantidade,
+      );
+
+      // Create registo record on original item
+      const registo = await RecordService.createRecord({
+        instituicaoId: req.tenantId,
+        itemId: itemId,
+        quantidade: Number(quantidade),
+        utilizadorId: req.userId,
+        type: transferType || "return",
+        reason,
+      });
+
+      res.json({
+        message: "Devolução registada com sucesso",
+        data: { originalItem: updatedOriginal, returnedItem, registo },
+        error: null,
+      });
+    } catch (error) {
+      console.error("Error in return:", error);
+      res.status(400).json({
+        data: null,
+        message: error.message || "Erro ao registar devolução",
+        error: error.message,
+      });
+    }
+  },
+);
+
+/**
+ * POST /item/exit/:id
+ * Register permanent removal from item (loss, disposal, etc)
+ * Works with any status except deleted
+ */
+router.post(
+  "/exit/:id",
+  requirePermission(PERMISSIONS.ITEM_UPDATE),
+  async (req, res) => {
+    const { quantidade, reason } = req.body;
+    const itemId = parseInt(req.params.id);
+
+    try {
+      // Fetch item
+      const item = await prisma.item.findUnique({
+        where: { id: itemId },
+      });
+
+      if (!item || item.deletedAt) {
+        return res
+          .status(404)
+          .json({ data: null, error: "Item não encontrado" });
+      }
+
+      // Validate quantity
+      if (
+        !quantidade ||
+        Number(quantidade) <= 0 ||
+        Number(quantidade) > item.quantidade
+      ) {
+        return res.status(400).json({
+          data: null,
+          error:
+            "Quantidade deve ser maior que 0 e não pode exceder a quantidade disponível",
+        });
+      }
+
+      // Reduce quantity and auto soft-delete if reaches 0
+      const updatedItem = await ItemService.reduceAndDeleteIfZero(
+        itemId,
+        quantidade,
+      );
+
+      // Create registo record
+      const registo = await RecordService.createRecord({
+        instituicaoId: req.tenantId,
+        itemId: itemId,
+        quantidade: Number(quantidade),
+        utilizadorId: req.userId,
+        type: "exit",
+        reason,
+      });
+
+      res.json({
+        message: "Saída registada com sucesso",
+        data: { item: updatedItem, registo },
+        error: null,
+      });
+    } catch (error) {
+      console.error("Error in exit:", error);
+      res.status(400).json({
+        data: null,
+        message: error.message || "Erro ao registar saída",
+        error: error.message,
+      });
     }
   },
 );

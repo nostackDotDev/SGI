@@ -5,7 +5,7 @@
 
 */
 -- AlterTable
-ALTER TABLE `item` ADD COLUMN `serialNumber` VARCHAR(191) NULL;
+ALTER TABLE `Item` ADD COLUMN `serialNumber` VARCHAR(191) NULL;
 
 -- CreateIndex
 CREATE UNIQUE INDEX `Item_serialNumber_key` ON `Item`(`serialNumber`);

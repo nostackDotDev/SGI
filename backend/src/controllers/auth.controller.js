@@ -64,7 +64,7 @@ export async function loginController(req, res) {
     console.error("Signup error:", error);
     const { status, message } = handlePrismaError(error);
     return res.status(status).json({
-      message,
+      message: "Ocorreu um erro inesperado. Por favor, tente novamente",
       data: null,
       error: "Server responded with a status: " + status + "\n" + error,
     });
@@ -78,7 +78,7 @@ export async function refreshController(req, res) {
 
     if (!refreshToken) {
       return res.status(401).json({
-        message: "Unauthorized",
+        message: "Não autorizado",
         data: null,
         error: "No refresh token provided",
       });
@@ -103,7 +103,7 @@ export async function refreshController(req, res) {
       });
 
       return res.status(401).json({
-        message: "Unauthorized",
+        message: "Não autorizado",
         data: null,
         error: "Refresh token invalid or expired",
       });

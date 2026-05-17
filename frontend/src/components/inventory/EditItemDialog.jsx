@@ -51,6 +51,7 @@ export function EditItemDialog({
   status,
   localizacoes,
   item,
+  onSuccess,
 }) {
   const [formData, setFormData] = useState(initialFormData);
   const [isLoading, setIsLoading] = useState(false);
@@ -95,6 +96,7 @@ export function EditItemDialog({
           condicaoId: formData.condicaoId,
           salaId: formData.salaId,
         },
+        refreshKey: "items",
       },
       (res) => {
         console.log(res);
@@ -107,6 +109,7 @@ export function EditItemDialog({
           });
           return;
         }
+        onSuccess?.();
         toast.success(res.message ?? "Item atualizado com sucesso!", {
           id: "fetch-toast",
           position: "bottom-right",
@@ -183,15 +186,21 @@ export function EditItemDialog({
                     <SelectValue placeholder="Selecionar" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categorias.length ? (
-                      categorias.map((c, i) => (
-                        <SelectItem key={i} value={String(c.id)}>
-                          {c.nome}
+                    {categorias ? (
+                      categorias.length ? (
+                        categorias.map((c, i) => (
+                          <SelectItem key={i} value={String(c.id)}>
+                            {c.nome}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem key={"cat-00"} value={undefined}>
+                          Não existem categorias
                         </SelectItem>
-                      ))
+                      )
                     ) : (
                       <>
-                        <SelectItem key={0} value={undefined}>
+                        <SelectItem key={"cat-0"} value={undefined}>
                           Falha ao carregar
                         </SelectItem>
                       </>
@@ -270,18 +279,22 @@ export function EditItemDialog({
                   <SelectValue placeholder="Selecionar" />
                 </SelectTrigger>
                 <SelectContent>
-                  {localizacoes.length ? (
-                    localizacoes.map((c, i) => (
-                      <SelectItem key={i} value={String(c.id)}>
-                        {c.nome}
+                  {localizacoes ? (
+                    localizacoes.length ? (
+                      localizacoes.map((c, i) => (
+                        <SelectItem key={i} value={String(c.id)}>
+                          {c.nome}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem key={"loc-00"} value={undefined}>
+                        Não existem localizações
                       </SelectItem>
-                    ))
+                    )
                   ) : (
-                    <>
-                      <SelectItem key={0} value={undefined}>
-                        Falha ao carregar
-                      </SelectItem>
-                    </>
+                    <SelectItem key={"loc-0"} value={undefined}>
+                      Falha ao carregar
+                    </SelectItem>
                   )}
                 </SelectContent>
               </Select>

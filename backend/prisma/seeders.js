@@ -62,6 +62,11 @@ async function main() {
     "REGISTO_CREATE",
     "REGISTO_UPDATE",
     "REGISTO_DELETE",
+
+    // Relatórios
+    "RELATORIO_READ",
+    "RELATORIO_CREATE",
+    "RELATORIO_EXPORT",
   ];
 
   for (const nome of permissoes) {

@@ -59,7 +59,7 @@ router.get(
       where: {
         deletedAt: null,
         instituicaoId: instituicaoId,
-        // defaultType: { equals: false },
+        defaultType: { equals: false },
       },
       include: { instituicao: true, salas: true },
     });

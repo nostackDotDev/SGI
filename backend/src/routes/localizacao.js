@@ -53,7 +53,7 @@ router.get("/", requirePermission(PERMISSIONS.SALA_READ), async (req, res) => {
   const salas = await prisma.sala.findMany({
     where: {
       deletedAt: null,
-      // defaultType: { equals: false },
+      defaultType: { equals: false },
       departamento: {
         instituicaoId: req.tenantId,
       },

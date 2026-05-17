@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
 import { request } from "@/lib/request";
 import { Loader2 } from "lucide-react";
+import { getFormState } from "@/lib/utils";
 
 const initialFormData = {
   numeroSala: "",
@@ -78,6 +79,11 @@ export function CreateLocationDialog({ open, onOpenChange, departaments }) {
     onOpenChange(false);
   };
 
+  const { canSubmit } = getFormState(formData, initialFormData, [
+    "departamentoId",
+    "numeroSala",
+  ]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-125 max-h-7/9 overflow-y-auto no-scrollbar">
@@ -105,19 +111,19 @@ export function CreateLocationDialog({ open, onOpenChange, departaments }) {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="locatioonType">Tipo</Label>
+                <Label htmlFor="locationType">Tipo</Label>
                 <Input
                   id="locationType"
                   type="text"
-                  placeholder="Laboratório"
-                  defaultValue={formData.tipoSala ?? ""}
+                  placeholder="Sala de aula, laboratório"
+                  value={formData.tipoSala ?? ""}
                   onChange={(v) =>
                     handleInputChange("tipoSala", v.currentTarget.value)
                   }
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="category">Departamento</Label>
+                <Label htmlFor="categorySelect">Departamento</Label>
                 <Select
                   value={formData.departamentoId ?? ""}
                   required
@@ -125,22 +131,26 @@ export function CreateLocationDialog({ open, onOpenChange, departaments }) {
                     handleInputChange("departamentoId", value)
                   }
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger id="categorySelect" className="w-full">
                     <SelectValue placeholder="Selecionar" />
                   </SelectTrigger>
                   <SelectContent>
-                    {departaments.length ? (
-                      departaments.map((d, i) => (
-                        <SelectItem key={i} value={String(d.id)}>
-                          {d.nome}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <>
+                    {departaments ? (
+                      departaments.length ? (
+                        departaments.map((d, i) => (
+                          <SelectItem key={i} value={String(d.id)}>
+                            {d.nome}
+                          </SelectItem>
+                        ))
+                      ) : (
                         <SelectItem key={0} value={undefined}>
-                          Falha ao carregar
+                          Não existem departamentos
                         </SelectItem>
-                      </>
+                      )
+                    ) : (
+                      <SelectItem key={0} value={undefined}>
+                        Falha ao carregar
+                      </SelectItem>
                     )}
                   </SelectContent>
                 </Select>
@@ -154,7 +164,7 @@ export function CreateLocationDialog({ open, onOpenChange, departaments }) {
             </Button>
             <Button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !canSubmit}
               className="flex items-center justify-center gap-2"
             >
               Adicionar Localização{" "}

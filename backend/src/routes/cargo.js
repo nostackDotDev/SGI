@@ -57,7 +57,7 @@ router.get("/", requirePermission(PERMISSIONS.CARGO_READ), async (req, res) => {
     where: {
       instituicaoId,
       deletedAt: null,
-      // defaultType: { equals: false }
+      defaultType: { equals: false },
     },
     include: {
       permissoes: {

@@ -36,9 +36,9 @@ export default function DeleteDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogTrigger asChild>
+      {/* <AlertDialogTrigger asChild>
         <Button variant="destructive">{title}</Button>
-      </AlertDialogTrigger>
+      </AlertDialogTrigger> */}
       <AlertDialogContent size="sm">
         <AlertDialogHeader>
           <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">

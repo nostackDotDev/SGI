@@ -32,12 +32,12 @@ CREATE UNIQUE INDEX `Utilizador_nome_instituicaoId_key` ON `Utilizador`(`nome`, 
 --
 
 -- DropIndex
--- DROP INDEX `Sala_numeroSala_tipoSala_key` ON `sala`;
+-- DROP INDEX `Sala_numeroSala_tipoSala_key` ON `Sala`;
 -- AlterTable
-ALTER TABLE `registo`
+ALTER TABLE `Registo`
 ADD COLUMN `instituicaoId` INTEGER NOT NULL;
 -- AlterTable
-ALTER TABLE `sala`
+ALTER TABLE `Sala`
 ADD COLUMN `instituicaoId` INTEGER NULL;
 -- CreateIndex
 CREATE UNIQUE INDEX `Sala_numeroSala_tipoSala_departamentoId_key` ON `Sala`(`numeroSala`, `tipoSala`, `departamentoId`);

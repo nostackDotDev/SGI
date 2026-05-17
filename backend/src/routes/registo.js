@@ -27,8 +27,9 @@ router.get(
     // If date range is invalid, return empty array
     if (isInvalid) {
       return res.json({
+        message: "Período inválido",
         data: [],
-        error: null,
+        error: "Invalid date range",
       });
     }
 
@@ -50,18 +51,63 @@ router.get(
     });
 
     res.json({
+      message: "Registos carregados com sucesso",
       data: registos.map((reg) => ({
         id: reg.id,
         type: reg.type,
         date: reg.createdAt,
         reason: reg.reason,
+        quantidade: reg.quantidade,
         item: {
           id: reg.item.id,
           nome: reg.item.nome,
-          descricao: reg.item.descricao ?? "",
-          quantidade: reg.item.quantidade,
-          categoriaId: reg.item.categoriaId,
-          salaId: reg.item.salaId,
+        },
+        utilizador: {
+          id: reg.utilizador.id,
+          nome: reg.utilizador.nome,
+        },
+      })),
+      // filters: {
+      //   startDate: parsedStart ?? undefined,
+      //   endDate: parsedEnd ?? undefined,
+      // },
+      error: null,
+    });
+  },
+);
+
+router.get(
+  "/latest",
+  requirePermission(PERMISSIONS.REGISTO_READ),
+  async (req, res) => {
+    const registos = await prisma.registo.findMany({
+      where: {
+        deletedAt: null,
+        utilizador: {
+          instituicaoId: req.tenantId,
+        },
+      },
+      include: {
+        item: true,
+        utilizador: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 10,
+    });
+
+    res.json({
+      message: "Últimas movimentações carregadas com sucesso",
+      data: registos.map((reg) => ({
+        id: reg.id,
+        type: reg.type,
+        date: reg.createdAt,
+        reason: reg.reason,
+        quantidade: reg.quantidade,
+        item: {
+          id: reg.item.id,
+          nome: reg.item.nome,
         },
         utilizador: {
           id: reg.utilizador.id,
@@ -77,7 +123,7 @@ router.get(
   "/:id",
   requirePermission(PERMISSIONS.REGISTO_READ),
   async (req, res) => {
-    const registo = await prisma.registo.findUnique({
+    const registo = await prisma.registo.findFirst({
       where: {
         id: parseInt(req.params.id),
         utilizador: {
@@ -99,19 +145,56 @@ router.get(
         type: registo.type,
         date: registo.createdAt,
         reason: registo.reason,
+        quantidade: registo.quantidade,
         item: {
           id: registo.item.id,
           nome: registo.item.nome,
-          descricao: registo.item.descricao ?? "",
-          quantidade: registo.item.quantidade,
-          categoriaId: registo.item.categoriaId,
-          salaId: registo.item.salaId,
         },
         utilizador: {
           id: registo.utilizador.id,
           nome: registo.utilizador.nome,
         },
       },
+      error: null,
+    });
+  },
+);
+
+router.get(
+  "/item/:id",
+  requirePermission(PERMISSIONS.REGISTO_READ),
+  async (req, res) => {
+    const registos = await prisma.registo.findMany({
+      where: {
+        utilizador: {
+          instituicaoId: req.tenantId,
+        },
+        itemId: parseInt(req.params.id),
+      },
+      include: {
+        item: true,
+        utilizador: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    if (!registos || registos.deletedAt)
+      return res.status(404).json({ data: null, error: "Registo not found" });
+
+    res.json({
+      data: registos.map((reg) => ({
+        id: reg.id,
+        type: reg.type,
+        date: reg.createdAt,
+        reason: reg.reason,
+        quantidade: reg.quantidade,
+        utilizador: {
+          id: reg.utilizador.id,
+          nome: reg.utilizador.nome,
+        },
+      })),
       error: null,
     });
   },
@@ -129,7 +212,7 @@ router.post(
         .json({ data: null, error: "Todos os campos são obrigatórios" });
     }
 
-    const item = await prisma.item.findUnique({
+    const item = await prisma.item.findFirst({
       where: {
         id: itemId,
         sala: {
@@ -185,7 +268,7 @@ router.put(
       });
     }
 
-    const registo = await prisma.registo.findUnique({
+    const registo = await prisma.registo.findFirst({
       where: {
         id: parseInt(req.params.id),
         utilizador: {
@@ -199,7 +282,7 @@ router.put(
     }
 
     const item = itemId
-      ? await prisma.item.findUnique({
+      ? await prisma.item.findFirst({
           where: {
             id: itemId,
             sala: {
@@ -251,7 +334,7 @@ router.delete(
   "/:id",
   requirePermission(PERMISSIONS.REGISTO_DELETE),
   async (req, res) => {
-    const registo = await prisma.registo.findUnique({
+    const registo = await prisma.registo.findFirst({
       where: {
         id: parseInt(req.params.id),
         utilizador: {

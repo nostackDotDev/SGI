@@ -39,26 +39,26 @@ export function EditLocationDialog({
   const [formData, setFormData] = useState(initialFormData);
   const [isLoading, setIsLoading] = useState(false);
 
-  // ✅ Preenche corretamente quando abre modal
   useEffect(() => {
     const f = () => {
       if (open && location) {
         setFormData({
           id: location.id ?? undefined,
 
-          // ⚠️ ajustado para bater com teu Settings/API
           numeroSala: location.numeroSala ?? location.nome ?? "",
           tipoSala: location.tipoSala ?? location.tipo ?? "",
 
-          // suporta objeto OU id direto
           departamentoId:
-            location.departamentoId ?? location.departamento?.id ?? "",
+            departaments.find((d) => d.nome === location.departamento)?.id ??
+            "",
         });
       } else {
         setFormData(initialFormData);
       }
     };
     f();
+
+    console.log("location", location);
   }, [open, location]);
 
   const handleInputChange = (field, value) => {
@@ -113,52 +113,58 @@ export function EditLocationDialog({
           <div className="grid gap-4 py-4">
             {/* Nome */}
             <div className="grid gap-2">
-              <Label>Nome da Localização</Label>
+              <Label htmlFor="name">Nome da Localização</Label>
               <Input
+                id="name"
+                placeholder="Ex: Sala 101"
                 value={formData.numeroSala}
                 onChange={(e) =>
                   handleInputChange("numeroSala", e.currentTarget.value)
                 }
               />
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              {/* Tipo */}
+              <div className="grid gap-2">
+                <Label htmlFor="locationType">Tipo</Label>
+                <Input
+                  id="locationType"
+                  type="text"
+                  value={formData.tipoSala}
+                  placeholder="Sala de aula, laboratório"
+                  onChange={(e) =>
+                    handleInputChange("tipoSala", e.currentTarget.value)
+                  }
+                />
+              </div>
 
-            {/* Tipo */}
-            <div className="grid gap-2">
-              <Label>Tipo</Label>
-              <Input
-                value={formData.tipoSala}
-                onChange={(e) =>
-                  handleInputChange("tipoSala", e.currentTarget.value)
-                }
-              />
-            </div>
+              {/* Departamento */}
+              <div className="grid gap-2">
+                <Label htmlFor="categorySelect">Departamento</Label>
 
-            {/* Departamento */}
-            <div className="grid gap-2">
-              <Label>Departamento</Label>
+                <Select
+                  value={String(formData.departamentoId || "")}
+                  onValueChange={(value) =>
+                    handleInputChange("departamentoId", value)
+                  }
+                >
+                  <SelectTrigger id="categorySelect" className="w-full">
+                    <SelectValue placeholder="Selecionar departamento" />
+                  </SelectTrigger>
 
-              <Select
-                value={String(formData.departamentoId || "")}
-                onValueChange={(value) =>
-                  handleInputChange("departamentoId", value)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecionar departamento" />
-                </SelectTrigger>
-
-                <SelectContent>
-                  {departaments.length ? (
-                    departaments.map((d) => (
-                      <SelectItem key={d.id} value={String(d.id)}>
-                        {d.nome}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="none">Nenhum departamento</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
+                  <SelectContent>
+                    {departaments.length ? (
+                      departaments.map((d) => (
+                        <SelectItem key={d.id} value={String(d.id)}>
+                          {d.nome}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="none">Nenhum departamento</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 

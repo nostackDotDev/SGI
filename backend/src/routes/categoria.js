@@ -51,7 +51,7 @@ router.get(
       where: {
         instituicaoId,
         deletedAt: null,
-        //  defaultType: { equals: false }
+        defaultType: { equals: false },
       },
     });
 

@@ -1,14 +1,20 @@
 export const defaultSuccessMessage = "Operação realizada com sucesso";
 export const defaultErrorMessage = "Não foi possível completar a operação";
 
-export function formatResponse({ data = null, error = null, message = null }) {
+export function formatResponse({
+  data = null,
+  error = null,
+  message = null,
+  ...rest
+}) {
   const normalizedError = error
     ? typeof error === "string"
       ? error
-      : error?.message ?? String(error)
+      : (error?.message ?? String(error))
     : null;
 
   return {
+    ...rest,
     message:
       message ??
       (normalizedError ? defaultErrorMessage : defaultSuccessMessage),
@@ -17,8 +23,15 @@ export function formatResponse({ data = null, error = null, message = null }) {
   };
 }
 
-export function sendSuccess(res, data, message = defaultSuccessMessage, status = 200) {
-  return res.status(status).json(formatResponse({ data, message, error: null }));
+export function sendSuccess(
+  res,
+  data,
+  message = defaultSuccessMessage,
+  status = 200,
+) {
+  return res
+    .status(status)
+    .json(formatResponse({ ...res, data, message, error: null }));
 }
 
 export function sendError(
@@ -27,5 +40,7 @@ export function sendError(
   error = null,
   status = 400,
 ) {
-  return res.status(status).json(formatResponse({ data: null, error, message }));
+  return res
+    .status(status)
+    .json(formatResponse({ data: null, error, message }));
 }

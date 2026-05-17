@@ -29,39 +29,33 @@ export default function Login() {
         data: formData,
       },
       (res) => {
-        if (res && !res.error) {
-          const user = { ...res.data.user, instituicao: res.data.instituicao };
-          setUser(user);
-          setFormData(initialData);
-          navigate("/");
-          toast.success(res.message ?? "Login realizado com sucesso!", {
+        console.log(res);
+        if (!res || res.error) {
+          console.log("Failed to login:", res.error);
+          toast.warning(res.message || "Ocorreu um erro ao fazer login", {
             id: "fetch-toast",
             position: "bottom-right",
           });
+          setIsLoading(false);
           return;
         }
-        toast.error(
-          res.message ||
-            "Ocorreu um erro inesperado. Por favor, tente novamente.",
-          {
-            id: "fetch-toast",
-            position: "bottom-right",
-          },
-        );
-        return;
+        const user = { ...res.data.user, instituicao: res.data.instituicao };
+        setUser(user);
+        toast.success(res.message || "Login realizado com sucesso", {
+          id: "fetch-toast",
+          position: "bottom-right",
+        });
+        setIsLoading(false);
       },
       (err) => {
-        toast.error(
-          err?.message ||
-            "Ocorreu um erro inesperado. Por favor, tente novamente.",
-          {
-            id: "fetch-toast",
-            position: "bottom-right",
-          },
-        );
+        console.error("Error logging in:", err?.message ?? err);
+        toast.error(err?.message || "Ocorreu um erro ao fazer login", {
+          id: "fetch-toast",
+          position: "bottom-right",
+        });
+        setIsLoading(false);
       },
     );
-
     setIsLoading(false);
   };
 
@@ -70,15 +64,13 @@ export default function Login() {
   };
 
   return (
-    <main className="w-full h-full min-h-fit flex items-center justify-center gradient-primary py-4">
-      <section className="w-2xl max-w-[90vw] bg-card max-h-[94vh] min-h-fit rounded-xl p-6 overflow-y-auto no-scrollbar">
+    <main className="flex-1 w-full h-full min-h-fit flex items-center justify-center gradient-primary py-4">
+      <section className="w-2xl max-w-[90vw] max-h-[94vh] min-h-fit rounded-xl p-6 overflow-y-auto no-scrollbar border border-border shadow-sm bg-card drop-shadow-2xl">
         <aside className="text-center space-y-1">
           <i className="block mx-auto w-fit h-fit p-1 rounded-sm text-muted-foreground">
-            <img src="/logo.png" className="w-30 aspect-auto" alt="IPIKK" />
+            <img src="/logo.webp" className="w-30 aspect-auto" alt="IPIKK" />
           </i>
-          <h1 className="text-2xl font-bold capitalize -mt-5">
-            inventário escolar
-          </h1>
+          <h1 className="text-2xl font-bold capitalize">inventário escolar</h1>
           <p>Faça login para acessar o sistema</p>
         </aside>
         <form
@@ -89,7 +81,7 @@ export default function Login() {
             <label htmlFor="login-email" className="font-medium">
               E-mail
             </label>
-            <div className="w-full h-fit border border-accent rounded-md grid grid-cols-[auto_1fr] hover:shadow-xs shadow-muted-foreground/60 focus-within:border-primary transition-colors ease">
+            <div className="w-full h-fit border border-accent rounded-md grid grid-cols-[auto_1fr] shadow shadow-primary/30 focus-within:border-primary transition-colors ease">
               <i className="w-fit bg-transparent px-2 flex items-center justify-center">
                 <Mail className="w-4 h-4" />
               </i>
@@ -109,7 +101,7 @@ export default function Login() {
             <label htmlFor="login-password" className="font-medium">
               Senha
             </label>
-            <div className="w-full h-fit border border-accent rounded-md grid grid-cols-[auto_1fr_auto] hover:shadow-xs shadow-muted-foreground/60 focus-within:border-primary transition-colors ease relative">
+            <div className="w-full h-fit border border-accent rounded-md grid grid-cols-[auto_1fr_auto] shadow shadow-primary/30 focus-within:border-primary transition-colors ease relative">
               <i className="w-fit bg-transparent px-2 flex items-center justify-center">
                 <Lock className="w-4 h-4" />
               </i>
@@ -135,31 +127,18 @@ export default function Login() {
               </i>
             </div>
           </div>
-          <div className="h-fit flex items-center justify-between">
-            <div className="flex items-center justify-center gap-1">
-              <input
-                type="checkbox"
-                name="remeberUser"
-                id="rememberUser"
-                className="rounded-full text-success cursor-pointer"
-              />
-              <label htmlFor="rememberUser" className="cursor-pointer">
-                Lembrar-me
-              </label>
-            </div>
+          <div className="h-fit flex items-center justify-end">
             <span className="text-ring text-shadow-2xs cursor-pointer hover:underline">
               Esqueceu a senha?
             </span>
           </div>
-          {
-            <Link
-              to="/signup"
-              replace
-              className="-mt-5 text-right text-ring text-shadow-2xs cursor-pointer hover:underline"
-            >
-              Não possui uma conta? Criar conta
-            </Link>
-          }
+          {/* <Link
+            to="/signup"
+            replace
+            className="-mt-5 text-right text-ring text-shadow-2xs cursor-pointer hover:underline"
+          >
+            Não possui uma conta? Criar conta
+          </Link> */}
           <button
             type="submit"
             disabled={isLoading}
