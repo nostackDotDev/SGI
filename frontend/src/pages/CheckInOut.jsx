@@ -60,10 +60,6 @@ export default function CheckInOut() {
       name: "restore",
       label: "Restauração",
     },
-    {
-      name: "exit",
-      label: "Saída",
-    },
   ];
 
   const refreshRecords = () => {

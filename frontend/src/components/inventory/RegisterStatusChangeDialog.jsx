@@ -29,7 +29,13 @@ const initialFormData = {
   reason: "",
 };
 
-export function RegisterExitDialog({ open, onOpenChange, item, onSuccess }) {
+export function RegisterStatusChangeDialog({
+  open,
+  onOpenChange,
+  localizacoes,
+  item,
+  onSuccess,
+}) {
   const [formData, setFormData] = useState(initialFormData);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -111,10 +117,6 @@ export function RegisterExitDialog({ open, onOpenChange, item, onSuccess }) {
     Number(formData.salaId) === item?.location.value ||
     Number(formData.quantidade) > item?.quantity;
 
-  useEffect(() => {
-    console.log("Form data or item changed:", { formData, item });
-  }, [item, formData]);
-
   if (!item) return null;
 
   return (
@@ -122,9 +124,7 @@ export function RegisterExitDialog({ open, onOpenChange, item, onSuccess }) {
       <DialogContent className="sm:max-w-125 max-h-7/9 overflow-y-auto no-scrollbar">
         <DialogHeader className="">
           <DialogTitle>Registar Devolução</DialogTitle>
-          <DialogDescription>
-            Registar a devolução de {item.nome} ao inventário
-          </DialogDescription>
+          <DialogDescription>Mudar o status de {item.nome}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
@@ -148,28 +148,54 @@ export function RegisterExitDialog({ open, onOpenChange, item, onSuccess }) {
                 required
               />
             </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="location">Devolver para</Label>
-              <Select
-                value={String(formData.type ?? "")}
-                onValueChange={(value) => handleInputChange("salaId", value)}
-              >
-                <SelectTrigger className="w-full" required>
-                  <SelectValue placeholder="Selecionar local" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="borrow">Empréstimo</SelectItem>
-                  <SelectItem value="repair">Manutenção</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid xs:grid-cols-2 gap-3">
+              <div className="grid gap-2">
+                <Label htmlFor="location">Status</Label>
+                <Select
+                  value={String(formData.type ?? "")}
+                  onValueChange={(value) => handleInputChange("salaId", value)}
+                >
+                  <SelectTrigger className="w-full" required>
+                    <SelectValue placeholder="Selecionar status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="borrow">Empréstimo</SelectItem>
+                    <SelectItem value="repair">Manutenção</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="location">Transferir para</Label>
+                <Select
+                  value={String(formData.salaId ?? "")}
+                  onValueChange={(value) => handleInputChange("salaId", value)}
+                >
+                  <SelectTrigger className="w-full" required>
+                    <SelectValue placeholder="Selecionar local" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {localizacoes.length ? (
+                      localizacoes.map((c, i) => (
+                        <SelectItem key={i} value={String(c.id)}>
+                          {c.nome}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <>
+                        <SelectItem key={0} value={undefined}>
+                          Falha ao carregar
+                        </SelectItem>
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-
             <div className="grid gap-2">
               <Label htmlFor="reason">Motivo (opcional)</Label>
               <Textarea
                 id="reason"
-                placeholder="Ex: Devolvido em bom estado, sem danos"
+                placeholder="Ex: Em mau estado, danificado"
                 value={formData.reason}
                 onChange={(e) =>
                   handleInputChange("reason", e.currentTarget.value)

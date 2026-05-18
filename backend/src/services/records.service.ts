@@ -6,7 +6,7 @@ const VALID_MOVEMENT_TYPES = [
   "transfer",
   "return",
   "reduction",
-  "exit",
+  // "exit",
   "borrow",
   "repair",
   "restore",

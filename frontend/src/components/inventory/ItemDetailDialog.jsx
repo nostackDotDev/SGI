@@ -38,7 +38,7 @@ export function ItemDetailDialog({
   onOpenChange,
   item,
   onRegisterDeletion,
-  onRegisterCheckout,
+  onRegisterStatusChange,
   onRegisterReturn,
   onRegisterRestore,
 }) {
@@ -84,9 +84,9 @@ export function ItemDetailDialog({
     restore: {
       label: "Restauração",
     },
-    exit: {
-      label: "Saída",
-    },
+    // exit: {
+    //   label: "Saída",
+    // },
   };
 
   const inMoves = ["in", "return", "restore"];
@@ -206,9 +206,15 @@ export function ItemDetailDialog({
           {/* Actions */}
           <div className="flex gap-3">
             {item.status.value === 1 ? (
-              <Button className="flex-1" onClick={onRegisterCheckout}>
+              <Button
+                className="flex-1"
+                onClick={() => {
+                  onOpenChange(false);
+                  onRegisterStatusChange();
+                }}
+              >
                 <ArrowUpRight className="w-4 h-4 mr-2" />
-                Registrar Saída
+                Aterar Status
               </Button>
             ) : item.status.value === 3 ? (
               <Button

@@ -322,7 +322,7 @@ function MovementsPages({ records, institution, user, generatedAt }) {
     return: "Devolução",
     borrow: "Empréstimo",
     repair: "Reparação",
-    exit: "Saída",
+    // exit: "Saída",
     reduction: "Redução",
   };
 

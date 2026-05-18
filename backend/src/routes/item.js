@@ -763,7 +763,7 @@ router.post(
         itemId: itemId,
         quantidade: Number(quantidade),
         utilizadorId: req.userId,
-        type: "exit",
+        type: "out",
         reason,
       });
 

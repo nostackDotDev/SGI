@@ -11,6 +11,7 @@ import Loader from "@/components/layout/Loader";
 import { RegisterReturnDialog } from "@/components/inventory/RegisterReturnDialog";
 import { RegisterRemovalDialog } from "@/components/inventory/RegisterRemovalDialog";
 import { RegisterRestoreDialog } from "@/components/inventory/RegisterRestoreDialog";
+import { RegisterStatusChangeDialog } from "@/components/inventory/RegisterStatusChangeDialog";
 
 export default function Inventory() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -20,6 +21,8 @@ export default function Inventory() {
   const [registerReturnOpen, setRegisterReturnOpen] = useState(false);
   const [registerExitOpen, setRegisterExitOpen] = useState(false);
   const [registerRestoreOpen, setRegisterRestoreOpen] = useState(false);
+  const [registerStatusChangeOpen, setRegisterStatusChangeOpen] =
+    useState(false);
 
   const [selectedItem, setSelectedItem] = useState(null);
 
@@ -196,7 +199,7 @@ export default function Inventory() {
         item={selectedItem}
         onRegisterReturn={() => setRegisterReturnOpen(true)}
         onRegisterRestore={() => setRegisterRestoreOpen(true)}
-        onRegisterCheckout={() => {}}
+        onRegisterStatusChange={() => setRegisterStatusChangeOpen(true)}
         onRegisterDeletion={() => setRegisterExitOpen(true)}
       />
       <RegisterReturnDialog
@@ -211,6 +214,13 @@ export default function Inventory() {
         onOpenChange={setRegisterRestoreOpen}
         item={selectedItem}
         localizacoes={locations}
+        onSuccess={refreshItems}
+      />
+      <RegisterStatusChangeDialog
+        open={registerStatusChangeOpen}
+        onOpenChange={setRegisterStatusChangeOpen}
+        localizacoes={locations}
+        item={selectedItem}
         onSuccess={refreshItems}
       />
       <RegisterRemovalDialog
