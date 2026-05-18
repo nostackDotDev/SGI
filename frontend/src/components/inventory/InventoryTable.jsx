@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { PermissionDisabled } from "../auth/PermissionDisabled";
+import { PERMISSIONS } from "@/core/constants/permissions";
 
 const statusConfig = {
   1: {
@@ -231,33 +233,39 @@ export function InventoryTable({
                 </td>
                 <td className="py-2 pl-2 text-center">
                   <div className="flex items-center justify-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => {
-                        console.log("View pressed");
-                        onViewItem?.(item);
-                      }}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => onEditItem?.(item)}
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => onDeleteItem?.(item)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <PermissionDisabled permission={PERMISSIONS.ITEM_READ}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => {
+                          console.log("View pressed");
+                          onViewItem?.(item);
+                        }}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    </PermissionDisabled>
+                    <PermissionDisabled permission={PERMISSIONS.ITEM_UPDATE}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => onEditItem?.(item)}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                    </PermissionDisabled>
+                    <PermissionDisabled permission={PERMISSIONS.ITEM_DELETE}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => onDeleteItem?.(item)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </PermissionDisabled>
                   </div>
                 </td>
               </motion.tr>

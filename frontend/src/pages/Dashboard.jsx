@@ -36,8 +36,11 @@ const typeConfig = {
   return: "Devolução",
   borrow: "Empréstimo",
   repair: "Reparação",
-  // exit: "Saída",
+  maintenance: "Manutenção",
+  restore: "Restauração",
   reduction: "Redução",
+  consolidation: "Consolidação",
+  // exit: "Saída",
 };
 
 export default function Dashboard() {
@@ -192,8 +195,8 @@ export default function Dashboard() {
               Evolução dos Movimentos
             </h2>
             {chartData.length ? (
-              <div className="w-full grid grid-cols-1 2xl:grid-cols-2 gap-4">
-                <section className="relative">
+              <div className="w-full grid grid-cols-1 2xl:grid-cols-2 gap-4 items-center">
+                <section className="relative flex items-center justify-center">
                   <Chart data={chartData} />
                 </section>
 

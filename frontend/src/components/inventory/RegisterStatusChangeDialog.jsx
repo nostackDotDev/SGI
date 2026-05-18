@@ -26,6 +26,7 @@ const initialFormData = {
   id: undefined,
   salaId: undefined,
   quantidade: undefined,
+  type: undefined,
   reason: "",
 };
 
@@ -46,6 +47,7 @@ export function RegisterStatusChangeDialog({
           id: item.id,
           quantidade: undefined,
           salaId: undefined,
+          type: undefined,
           reason: "",
         });
       } else {
@@ -64,41 +66,44 @@ export function RegisterStatusChangeDialog({
     setIsLoading(true);
 
     request(
-      `/item/update/${item.id}`,
-      "PUT",
+      `/item/status-change/${item.id}`,
+      "POST",
       {
         data: {
           quantidade: formData.quantidade
             ? Number(formData.quantidade)
             : undefined,
           salaId: formData.salaId ? Number(formData.salaId) : undefined,
+          type: formData.type || undefined,
           reason: formData.reason || undefined,
-          transferType: "return",
         },
         refreshKey: "items",
       },
       (res) => {
         console.log(res);
         if (!res || res.error) {
-          console.log("Failed to register return:", res.error);
+          console.log("Failed to register status change:", res.error);
           setIsLoading(false);
-          toast.warning(res.message ?? "Falha ao registar devolução!", {
+          toast.warning(res.message ?? "Falha ao registar mudança de status!", {
             id: "fetch-toast",
             position: "bottom-right",
           });
           return;
         }
         onSuccess?.();
-        toast.success(res.message ?? "Devolução registada com sucesso!", {
-          id: "fetch-toast",
-          position: "bottom-right",
-        });
+        toast.success(
+          res.message ?? "Mudança de status registada com sucesso!",
+          {
+            id: "fetch-toast",
+            position: "bottom-right",
+          },
+        );
         resetForm();
         setIsLoading(false);
       },
       (err) => {
-        console.error("Error registering return:", err?.message ?? err);
-        toast.error(err?.message ?? "Falha ao registar devolução!", {
+        console.error("Error registering status change:", err?.message ?? err);
+        toast.error(err?.message ?? "Falha ao registar mudança de status!", {
           id: "fetch-toast",
           position: "bottom-right",
         });
@@ -114,8 +119,13 @@ export function RegisterStatusChangeDialog({
   const isDisabled =
     !formData.quantidade ||
     !formData.salaId ||
+    !formData.type ||
     Number(formData.salaId) === item?.location.value ||
     Number(formData.quantidade) > item?.quantity;
+
+  useEffect(() => {
+    console.log("Form data changed:", formData);
+  }, [formData, item]);
 
   if (!item) return null;
 
@@ -153,14 +163,14 @@ export function RegisterStatusChangeDialog({
                 <Label htmlFor="location">Status</Label>
                 <Select
                   value={String(formData.type ?? "")}
-                  onValueChange={(value) => handleInputChange("salaId", value)}
+                  onValueChange={(value) => handleInputChange("type", value)}
                 >
                   <SelectTrigger className="w-full" required>
                     <SelectValue placeholder="Selecionar status" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="maintenance">Manutenção</SelectItem>
                     <SelectItem value="borrow">Empréstimo</SelectItem>
-                    <SelectItem value="repair">Manutenção</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -215,7 +225,7 @@ export function RegisterStatusChangeDialog({
               disabled={isLoading || isDisabled}
               className=""
             >
-              Registar Devolução
+              Registar Mudança de Status
             </Button>
           </DialogFooter>
         </form>

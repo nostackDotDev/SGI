@@ -783,4 +783,170 @@ router.post(
   },
 );
 
+/**
+ * POST /item/status-change/:id
+ * Register status change and transfer items (borrow, repair, maintenance, restore)
+ * If item exists at destination with same (nome, serialNumber, salaId), update its quantity
+ * Otherwise, create a new item at destination location
+ * Similar to return but for different movement types
+ */
+router.post(
+  "/status-change/:id",
+  requirePermission(PERMISSIONS.ITEM_UPDATE),
+  async (req, res) => {
+    const { quantidade, salaId, type, reason } = req.body;
+    const itemId = parseInt(req.params.id);
+
+    try {
+      // Validate movement type
+      const validTypes = [
+        "borrow",
+        "repair",
+        "maintenance",
+        "restore",
+        "transfer",
+      ];
+      if (!type || !validTypes.includes(type)) {
+        return res.status(400).json({
+          data: null,
+          error: `Tipo de movimento inválido. Tipos suportados: ${validTypes.join(
+            ", ",
+          )}`,
+        });
+      }
+
+      // Fetch item with relations
+      const item = await prisma.item.findUnique({
+        where: { id: itemId, deletedAt: null },
+        include: { condicao: true, sala: true },
+      });
+
+      if (!item) {
+        return res
+          .status(404)
+          .json({ data: null, error: "Item não encontrado" });
+      }
+
+      // Validate quantity
+      ItemService.validateQuantityTransfer(item.quantidade, quantidade);
+
+      // Validate new location exists
+      if (!salaId) {
+        return res.status(400).json({
+          data: null,
+          error: "Localização de destino é obrigatória",
+        });
+      }
+
+      const newSala = await prisma.sala.findUnique({
+        where: { id: parseInt(salaId) },
+      });
+
+      if (!newSala) {
+        return res.status(404).json({
+          data: null,
+          error: "Localização de destino não encontrada",
+        });
+      }
+
+      // Map movement type to target condition
+      // For status changes, we keep the current status or set appropriate one
+      // "borrow" -> "Emprestado", "repair"/"maintenance" -> "Em manutenção", "restore" -> "Disponível"
+      let targetCondicaoId = item.condicaoId;
+      let targetConditionName = item.condicao.nome;
+
+      if (type === "borrow") {
+        const emprestado = await prisma.condicao.findFirst({
+          where: { nome: "Emprestado" },
+        });
+        if (emprestado) {
+          targetCondicaoId = emprestado.id;
+          targetConditionName = "Emprestado";
+        }
+      } else if (type === "repair" || type === "maintenance") {
+        const emManutencao = await prisma.condicao.findFirst({
+          where: { nome: "Em manutenção" },
+        });
+        if (emManutencao) {
+          targetCondicaoId = emManutencao.id;
+          targetConditionName = "Em manutenção";
+        }
+      } else if (type === "restore") {
+        const disponivel = await prisma.condicao.findFirst({
+          where: { nome: "Disponível" },
+        });
+        if (disponivel) {
+          targetCondicaoId = disponivel.id;
+          targetConditionName = "Disponível";
+        }
+      }
+
+      // Create/update item at new location with target status and quantity
+      // If item with same (nome, serialNumber, salaId) exists, update its quantity
+      // Otherwise, create a new item
+      const statusChangeItem = await ItemService.upsertItemAtLocation(
+        itemId,
+        parseInt(salaId),
+        targetCondicaoId,
+        quantidade,
+      );
+
+      // Reduce original item quantity
+      let updatedOriginal = await prisma.item.update({
+        where: { id: itemId },
+        data: { quantidade: item.quantidade - Number(quantidade) },
+      });
+
+      // If quantity reaches 0, consolidate into the status change item
+      if (updatedOriginal.quantidade <= 0) {
+        // Consolidate the original item into the status change item
+        updatedOriginal = await ItemService.consolidateItem(
+          itemId,
+          statusChangeItem.id,
+        );
+
+        // Create "consolidation" registo to document the merge event
+        await RecordService.createRecord({
+          instituicaoId: req.tenantId,
+          itemId: statusChangeItem.id,
+          quantidade: Number(quantidade),
+          utilizadorId: req.userId,
+          type: "consolidation",
+          reason: `Consolidado do item anterior (${item.id})`,
+        });
+      }
+
+      // Create registo record on original item for the status change transaction
+      const registo = await RecordService.createRecord({
+        instituicaoId: req.tenantId,
+        itemId: itemId,
+        quantidade: Number(quantidade),
+        utilizadorId: req.userId,
+        type,
+        reason,
+      });
+
+      res.json({
+        message: "Mudança de status registada com sucesso",
+        data: {
+          originalItem: updatedOriginal,
+          statusChangeItem,
+          registo,
+          consolidatedInto: updatedOriginal.consolidatedIntoItemId
+            ? statusChangeItem.id
+            : null,
+        },
+        error: null,
+      });
+    } catch (error) {
+      console.error("Error in status change:", error);
+      res.status(400).json({
+        data: null,
+        message: error.message || "Erro ao registar mudança de status",
+        error: error.message,
+      });
+    }
+  },
+);
+
 export default router;
