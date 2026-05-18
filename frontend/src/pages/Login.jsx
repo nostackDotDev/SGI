@@ -126,11 +126,11 @@ export default function Login() {
               </i>
             </div>
           </div>
-          <div className="h-fit flex items-center justify-end">
+          {/* <div className="h-fit flex items-center justify-end">
             <span className="text-ring text-shadow-2xs cursor-pointer hover:underline">
               Esqueceu a senha?
             </span>
-          </div>
+          </div> */}
           {/* <Link
             to="/signup"
             replace
