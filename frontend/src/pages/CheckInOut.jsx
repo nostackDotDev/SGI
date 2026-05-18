@@ -39,6 +39,33 @@ export default function CheckInOut() {
   const [dateRange, setDateRange] = useState(undefined);
   const [records, setRecords] = useState(null);
 
+  const typeConfig = [
+    {
+      name: "in",
+      label: "Entrada",
+    },
+    {
+      name: "transfer",
+      label: "Transferência",
+    },
+    {
+      name: "out",
+      label: "Saída",
+    },
+    {
+      name: "return",
+      label: "Devolução",
+    },
+    {
+      name: "restore",
+      label: "Restauração",
+    },
+    {
+      name: "exit",
+      label: "Saída",
+    },
+  ];
+
   const refreshRecords = () => {
     request(
       "/registo",
@@ -99,9 +126,11 @@ export default function CheckInOut() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os tipos</SelectItem>
-                <SelectItem value="in">Entradas</SelectItem>
-                <SelectItem value="out">Saídas</SelectItem>
-                <SelectItem value="transfer">Transferências</SelectItem>
+                {typeConfig.map((type) => (
+                  <SelectItem key={type.name} value={type.name}>
+                    {type.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

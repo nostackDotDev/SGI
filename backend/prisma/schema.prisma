@@ -198,6 +198,16 @@ model Item {
 
   serialNumber String?
 
+  // Unique constraint that's NULL for deleted items (allows duplicates)
+  // When active, this equals "{nome}_{serialNumber}_{salaId}"
+  // When deleted, this is NULL, allowing new items with same details
+  uniqueKey String? @unique
+
+  // Consolidation tracking: if this item was merged into another, reference the parent
+  consolidatedIntoItemId Int?
+  consolidatedIntoItem   Item?  @relation("consolidation", fields: [consolidatedIntoItemId], references: [id], onDelete: SetNull)
+  consolidatedItems      Item[] @relation("consolidation")
+
   categoriaId Int?
   categoria   Categoria? @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
 
@@ -209,10 +219,11 @@ model Item {
 
   registos Registo[]
 
-  @@unique([nome, serialNumber, salaId])
   @@index([deletedAt])
   @@index([categoriaId])
   @@index([salaId])
+  @@index([nome, serialNumber, salaId])
+  @@index([consolidatedIntoItemId])
 }
 
 model Registo {

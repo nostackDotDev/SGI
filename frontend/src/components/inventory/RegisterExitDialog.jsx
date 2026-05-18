@@ -197,10 +197,3 @@ export function RegisterExitDialog({ open, onOpenChange, item, onSuccess }) {
     </Dialog>
   );
 }
-
-/* 
-create reductions feture for both borrow and repair
-
-- borrow: where to + how many -> new item status 'emprestado'
-- repair: how many -> new item status 'em manuntenção'
-*/
