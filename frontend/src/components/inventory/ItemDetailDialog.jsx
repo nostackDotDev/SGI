@@ -20,6 +20,8 @@ import {
 import { cn, formatDate } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { request } from "@/lib/request";
+import { PermissionDisabled } from "../auth/PermissionDisabled";
+import { PERMISSIONS } from "@/core/constants/permissions";
 
 const statusConfig = {
   1: {
@@ -38,7 +40,7 @@ export function ItemDetailDialog({
   onOpenChange,
   item,
   onRegisterDeletion,
-  onRegisterCheckout,
+  onRegisterStatusChange,
   onRegisterReturn,
   onRegisterRestore,
 }) {
@@ -84,9 +86,12 @@ export function ItemDetailDialog({
     restore: {
       label: "Restauração",
     },
-    exit: {
-      label: "Saída",
+    consolidation: {
+      label: "Consolidação",
     },
+    // exit: {
+    //   label: "Saída",
+    // },
   };
 
   const inMoves = ["in", "return", "restore"];
@@ -205,46 +210,56 @@ export function ItemDetailDialog({
 
           {/* Actions */}
           <div className="flex gap-3">
-            {item.status.value === 1 ? (
-              <Button className="flex-1" onClick={onRegisterCheckout}>
-                <ArrowUpRight className="w-4 h-4 mr-2" />
-                Registrar Saída
-              </Button>
-            ) : item.status.value === 3 ? (
+            <PermissionDisabled permission={PERMISSIONS.ITEM_UPDATE}>
+              {item.status.value === 1 ? (
+                <Button
+                  className="flex-1"
+                  onClick={() => {
+                    onOpenChange(false);
+                    onRegisterStatusChange();
+                  }}
+                >
+                  <ArrowUpRight className="w-4 h-4 mr-2" />
+                  Aterar Status
+                </Button>
+              ) : item.status.value === 3 ? (
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={() => {
+                    onOpenChange(false);
+                    onRegisterReturn();
+                  }}
+                >
+                  <ArrowDownLeft className="w-4 h-4 mr-2" />
+                  Registrar Devolução
+                </Button>
+              ) : (
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={() => {
+                    onOpenChange(false);
+                    onRegisterRestore();
+                  }}
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Registrar Restauração
+                </Button>
+              )}
+            </PermissionDisabled>
+            <PermissionDisabled permission={PERMISSIONS.ITEM_DELETE}>
               <Button
-                variant="secondary"
-                className="flex-1"
+                variant="destructive"
                 onClick={() => {
                   onOpenChange(false);
-                  onRegisterReturn();
+                  onRegisterDeletion();
                 }}
-              >
-                <ArrowDownLeft className="w-4 h-4 mr-2" />
-                Registrar Devolução
-              </Button>
-            ) : (
-              <Button
-                variant="secondary"
                 className="flex-1"
-                onClick={() => {
-                  onOpenChange(false);
-                  onRegisterRestore();
-                }}
               >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Registrar Restauração
+                Registrar Remoção
               </Button>
-            )}
-            <Button
-              variant="destructive"
-              onClick={() => {
-                onOpenChange(false);
-                onRegisterDeletion();
-              }}
-              className="flex-1"
-            >
-              Registrar Remoção
-            </Button>
+            </PermissionDisabled>
           </div>
         </div>
       </DialogContent>

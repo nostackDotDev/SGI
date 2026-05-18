@@ -102,7 +102,7 @@ export function CreateItemDialog({
     onOpenChange(false);
   };
 
-  const { canSubmit } = getFormState(initialFormData, formData, [
+  const { canSubmit } = getFormState(formData, initialFormData, [
     "nome",
     "categoriaId",
     "condicaoId",

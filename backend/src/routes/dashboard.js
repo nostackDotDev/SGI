@@ -65,4 +65,30 @@ router.get(
   },
 );
 
+router.get(
+  "/chart-data",
+  requirePermission(PERMISSIONS.CATEGORIA_READ),
+  async (req, res) => {
+    const instituicaoId = req.tenantId;
+
+    const chartData = [
+      { name: "Group A", value: 400 },
+      { name: "Group B", value: 40 },
+      { name: "Group C", value: 400 },
+      { name: "Group D", value: 95 },
+    ];
+
+    const labels = chartData.map((entry) => entry.name);
+
+    res.json({
+      data: {
+        chartData,
+        labels,
+      },
+      error: null,
+      message: "Dados carregados com sucesso",
+    });
+  },
+);
+
 export default router;

@@ -117,6 +117,37 @@ router.get(
   },
 );
 
+router.get(
+  "/:id/consolidation-history",
+  requirePermission(PERMISSIONS.ITEM_READ),
+  async (req, res) => {
+    try {
+      const itemId = parseInt(req.params.id);
+
+      const item = await ItemService.getItemWithConsolidationHistory(itemId);
+
+      if (!item) {
+        return res.status(404).json({ data: null, error: "Item not found" });
+      }
+
+      res.json({
+        data: {
+          id: item.id,
+          nome: item.nome,
+          consolidatedItems: item.consolidatedItems || [],
+        },
+        error: null,
+      });
+    } catch (error) {
+      console.error("Error fetching consolidation history:", error);
+      res.status(500).json({
+        data: null,
+        error: error.message || "Erro ao buscar histórico de consolidação",
+      });
+    }
+  },
+);
+
 router.post(
   "/create",
   requirePermission(PERMISSIONS.ITEM_CREATE),
@@ -292,13 +323,32 @@ router.put(
           quantidade,
         );
 
-        // Reduce original item quantity and auto soft-delete if reaches 0
-        const updatedOriginal = await ItemService.reduceAndDeleteIfZero(
-          item.id,
-          quantidade,
-        );
+        // Reduce original item quantity
+        let updatedOriginal = await prisma.item.update({
+          where: { id: item.id },
+          data: { quantidade: item.quantidade - Number(quantidade) },
+        });
 
-        // Create registo record on original item
+        // If quantity reaches 0, consolidate into the returned item
+        if (updatedOriginal.quantidade <= 0) {
+          // Consolidate the original item into the returned item
+          updatedOriginal = await ItemService.consolidateItem(
+            item.id,
+            returnedItem.id,
+          );
+
+          // Create "consolidation" registo to document the merge event
+          await RecordService.createRecord({
+            instituicaoId: req.tenantId,
+            itemId: returnedItem.id,
+            quantidade: Number(quantidade),
+            utilizadorId: req.userId,
+            type: "consolidation",
+            reason: `Consolidado do item anterior (${item.id})`,
+          });
+        }
+
+        // Create registo record on original item for the return transaction
         const registo = await RecordService.createRecord({
           instituicaoId: req.tenantId,
           itemId: item.id,
@@ -310,7 +360,14 @@ router.put(
 
         return res.json({
           message: "Devolução registada com sucesso",
-          data: { originalItem: updatedOriginal, returnedItem, registo },
+          data: {
+            originalItem: updatedOriginal,
+            returnedItem,
+            registo,
+            consolidatedInto: updatedOriginal.consolidatedIntoItemId
+              ? returnedItem.id
+              : null,
+          },
           error: null,
         });
       } catch (error) {
@@ -426,7 +483,10 @@ router.delete(
     try {
       const deletedItem = await prisma.item.update({
         where: { id: item.id },
-        data: { deletedAt: new Date() },
+        data: {
+          deletedAt: new Date(),
+          uniqueKey: null, // Allow recreating this item
+        },
       });
 
       // Create registo record for item deletion (soft delete)
@@ -595,13 +655,33 @@ router.post(
         quantidade,
       );
 
-      // Reduce original item quantity and auto soft-delete if reaches 0
-      const updatedOriginal = await ItemService.reduceAndDeleteIfZero(
-        itemId,
-        quantidade,
-      );
+      // Reduce original item quantity
+      let updatedOriginal = await prisma.item.update({
+        where: { id: itemId },
+        data: { quantidade: item.quantidade - Number(quantidade) },
+      });
 
-      // Create registo record on original item
+      // If quantity reaches 0, consolidate into the returned item
+      if (updatedOriginal.quantidade <= 0) {
+        // Consolidate the original item into the returned item
+        // This preserves the history while marking the original as consolidated
+        updatedOriginal = await ItemService.consolidateItem(
+          itemId,
+          returnedItem.id,
+        );
+
+        // Create "consolidation" registo to document the merge event
+        const consolidationRegisto = await RecordService.createRecord({
+          instituicaoId: req.tenantId,
+          itemId: returnedItem.id,
+          quantidade: Number(quantidade),
+          utilizadorId: req.userId,
+          type: "consolidation",
+          reason: `Consolidado do item anterior (${item.id})`,
+        });
+      }
+
+      // Create registo record on original item for the return transaction
       const registo = await RecordService.createRecord({
         instituicaoId: req.tenantId,
         itemId: itemId,
@@ -613,7 +693,14 @@ router.post(
 
       res.json({
         message: "Devolução registada com sucesso",
-        data: { originalItem: updatedOriginal, returnedItem, registo },
+        data: {
+          originalItem: updatedOriginal,
+          returnedItem,
+          registo,
+          consolidatedInto: updatedOriginal.consolidatedIntoItemId
+            ? returnedItem.id
+            : null,
+        },
         error: null,
       });
     } catch (error) {
@@ -676,7 +763,7 @@ router.post(
         itemId: itemId,
         quantidade: Number(quantidade),
         utilizadorId: req.userId,
-        type: "exit",
+        type: "out",
         reason,
       });
 
@@ -690,6 +777,172 @@ router.post(
       res.status(400).json({
         data: null,
         message: error.message || "Erro ao registar saída",
+        error: error.message,
+      });
+    }
+  },
+);
+
+/**
+ * POST /item/status-change/:id
+ * Register status change and transfer items (borrow, repair, maintenance, restore)
+ * If item exists at destination with same (nome, serialNumber, salaId), update its quantity
+ * Otherwise, create a new item at destination location
+ * Similar to return but for different movement types
+ */
+router.post(
+  "/status-change/:id",
+  requirePermission(PERMISSIONS.ITEM_UPDATE),
+  async (req, res) => {
+    const { quantidade, salaId, type, reason } = req.body;
+    const itemId = parseInt(req.params.id);
+
+    try {
+      // Validate movement type
+      const validTypes = [
+        "borrow",
+        "repair",
+        "maintenance",
+        "restore",
+        "transfer",
+      ];
+      if (!type || !validTypes.includes(type)) {
+        return res.status(400).json({
+          data: null,
+          error: `Tipo de movimento inválido. Tipos suportados: ${validTypes.join(
+            ", ",
+          )}`,
+        });
+      }
+
+      // Fetch item with relations
+      const item = await prisma.item.findUnique({
+        where: { id: itemId, deletedAt: null },
+        include: { condicao: true, sala: true },
+      });
+
+      if (!item) {
+        return res
+          .status(404)
+          .json({ data: null, error: "Item não encontrado" });
+      }
+
+      // Validate quantity
+      ItemService.validateQuantityTransfer(item.quantidade, quantidade);
+
+      // Validate new location exists
+      if (!salaId) {
+        return res.status(400).json({
+          data: null,
+          error: "Localização de destino é obrigatória",
+        });
+      }
+
+      const newSala = await prisma.sala.findUnique({
+        where: { id: parseInt(salaId) },
+      });
+
+      if (!newSala) {
+        return res.status(404).json({
+          data: null,
+          error: "Localização de destino não encontrada",
+        });
+      }
+
+      // Map movement type to target condition
+      // For status changes, we keep the current status or set appropriate one
+      // "borrow" -> "Emprestado", "repair"/"maintenance" -> "Em manutenção", "restore" -> "Disponível"
+      let targetCondicaoId = item.condicaoId;
+      let targetConditionName = item.condicao.nome;
+
+      if (type === "borrow") {
+        const emprestado = await prisma.condicao.findFirst({
+          where: { nome: "Emprestado" },
+        });
+        if (emprestado) {
+          targetCondicaoId = emprestado.id;
+          targetConditionName = "Emprestado";
+        }
+      } else if (type === "repair" || type === "maintenance") {
+        const emManutencao = await prisma.condicao.findFirst({
+          where: { nome: "Em manutenção" },
+        });
+        if (emManutencao) {
+          targetCondicaoId = emManutencao.id;
+          targetConditionName = "Em manutenção";
+        }
+      } else if (type === "restore") {
+        const disponivel = await prisma.condicao.findFirst({
+          where: { nome: "Disponível" },
+        });
+        if (disponivel) {
+          targetCondicaoId = disponivel.id;
+          targetConditionName = "Disponível";
+        }
+      }
+
+      // Create/update item at new location with target status and quantity
+      // If item with same (nome, serialNumber, salaId) exists, update its quantity
+      // Otherwise, create a new item
+      const statusChangeItem = await ItemService.upsertItemAtLocation(
+        itemId,
+        parseInt(salaId),
+        targetCondicaoId,
+        quantidade,
+      );
+
+      // Reduce original item quantity
+      let updatedOriginal = await prisma.item.update({
+        where: { id: itemId },
+        data: { quantidade: item.quantidade - Number(quantidade) },
+      });
+
+      // If quantity reaches 0, consolidate into the status change item
+      if (updatedOriginal.quantidade <= 0) {
+        // Consolidate the original item into the status change item
+        updatedOriginal = await ItemService.consolidateItem(
+          itemId,
+          statusChangeItem.id,
+        );
+
+        // Create "consolidation" registo to document the merge event
+        await RecordService.createRecord({
+          instituicaoId: req.tenantId,
+          itemId: statusChangeItem.id,
+          quantidade: Number(quantidade),
+          utilizadorId: req.userId,
+          type: "consolidation",
+          reason: `Consolidado do item anterior (${item.id})`,
+        });
+      }
+
+      // Create registo record on original item for the status change transaction
+      const registo = await RecordService.createRecord({
+        instituicaoId: req.tenantId,
+        itemId: itemId,
+        quantidade: Number(quantidade),
+        utilizadorId: req.userId,
+        type,
+        reason,
+      });
+
+      res.json({
+        message: "Mudança de status registada com sucesso",
+        data: {
+          originalItem: updatedOriginal,
+          statusChangeItem,
+          registo,
+          consolidatedInto: updatedOriginal.consolidatedIntoItemId
+            ? statusChangeItem.id
+            : null,
+        },
+        error: null,
+      });
+    } catch (error) {
+      console.error("Error in status change:", error);
+      res.status(400).json({
+        data: null,
+        message: error.message || "Erro ao registar mudança de status",
         error: error.message,
       });
     }

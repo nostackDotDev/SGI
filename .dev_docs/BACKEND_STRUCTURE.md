@@ -128,6 +128,7 @@ backend/
   2. Executar: `npx prisma migrate dev --name <nome_da_migracao>`
   3. O Prisma gera automaticamente migrations e atualiza o banco
 - **Exemplo de modelo**:
+
   ```prisma
   model User {
     id    Int     @id @default(autoincrement())
@@ -332,7 +333,7 @@ backend/
 
   exports.getById = async (id) => {
     const user = await userRepository.findById(id);
-    if (!user) throw new Error("Usuário não encontrado");
+    if (!user) throw new Error("Utilizador não encontrado");
     return user;
   };
 

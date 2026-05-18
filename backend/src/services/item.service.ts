@@ -2,6 +2,25 @@ import prisma from "../lib/prisma.js";
 
 export class ItemService {
   /**
+   * Generate unique key from item fields (only for non-deleted items)
+   * Format: {nome}_{serialNumber}_{salaId}
+   * Used to enforce uniqueness constraint only on active items
+   */
+  static generateUniqueKey(
+    nome: string,
+    serialNumber: string | null | undefined,
+    salaId: number | null | undefined,
+  ): string {
+    // Only non-null/undefined values are included
+    const parts = [
+      nome.trim(),
+      serialNumber ? String(serialNumber).trim() : "NULL",
+      salaId ? String(salaId) : "NULL",
+    ];
+    return parts.join("_");
+  }
+
+  /**
    * Validates item data before creation or update
    * - Prevents negative quantities
    */
@@ -29,6 +48,12 @@ export class ItemService {
   }) {
     this.validateItemData(data);
 
+    const uniqueKey = this.generateUniqueKey(
+      data.nome,
+      data.serialNumber,
+      data.salaId,
+    );
+
     return prisma.item.create({
       data: {
         nome: data.nome,
@@ -38,6 +63,7 @@ export class ItemService {
         condicaoId: Number(data.condicaoId),
         salaId: Number(data.salaId),
         serialNumber: data.serialNumber || null,
+        uniqueKey,
       },
     });
   }
@@ -59,6 +85,15 @@ export class ItemService {
   ) {
     this.validateItemData(data);
 
+    // Fetch current item to get values needed for uniqueKey
+    const currentItem = await prisma.item.findUnique({
+      where: { id: itemId },
+    });
+
+    if (!currentItem) {
+      throw new Error("Item não encontrado");
+    }
+
     const updateData: any = {};
 
     if (data.nome !== undefined) updateData.nome = data.nome;
@@ -72,6 +107,24 @@ export class ItemService {
     if (data.salaId !== undefined) updateData.salaId = Number(data.salaId);
     if (data.serialNumber !== undefined)
       updateData.serialNumber = data.serialNumber || null;
+
+    // Regenerate uniqueKey if any relevant field changed
+    if (
+      data.nome !== undefined ||
+      data.serialNumber !== undefined ||
+      data.salaId !== undefined
+    ) {
+      const newNome = data.nome ?? currentItem.nome;
+      const newSerial = data.serialNumber ?? currentItem.serialNumber;
+      const newSalaId = data.salaId ?? currentItem.salaId;
+
+      updateData.uniqueKey = this.generateUniqueKey(
+        newNome,
+        newSerial,
+        newSalaId,
+      );
+    }
+
     return prisma.item.update({
       where: { id: itemId },
       data: updateData,
@@ -118,6 +171,12 @@ export class ItemService {
       throw new Error("Item original não encontrado");
     }
 
+    const uniqueKey = this.generateUniqueKey(
+      originalItem.nome,
+      originalItem.serialNumber,
+      newSalaId,
+    );
+
     return prisma.item.create({
       data: {
         nome: originalItem.nome,
@@ -127,6 +186,44 @@ export class ItemService {
         categoriaId: originalItem.categoriaId,
         condicaoId: Number(newCondicaoId),
         salaId: Number(newSalaId),
+        uniqueKey,
+      },
+    });
+  }
+
+  /**
+   * Consolidate item - mark as merged into another item
+   * Instead of soft-deleting, track the consolidation relationship
+   * Allows preserving full history while showing item as inactive
+   */
+  static async consolidateItem(
+    sourceItemId: number,
+    consolidatedIntoItemId: number,
+  ) {
+    return prisma.item.update({
+      where: { id: sourceItemId },
+      data: {
+        consolidatedIntoItemId,
+        deletedAt: new Date(), // Soft-delete but with consolidation reference
+        uniqueKey: null, // Clear unique key since item is consolidated
+      },
+    });
+  }
+
+  /**
+   * Get item with full consolidation history
+   * Returns the item plus any items that were consolidated into it
+   */
+  static async getItemWithConsolidationHistory(itemId: number) {
+    return prisma.item.findUnique({
+      where: { id: itemId },
+      include: {
+        consolidatedItems: {
+          include: {
+            registos: true,
+          },
+        },
+        registos: true,
       },
     });
   }
@@ -147,9 +244,13 @@ export class ItemService {
 
     if (newQty <= 0) {
       // Soft delete if quantity reaches 0 or below
+      // Set uniqueKey to null to allow new items with same details
       return prisma.item.update({
         where: { id: itemId },
-        data: { deletedAt: new Date() },
+        data: {
+          deletedAt: new Date(),
+          uniqueKey: null, // Allow recreating this item
+        },
       });
     }
 
@@ -201,6 +302,12 @@ export class ItemService {
       });
     } else {
       // Create new item
+      const uniqueKey = this.generateUniqueKey(
+        originalItem.nome,
+        originalItem.serialNumber,
+        newSalaId,
+      );
+
       return prisma.item.create({
         data: {
           nome: originalItem.nome,
@@ -210,6 +317,7 @@ export class ItemService {
           categoriaId: originalItem.categoriaId,
           condicaoId: Number(newCondicaoId),
           salaId: Number(newSalaId),
+          uniqueKey,
         },
       });
     }

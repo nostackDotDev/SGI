@@ -98,8 +98,8 @@ http://localhost:5173
 
 ```text
 Método   Endpoint             Descrição
-GET      /api/users           Lista todos os usuários
-POST     /api/users/login     Autentica um usuário
+GET      /api/users           Lista todos os utilizadores
+POST     /api/users/login     Autentica um utilizador
 ```
 
 ---

@@ -9,6 +9,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "../ui/label";
+import { PermissionDisabled } from "../auth/PermissionDisabled";
+import { PERMISSIONS } from "@/core/constants/permissions";
 
 export function InventoryFilters({
   onAddItem,
@@ -117,10 +119,12 @@ export function InventoryFilters({
       </div>
 
       {/* Add Button */}
-      <Button onClick={onAddItem} className="w-full py-5 sm:w-auto">
-        <Plus className="w-4 h-4 mr-2" />
-        Novo Item
-      </Button>
+      <PermissionDisabled permission={PERMISSIONS.ITEM_CREATE}>
+        <Button onClick={onAddItem} className="w-full py-5 sm:w-auto">
+          <Plus className="w-4 h-4 mr-2" />
+          Novo Item
+        </Button>
+      </PermissionDisabled>
     </div>
   );
 }

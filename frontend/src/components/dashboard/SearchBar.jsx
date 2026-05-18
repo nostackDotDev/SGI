@@ -1,13 +1,25 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Plus, ArrowRightLeft, FileText, LogOut, UserPlus, FileDown } from "lucide-react";
+import {
+  Search,
+  Plus,
+  ArrowRightLeft,
+  FileText,
+  LogOut,
+  UserPlus,
+  FileDown,
+} from "lucide-react";
 
 const quickActions = [
   { label: "Adicionar Produto", icon: Plus, color: "text-primary" },
-  { label: "Fazer Transferência", icon: ArrowRightLeft, color: "text-purple-accent" },
+  {
+    label: "Fazer Transferência",
+    icon: ArrowRightLeft,
+    color: "text-purple-accent",
+  },
   { label: "Gerar Relatório", icon: FileText, color: "text-cyan-accent" },
   { label: "Registrar Saída", icon: LogOut, color: "text-warning" },
-  { label: "Novo Usuário", icon: UserPlus, color: "text-success" },
+  { label: "Novo Utilizador", icon: UserPlus, color: "text-success" },
   { label: "Emitir PDF", icon: FileDown, color: "text-primary" },
 ];
 

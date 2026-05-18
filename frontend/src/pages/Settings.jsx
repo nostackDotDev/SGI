@@ -291,7 +291,7 @@ export default function Settings() {
             />
           </div>
         </div>
-        <div className="flex items-center gap-4 flex-wrap">
+        {/* <div className="flex items-center gap-4 flex-wrap">
           <Button
             variant="outline"
             className={cn(
@@ -321,7 +321,7 @@ export default function Settings() {
               <Save className="w-4 h-4" /> Salvar
             </Button>
           )}
-        </div>
+        </div> */}
       </Card>
 
       <Card
@@ -409,7 +409,7 @@ export default function Settings() {
                                   });
                                   setDeleteDialogOpen(true);
                                 }}
-                                disabled={item.defaultType}
+                                disabled={item.defaultType || !item.empty}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>

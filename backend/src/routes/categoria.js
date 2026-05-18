@@ -5,6 +5,7 @@ import { tenantIsolation } from "../middlewares/tenantIsolation.middleware.js";
 import { requirePermission } from "../middlewares/permissions.middleware.js";
 import { PERMISSIONS } from "../constants/permissions.constants.js";
 import { handlePrismaError } from "../lib/errorHandler.js";
+import { empty } from "@prisma/client/runtime/library";
 
 const router = express.Router();
 
@@ -23,6 +24,7 @@ router.get(
         deletedAt: null,
         defaultType: { equals: true },
       },
+      include: { itens: true },
     });
 
     if (!defaultCategoria) {
@@ -34,6 +36,7 @@ router.get(
     res.json({
       data: {
         ...defaultCategoria,
+        empty: defaultCategoria.itens.length === 0,
         isDefault: true,
       },
       error: null,
@@ -53,6 +56,7 @@ router.get(
         deletedAt: null,
         defaultType: { equals: false },
       },
+      include: { itens: true },
     });
 
     res.json({
@@ -63,6 +67,15 @@ router.get(
         updatedAt: cat.updatedAt,
         defaultType: cat.defaultType,
         instituicaoId: cat.instituicaoId,
+        // itens: cat.itens.map((item) => ({
+        //   id: item.id,
+        //   nome: item.nome,
+        //   descricao: item.descricao,
+        //   serialNumber: item.serialNumber,
+        //   quantidade: item.quantidade,
+        //   updatedAt: item.updatedAt,
+        // })),
+        empty: cat.itens.length === 0,
       })),
       error: null,
     });
@@ -81,6 +94,7 @@ router.get(
         instituicaoId,
         deletedAt: null,
       },
+      include: { itens: true },
     });
 
     if (!categoria) {
@@ -95,6 +109,8 @@ router.get(
         updatedAt: categoria.updatedAt,
         defaultType: categoria.defaultType,
         instituicaoId: categoria.instituicaoId,
+        // itens: categoria.itens,
+        empty: categoria.itens.length === 0,
       },
       error: null,
     });

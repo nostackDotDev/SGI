@@ -22,14 +22,34 @@ const typeConfig = {
     label: "Devolução",
     className: "bg-primary/10 text-primary border-primary/20",
   },
+  borrow: {
+    label: "Empréstimo",
+    className: "bg-blue/10 text-blue border-blue/20",
+  },
+  repair: {
+    label: "Reparação",
+    className: "bg-yellow/10 text-yellow border-yellow/20",
+  },
+  maintenance: {
+    label: "Manutenção",
+    className: "bg-yellow/10 text-yellow border-yellow/20",
+  },
   restore: {
     label: "Restauração",
     className: "bg-primary/10 text-primary border-primary/20",
   },
-  exit: {
-    label: "Saída",
+  reduction: {
+    label: "Redução",
     className: "bg-destructive/10 text-destructive border-destructive/20",
   },
+  consolidation: {
+    label: "Consolidação",
+    className: "bg-muted/30 text-muted-foreground border-muted-foreground/40",
+  },
+  // exit: {
+  //   label: "Saída",
+  //   className: "bg-destructive/10 text-destructive border-destructive/20",
+  // },
 };
 
 export default function CheckInOutTable({ data, filters, pageSize }) {
