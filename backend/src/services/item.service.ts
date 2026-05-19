@@ -3,19 +3,22 @@ import prisma from "../lib/prisma.js";
 export class ItemService {
   /**
    * Generate unique key from item fields (only for non-deleted items)
-   * Format: {nome}_{serialNumber}_{salaId}
+   * Format: {nome}_{serialNumber}_{salaId}_{instituicaoId}
+   * Institution-scoped to prevent conflicts between organizations
    * Used to enforce uniqueness constraint only on active items
    */
   static generateUniqueKey(
     nome: string,
     serialNumber: string | null | undefined,
     salaId: number | null | undefined,
+    instituicaoId: number,
   ): string {
-    // Only non-null/undefined values are included
+    // All parts participate in uniqueness - use placeholder for nulls
     const parts = [
       nome.trim(),
       serialNumber ? String(serialNumber).trim() : "NULL",
       salaId ? String(salaId) : "NULL",
+      String(instituicaoId),
     ];
     return parts.join("_");
   }
@@ -45,6 +48,7 @@ export class ItemService {
     categoriaId: number;
     condicaoId: number;
     salaId: number;
+    instituicaoId: number;
   }) {
     this.validateItemData(data);
 
@@ -52,6 +56,7 @@ export class ItemService {
       data.nome,
       data.serialNumber,
       data.salaId,
+      data.instituicaoId,
     );
 
     return prisma.item.create({
@@ -63,6 +68,7 @@ export class ItemService {
         condicaoId: Number(data.condicaoId),
         salaId: Number(data.salaId),
         serialNumber: data.serialNumber || null,
+        instituicaoId: Number(data.instituicaoId),
         uniqueKey,
       },
     });
@@ -122,6 +128,7 @@ export class ItemService {
         newNome,
         newSerial,
         newSalaId,
+        currentItem.instituicaoId,
       );
     }
 
@@ -175,6 +182,7 @@ export class ItemService {
       originalItem.nome,
       originalItem.serialNumber,
       newSalaId,
+      originalItem.instituicaoId,
     );
 
     return prisma.item.create({
@@ -186,6 +194,7 @@ export class ItemService {
         categoriaId: originalItem.categoriaId,
         condicaoId: Number(newCondicaoId),
         salaId: Number(newSalaId),
+        instituicaoId: originalItem.instituicaoId,
         uniqueKey,
       },
     });
@@ -263,7 +272,8 @@ export class ItemService {
 
   /**
    * Upsert (update or insert) an item at a specific location
-   * If an item with the same (nome, serialNumber, salaId) exists, update its quantity
+   * Institution-scoped: only merges with items from the same institution
+   * If an item with the same (nome, serialNumber, salaId, instituicaoId) exists, update its quantity
    * Otherwise, create a new item
    */
   static async upsertItemAtLocation(
@@ -280,12 +290,14 @@ export class ItemService {
       throw new Error("Item original não encontrado");
     }
 
-    // Check if an item with the same (nome, serialNumber, salaId) already exists at the new location
+    // Check if an item with the same (nome, serialNumber, salaId, instituicaoId) already exists
+    // CRITICAL: Filter by instituicaoId to prevent cross-institution merges
     const existingItem = await prisma.item.findFirst({
       where: {
         nome: originalItem.nome,
         serialNumber: originalItem.serialNumber,
         salaId: newSalaId,
+        instituicaoId: originalItem.instituicaoId, // Institution scoping
         deletedAt: null,
       },
     });
@@ -306,6 +318,7 @@ export class ItemService {
         originalItem.nome,
         originalItem.serialNumber,
         newSalaId,
+        originalItem.instituicaoId,
       );
 
       return prisma.item.create({
@@ -317,6 +330,7 @@ export class ItemService {
           categoriaId: originalItem.categoriaId,
           condicaoId: Number(newCondicaoId),
           salaId: Number(newSalaId),
+          instituicaoId: originalItem.instituicaoId,
           uniqueKey,
         },
       });

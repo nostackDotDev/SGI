@@ -27,6 +27,7 @@ model Instituicao {
   categorias    Categoria[]
   salas         Sala[]
   registos      Registo[]
+  itens         Item[]
 
   @@unique([nome, telefone])
   @@index([deletedAt])
@@ -199,14 +200,18 @@ model Item {
   serialNumber String?
 
   // Unique constraint that's NULL for deleted items (allows duplicates)
-  // When active, this equals "{nome}_{serialNumber}_{salaId}"
+  // When active, this equals "{nome}_{serialNumber}_{salaId}_{instituicaoId}"
   // When deleted, this is NULL, allowing new items with same details
+  // Institution-scoped to prevent conflicts between institutions
   uniqueKey String? @unique
 
   // Consolidation tracking: if this item was merged into another, reference the parent
   consolidatedIntoItemId Int?
   consolidatedIntoItem   Item?  @relation("consolidation", fields: [consolidatedIntoItemId], references: [id], onDelete: SetNull)
   consolidatedItems      Item[] @relation("consolidation")
+
+  instituicaoId Int
+  instituicao   Instituicao @relation(fields: [instituicaoId], references: [id], onDelete: Restrict)
 
   categoriaId Int?
   categoria   Categoria? @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
@@ -220,9 +225,10 @@ model Item {
   registos Registo[]
 
   @@index([deletedAt])
+  @@index([instituicaoId])
   @@index([categoriaId])
   @@index([salaId])
-  @@index([nome, serialNumber, salaId])
+  @@index([nome, serialNumber, salaId, instituicaoId])
   @@index([consolidatedIntoItemId])
 }
 

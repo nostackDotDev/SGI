@@ -1,5 +1,6 @@
 import { MetricCard } from "@/components/common/MetricCard";
 import { SearchBar } from "@/components/dashboard/SearchBar";
+import { LoaderSmall } from "@/components/layout/Loader";
 import PageContainer from "@/components/layout/PageContainer";
 import { useAuth } from "@/core/contexts/AuthContext";
 import { request } from "@/lib/request";
@@ -45,7 +46,7 @@ const typeConfig = {
 
 export default function Dashboard() {
   const [recentActivity, setRecentActivity] = useState([]);
-  const [chartData, setChartData] = useState([]);
+  const [chartData, setChartData] = useState(null);
   const [chartLabels, setChartLabels] = useState([]);
   const [summary, setSummary] = useState({
     total: 0,
@@ -189,25 +190,29 @@ export default function Dashboard() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="glass-card rounded-xl p-6 lg:col-span-2"
+            className="glass-card rounded-xl p-6 lg:col-span-2 min-h-72"
           >
             <h2 className="font-heading text-base font-semibold text-foreground">
               Evolução dos Movimentos
             </h2>
-            {chartData.length ? (
-              <div className="w-full grid grid-cols-1 2xl:grid-cols-2 gap-4 items-center">
-                <section className="relative flex items-center justify-center">
-                  <Chart data={chartData} />
-                </section>
+            {chartData ? (
+              chartData.length ? (
+                <div className="w-full grid grid-cols-1 2xl:grid-cols-2 gap-4 items-center">
+                  <section className="relative flex items-center justify-center">
+                    <Chart data={chartData} />
+                  </section>
 
-                <section className="min-h-fit p-4 flex items-center justify-center">
-                  <ChartLabels labels={chartLabels} />
-                </section>
-              </div>
+                  <section className="min-h-fit p-4 flex items-center justify-center">
+                    <ChartLabels labels={chartLabels} />
+                  </section>
+                </div>
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center p-4 gap-4 text-muted-foreground text-lg">
+                  <p>Não existem dados suficientes para o gráfico</p>
+                </div>
+              )
             ) : (
-              <div className="absolute inset-0 flex items-center justify-center p-4 gap-4 text-muted-foreground text-lg">
-                <p>Não existem dados suficientes para o gráfico</p>
-              </div>
+              <LoaderSmall />
             )}
           </motion.div>
 
@@ -224,12 +229,12 @@ export default function Dashboard() {
               </h2>
               <a
                 href="/movimentacoes"
-                className="text-xs text-primary hover:underline"
+                className="text-sm text-primary hover:underline"
               >
                 Ver tudo
               </a>
             </div>
-            <div className="mt-4 space-y-4 flex-1 min-h-0 px-4 p-6 pt-0">
+            <div className="mt-4 space-y-4 flex-1 min-h-0 max-h-150 px-4 p-6 pt-0 overflow-hidden overflow-y-auto">
               {recentActivity?.length > 0 ? (
                 recentActivity.map((item, i) => (
                   <motion.div
@@ -249,7 +254,7 @@ export default function Dashboard() {
                       </p>
                     </div>
                     <div className="flex flex-col items-end justify-center gap-1">
-                      <span className="shrink-0 text-[10px] text-muted-foreground/60">
+                      <span className="shrink-0 text-[10px] text-muted-foreground">
                         {formatDate(item.date, true)}
                       </span>
 
@@ -359,6 +364,8 @@ const Chart = ({ data, isAnimationActive = true }) => {
         dataKey="value"
         isAnimationActive={isAnimationActive}
         shape={MyCustomPie}
+        allowReorder="yes"
+        elevation={2}
       />
       {/* <RechartsDevtools /> */}
     </PieChart>
