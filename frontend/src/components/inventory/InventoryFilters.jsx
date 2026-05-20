@@ -1,4 +1,4 @@
-import { Search, Plus, Filter } from "lucide-react";
+import { Search, Plus, Filter, UploadCloud } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +14,7 @@ import { PERMISSIONS } from "@/core/constants/permissions";
 
 export function InventoryFilters({
   onAddItem,
+  onBulkImport,
   searchTerm,
   setSearchTerm,
   category,
@@ -120,10 +121,16 @@ export function InventoryFilters({
 
       {/* Add Button */}
       <PermissionDisabled permission={PERMISSIONS.ITEM_CREATE}>
-        <Button onClick={onAddItem} className="w-full py-5 sm:w-auto">
-          <Plus className="w-4 h-4 mr-2" />
-          Novo Item
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Button onClick={onBulkImport} className="w-full py-5 sm:w-auto">
+            <UploadCloud className="w-4 h-4 mr-2" />
+            Importar Itens
+          </Button>
+          <Button onClick={onAddItem} className="w-full py-5 sm:w-auto">
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Item
+          </Button>
+        </div>
       </PermissionDisabled>
     </div>
   );

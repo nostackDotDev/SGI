@@ -1,4 +1,6 @@
 import express from "express";
+import multer from "multer";
+import * as XLSX from "xlsx";
 import prisma from "../lib/prisma.js";
 import { ItemService } from "../services/item.service.ts";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
@@ -8,6 +10,223 @@ import { PERMISSIONS } from "../constants/permissions.constants.js";
 import { handlePrismaError } from "../lib/errorHandler.js";
 import { RecordService } from "../services/records.service.ts";
 import { parseDateRange } from "../lib/utils.js";
+
+const upload = multer({ storage: multer.memoryStorage() });
+
+const normalizeHeader = (value) => {
+  if (value === undefined || value === null) return "";
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/\s+/g, "");
+};
+
+const FIELD_MAP = {
+  nome: "nome",
+  name: "nome",
+  item: "nome",
+  itemname: "nome",
+  descricao: "descricao",
+  description: "descricao",
+  desc: "descricao",
+  serialnumber: "serialNumber",
+  serial: "serialNumber",
+  serie: "serialNumber",
+  numerodeserie: "serialNumber",
+  quantity: "quantidade",
+  quantidade: "quantidade",
+  qty: "quantidade",
+  categoria: "categoria",
+  category: "categoria",
+  categoriaid: "categoria",
+  condicao: "condicao",
+  condition: "condicao",
+  status: "condicao",
+  condicaoid: "condicao",
+  sala: "sala",
+  location: "sala",
+  localizacao: "sala",
+  salaid: "sala",
+};
+
+const normalizeValue = (value) => {
+  if (value === undefined || value === null) return "";
+  return String(value).trim();
+};
+
+const normalizeLookupValue = (value) => {
+  if (value === undefined || value === null) return "";
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
+};
+
+const mapFieldName = (key) => FIELD_MAP[normalizeHeader(key)] || null;
+
+const getLookupItem = (value, list) => {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+
+  const normalized = normalizeLookupValue(value);
+  const numeric = Number(value);
+
+  if (!Number.isNaN(numeric) && numeric > 0) {
+    return list.find((item) => Number(item.id) === numeric) || null;
+  }
+
+  return (
+    list.find(
+      (item) =>
+        normalizeLookupValue(item.nome) === normalized ||
+        normalizeLookupValue(item.label || "") === normalized,
+    ) || null
+  );
+};
+
+const parseUploadedRows = (file) => {
+  const fileName = file.originalname.toLowerCase();
+  let rows = [];
+
+  if (fileName.endsWith(".json")) {
+    const fileText = file.buffer.toString("utf8");
+    const parsed = JSON.parse(fileText);
+    if (Array.isArray(parsed)) {
+      rows = parsed;
+    } else if (parsed?.data && Array.isArray(parsed.data)) {
+      rows = parsed.data;
+    } else {
+      throw new Error("JSON deve conter um array de itens");
+    }
+  } else {
+    const workbook = XLSX.read(file.buffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
+      throw new Error("Arquivo não contém nenhuma planilha válida");
+    }
+    const worksheet = workbook.Sheets[sheetName];
+    rows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+  }
+
+  if (!Array.isArray(rows)) {
+    throw new Error(
+      "O arquivo não pôde ser interpretado como uma lista de itens",
+    );
+  }
+
+  return rows.filter((row) =>
+    Object.values(row).some(
+      (value) => value !== undefined && value !== null && value !== "",
+    ),
+  );
+};
+
+const normalizeRow = (rawRow, index) => {
+  const row = {
+    rowIndex: index + 1,
+    nome: "",
+    descricao: "",
+    serialNumber: "",
+    quantidade: "",
+    categoria: "",
+    condicao: "",
+    sala: "",
+  };
+
+  Object.entries(rawRow).forEach(([key, value]) => {
+    const field = mapFieldName(key);
+    if (!field) return;
+    row[field] = normalizeValue(value);
+  });
+
+  return row;
+};
+
+const validateRow = (row, categorias, status, localizacoes) => {
+  const errors = [];
+  const resolvedCategoria = getLookupItem(row.categoria, categorias);
+  const resolvedCondicao = getLookupItem(row.condicao, status);
+  const resolvedSala = getLookupItem(row.sala, localizacoes);
+  const quantityValue = row.quantidade === "" ? 1 : Number(row.quantidade);
+
+  if (!row.nome) {
+    errors.push("Nome é obrigatório");
+  }
+
+  if (!row.serialNumber) {
+    errors.push("Número de série é obrigatório");
+  }
+
+  if (!row.categoria) {
+    errors.push("Categoria é obrigatória");
+  } else if (!resolvedCategoria) {
+    errors.push("Categoria inválida");
+  }
+
+  if (!row.condicao) {
+    errors.push("Condição/Status é obrigatório");
+  } else if (!resolvedCondicao) {
+    errors.push("Condição/Status inválido(a)");
+  }
+
+  if (!row.sala) {
+    errors.push("Sala/Localização é obrigatória");
+  } else if (!resolvedSala) {
+    errors.push("Sala/Localização inválida");
+  }
+
+  if (
+    row.quantidade !== "" &&
+    (Number.isNaN(quantityValue) || quantityValue <= 0)
+  ) {
+    errors.push("Quantidade deve ser um número inteiro positivo");
+  }
+
+  return {
+    ...row,
+    quantidade: Number.isNaN(quantityValue) ? row.quantidade : quantityValue,
+    categoriaId: resolvedCategoria?.id ?? null,
+    condicaoId: resolvedCondicao?.id ?? null,
+    salaId: resolvedSala?.id ?? null,
+    errors,
+  };
+};
+
+const buildUniqueKey = (nome, serialNumber, salaId, instituicaoId) =>
+  ItemService.generateUniqueKey(nome, serialNumber, salaId, instituicaoId);
+
+const hasDuplicateRows = (processedRows) => {
+  const duplicates = [];
+  const seen = new Map();
+
+  processedRows.forEach((row) => {
+    if (!row.nome || !row.serialNumber || !row.salaId) return;
+
+    const key = `${row.nome.trim()}|${row.serialNumber.trim()}|${row.salaId}`;
+    const count = seen.get(key) ?? 0;
+    seen.set(key, count + 1);
+
+    if (count >= 1) {
+      duplicates.push(
+        `Itens duplicados no arquivo: ${row.nome} / ${row.serialNumber} / sala ${row.sala}`,
+      );
+    }
+  });
+
+  return duplicates;
+};
+
+const parseBulkUploadRows = (file) => {
+  const rawRows = parseUploadedRows(file);
+  return rawRows.map((rawRow, index) => normalizeRow(rawRow, index));
+};
+
+const validateBulkUploadRows = (rows, categorias, status, localizacoes) =>
+  rows.map((row) => validateRow(row, categorias, status, localizacoes));
 
 const router = express.Router();
 
@@ -233,6 +452,139 @@ router.post(
     } catch (error) {
       const { status, message } = handlePrismaError(error);
       res.status(status).json({ message, data: null, error });
+    }
+  },
+);
+
+router.post(
+  "/bulk-upload",
+  requirePermission(PERMISSIONS.ITEM_CREATE),
+  upload.single("file"),
+  async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({
+        message: "Nenhum arquivo enviado",
+        data: null,
+        error: "Arquivo ausente",
+      });
+    }
+
+    let rawRows;
+    try {
+      rawRows = parseUploadedRows(req.file);
+    } catch (error) {
+      console.error("Erro ao ler arquivo em massa:", error);
+      return res.status(400).json({
+        message: "Falha ao processar o arquivo",
+        data: null,
+        error: error.message || "Arquivo inválido",
+      });
+    }
+
+    if (!rawRows || rawRows.length === 0) {
+      return res.status(400).json({
+        message: "Nenhum item válido encontrado no arquivo",
+        data: null,
+        error: "Arquivo vazio ou inválido",
+      });
+    }
+
+    const categorias = await prisma.categoria.findMany({
+      where: { instituicaoId: req.tenantId },
+    });
+    const condicoes = await prisma.condicao.findMany();
+    const localizacoes = await prisma.sala.findMany({
+      where: { instituicaoId: req.tenantId },
+    });
+
+    const parsedRows = validateBulkUploadRows(
+      rawRows.map((row, index) => normalizeRow(row, index)),
+      categorias,
+      condicoes,
+      localizacoes,
+    );
+
+    const invalidRows = parsedRows.filter((row) => row.errors.length > 0);
+    if (invalidRows.length > 0) {
+      return res.status(400).json({
+        message: "Existem linhas inválidas no arquivo",
+        data: {
+          invalidRows: invalidRows.map((row) => ({
+            rowIndex: row.rowIndex,
+            errors: row.errors,
+          })),
+        },
+        error: "Validation failed",
+      });
+    }
+
+    const duplicateErrors = hasDuplicateRows(parsedRows);
+    if (duplicateErrors.length > 0) {
+      return res.status(400).json({
+        message: "Existem linhas duplicadas no arquivo",
+        data: { duplicateErrors },
+        error: "Duplicate rows found",
+      });
+    }
+
+    const uniqueKeys = parsedRows.map((row) =>
+      buildUniqueKey(row.nome, row.serialNumber, row.salaId, req.tenantId),
+    );
+    const existingItems = await prisma.item.findMany({
+      where: {
+        instituicaoId: req.tenantId,
+        deletedAt: null,
+        uniqueKey: { in: uniqueKeys },
+      },
+    });
+
+    if (existingItems.length > 0) {
+      return res.status(409).json({
+        message: "Já existem itens com os mesmos dados no sistema",
+        data: existingItems.map((item) => ({
+          id: item.id,
+          nome: item.nome,
+          serialNumber: item.serialNumber,
+          salaId: item.salaId,
+        })),
+        error: "Duplicate items already exist",
+      });
+    }
+
+    try {
+      const createdItems = [];
+      for (const row of parsedRows) {
+        const newItem = await ItemService.createItem({
+          nome: row.nome,
+          descricao: row.descricao,
+          quantidade: row.quantidade,
+          serialNumber: row.serialNumber,
+          categoriaId: row.categoriaId,
+          condicaoId: row.condicaoId,
+          salaId: row.salaId,
+          instituicaoId: req.tenantId,
+        });
+
+        await RecordService.createRecord({
+          instituicaoId: req.tenantId,
+          utilizadorId: req.userId,
+          itemId: newItem.id,
+          quantidade: newItem.quantidade,
+          type: "in",
+        });
+
+        createdItems.push(newItem);
+      }
+
+      return res.status(201).json({
+        message: `${createdItems.length} itens importados com sucesso`,
+        data: { imported: createdItems.length },
+        error: null,
+      });
+    } catch (error) {
+      console.error("Erro ao criar itens em massa:", error);
+      const { status, message } = handlePrismaError(error);
+      return res.status(status).json({ message, data: null, error });
     }
   },
 );

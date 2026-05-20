@@ -189,12 +189,23 @@ export function request<T = any>(
 ): void {
   const { refreshKey, ...requestOptions } = options;
 
+  const requestHeaders = {
+    ...requestOptions.headers,
+  };
+
+  const isFormData = requestOptions.data instanceof FormData;
+  if (isFormData) {
+    delete requestHeaders["Content-Type"];
+    delete requestHeaders["content-type"];
+  }
+
   axiosInstance
     .request<T>({
       url: path,
       method,
       baseURL: options.baseURL ?? API_BASE_URL,
       ...requestOptions,
+      headers: requestHeaders,
     })
     .then((response) => {
       // Always call success callback - let the component decide what to do

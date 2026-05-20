@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { InventoryFilters } from "@/components/inventory/InventoryFilters";
 import { CreateItemDialog } from "@/components/inventory/CreateItemDialog";
+import { BulkImportDialog } from "@/components/inventory/BulkImportDialog";
 import { ItemDetailDialog } from "@/components/inventory/ItemDetailDialog";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
 import PageContainer from "@/components/layout/PageContainer";
@@ -15,6 +16,7 @@ import { RegisterStatusChangeDialog } from "@/components/inventory/RegisterStatu
 
 export default function Inventory() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -137,6 +139,7 @@ export default function Inventory() {
         location={location}
         setLocation={setLocation}
         onAddItem={() => setAddDialogOpen(true)}
+        onBulkImport={() => setBulkImportOpen(true)}
         setPageSize={setPageSize}
         categorias={categories}
         estados={statusOptions}
@@ -177,6 +180,14 @@ export default function Inventory() {
       <CreateItemDialog
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
+        categorias={categories}
+        status={statusOptions}
+        localizacoes={locations}
+        onSuccess={refreshItems}
+      />
+      <BulkImportDialog
+        open={bulkImportOpen}
+        onOpenChange={setBulkImportOpen}
         categorias={categories}
         status={statusOptions}
         localizacoes={locations}
