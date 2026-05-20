@@ -225,12 +225,15 @@ export function BulkImportDialog({
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (!open) {
-      setSelectedFile(null);
-      setRows([]);
-      setParsedRows([]);
-      setIsLoading(false);
-    }
+    const f = () => {
+      if (!open) {
+        setSelectedFile(null);
+        setRows([]);
+        setParsedRows([]);
+        setIsLoading(false);
+      }
+    };
+    f();
   }, [open]);
 
   const handleFileChange = async (event) => {
@@ -264,10 +267,13 @@ export function BulkImportDialog({
   };
 
   useEffect(() => {
-    const processed = rows.map((row) =>
-      validateRow(row, categorias, status, localizacoes),
-    );
-    setParsedRows(processed);
+    const f = () => {
+      const processed = rows.map((row) =>
+        validateRow(row, categorias, status, localizacoes),
+      );
+      setParsedRows(processed);
+    };
+    f();
   }, [rows, categorias, status, localizacoes]);
 
   const totalRows = parsedRows.length;

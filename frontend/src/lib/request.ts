@@ -195,8 +195,9 @@ export function request<T = any>(
 
   const isFormData = requestOptions.data instanceof FormData;
   if (isFormData) {
-    delete requestHeaders["Content-Type"];
-    delete requestHeaders["content-type"];
+    // Let the browser set the multipart boundary
+    requestHeaders["Content-Type"] = undefined;
+    requestHeaders["content-type"] = undefined;
   }
 
   axiosInstance

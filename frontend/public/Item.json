@@ -1,0 +1,92 @@
+[
+  {
+    "nome": "Notebook Dell",
+    "descricao": "Notebook corporativo com SSD 256GB",
+    "serialNumber": "DL123456",
+    "quantidade": 5,
+    "categoria": "Categoria 1",
+    "condicao": "Disponível",
+    "sala": "Local 1"
+  },
+  {
+    "nome": "Projetor Epson",
+    "descricao": "Projetor para reuniões e apresentações",
+    "serialNumber": "EP987654",
+    "quantidade": 2,
+    "categoria": "Categoria 2",
+    "condicao": "Disponível",
+    "sala": "Local 2"
+  },
+  {
+    "nome": "Impressora HP",
+    "descricao": "Impressora laser monocromática",
+    "serialNumber": "HP555333",
+    "quantidade": 1,
+    "categoria": "Categoria de teste",
+    "condicao": "Em manutenção",
+    "sala": "Sala de teste"
+  },
+  {
+    "nome": "Monitor Samsung",
+    "descricao": "Monitor LED 24 polegadas",
+    "serialNumber": "SM224466",
+    "quantidade": 4,
+    "categoria": "Categoria de teste",
+    "condicao": "Disponível",
+    "sala": "Sala de teste"
+  },
+  {
+    "nome": "Teclado Logitech",
+    "descricao": "Teclado sem fio",
+    "serialNumber": "LG112233",
+    "quantidade": 8,
+    "categoria": "Categoria de teste",
+    "condicao": "Disponível",
+    "sala": "Sala de teste"
+  },
+  {
+    "nome": "Mouse Microsoft",
+    "descricao": "Mouse óptico sem fio",
+    "serialNumber": "MS998877",
+    "quantidade": 10,
+    "categoria": "Categoria de teste",
+    "condicao": "Disponível",
+    "sala": "Sala de teste"
+  },
+  {
+    "nome": "Estabilizador SMS",
+    "descricao": "Estabilizador de energia 2000VA",
+    "serialNumber": "SMS445566",
+    "quantidade": 3,
+    "categoria": "Categoria de teste",
+    "condicao": "Disponível",
+    "sala": "Sala de teste"
+  },
+  {
+    "nome": "Cabo HDMI",
+    "descricao": "Cabo HDMI 2 metros",
+    "serialNumber": "HD223344",
+    "quantidade": 12,
+    "categoria": "Categoria de teste",
+    "condicao": "Disponível",
+    "sala": "Sala de teste"
+  },
+  {
+    "nome": "Roteador TP-Link",
+    "descricao": "Roteador Wi-Fi dual-band",
+    "serialNumber": "TP778899",
+    "quantidade": 2,
+    "categoria": "Categoria de teste",
+    "condicao": "Disponível",
+    "sala": "Sala de teste"
+  },
+  {
+    "nome": "Microfone USB",
+    "descricao": "Microfone condensador para gravação",
+    "serialNumber": "MB667788",
+    "quantidade": 1,
+    "categoria": "Categoria de teste",
+    "condicao": "Emprestado",
+    "sala": "Sala de teste"
+  }
+]
