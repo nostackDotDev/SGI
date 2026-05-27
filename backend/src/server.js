@@ -18,9 +18,9 @@ import authRoutes from "./routes/auth.routes.js";
 import dashboard_routes from "./routes/dashboard.js";
 import { responseFormatter } from "./middlewares/responseFormatter.middleware.js";
 
+dotenv.config();
 const app = express();
 const port = process.env.PORT || 8001;
-dotenv.config();
 
 const allowedOrigins = process.env.FRONTEND_URLS?.split(",")
   .map((origin) => origin.trim())
