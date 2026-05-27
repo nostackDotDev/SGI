@@ -1,4 +1,4 @@
-import { softDeleteWithReassign } from "../lib/softDeleteHelper";
+import { softDeleteWithReassign } from "../lib/softDeleteHelper.js";
 
 export class CategoriaService {
   static async softDelete(id: number) {

@@ -1,12 +1,12 @@
 import express from "express";
 import prisma from "../lib/prisma.js";
-import { ItemService } from "../services/item.service.ts";
+import { ItemService } from "../services/item.service.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { tenantIsolation } from "../middlewares/tenantIsolation.middleware.js";
 import { requirePermission } from "../middlewares/permissions.middleware.js";
 import { PERMISSIONS } from "../constants/permissions.constants.js";
 import { handlePrismaError } from "../lib/errorHandler.js";
-import { RecordService } from "../services/records.service.ts";
+import { RecordService } from "../services/records.service.js";
 import { parseDateRange } from "../lib/utils.js";
 
 const router = express.Router();
