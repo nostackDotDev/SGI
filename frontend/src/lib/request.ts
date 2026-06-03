@@ -57,7 +57,14 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Don't attempt token refresh for login endpoint - 401 means invalid credentials, not expired token
+    const isLoginRequest = originalRequest.url?.includes("/auth/login");
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isLoginRequest
+    ) {
       originalRequest._retry = true;
 
       if (!isRefreshing) {

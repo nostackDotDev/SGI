@@ -48,8 +48,14 @@ export default function Login() {
         setIsLoading(false);
       },
       (err) => {
-        console.error("Error logging in:", err?.message ?? err);
-        toast.error(err?.message || "Ocorreu um erro ao fazer login", {
+        console.error("Error logging in:", err);
+        // Extract error message from response data or error object
+        const errorMessage =
+          (typeof err === "object" && err.message) ||
+          (typeof err === "string" ? err : null) ||
+          "Ocorreu um erro ao fazer login";
+
+        toast.error(errorMessage, {
           id: "fetch-toast",
           position: "bottom-right",
         });

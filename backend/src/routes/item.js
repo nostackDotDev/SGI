@@ -213,6 +213,7 @@ router.post(
         categoriaId,
         condicaoId,
         salaId,
+        instituicaoId: req.tenantId,
       });
 
       // Create registo record for item creation
