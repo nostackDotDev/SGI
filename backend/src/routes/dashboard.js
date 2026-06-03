@@ -71,19 +71,76 @@ router.get(
   async (req, res) => {
     const instituicaoId = req.tenantId;
 
-    const chartData = [
-      { name: "Group A", value: 400 },
-      { name: "Group B", value: 40 },
-      { name: "Group C", value: 400 },
-      { name: "Group D", value: 95 },
-    ];
+    const categorias = await prisma.categoria.findMany({
+      where: {
+        instituicaoId,
+        defaultType: false,
+        deletedAt: null,
+      },
+      include: {
+        itens: {
+          where: {
+            deletedAt: null,
+          },
+          select: {
+            quantidade: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
 
-    const labels = chartData.map((entry) => entry.name);
+    // Build chart data with summed quantities
+    const mappedData = categorias.map((categoria) => ({
+      name: categoria.nome,
+      createdAt: categoria.createdAt,
+      value: categoria.itens.reduce(
+        (total, item) => total + (item.quantidade || 0),
+        0,
+      ),
+    }));
+
+    // Sort by highest quantity first
+    const sortedByValue = [...mappedData].sort((a, b) => b.value - a.value);
+
+    // Keep top 5 categories
+    const TOP_LIMIT = 5;
+
+    const topCategories = sortedByValue.slice(0, TOP_LIMIT);
+
+    const otherCategories = sortedByValue.slice(TOP_LIMIT);
+
+    // Sum all remaining categories into "Others"
+    const othersValue = otherCategories.reduce(
+      (total, categoria) => total + categoria.value,
+      0,
+    );
+
+    // Re-order top categories by creation date
+    const finalData = topCategories.sort(
+      (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+    );
+
+    // Add "Others" at the end if needed
+    if (otherCategories.length > 0) {
+      finalData.push({
+        name: "Outras Categorias",
+        value: othersValue,
+      });
+    }
+
+    // Remove createdAt before sending response
+    const chartData = finalData.map(({ name, value }) => ({
+      name,
+      value,
+    }));
 
     res.json({
       data: {
         chartData,
-        labels,
+        labels: chartData.map((entry) => entry.name),
       },
       error: null,
       message: "Dados carregados com sucesso",

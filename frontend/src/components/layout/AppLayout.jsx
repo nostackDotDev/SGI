@@ -26,11 +26,10 @@ export default function AppLayout({ children }) {
     <div className="flex min-h-screen w-full">
       <AppSidebar />
       <div className="flex flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-12 items-center justify-start gap-4 border-b border-border/40 bg-background/80 backdrop-blur-xl md:hidden">
-          <SidebarTrigger className="ml-3">
-            <Menu className="h-5 w-5 text-red-500" />
+        <header className="sticky top-0 z-30 h-12 flex items-center border-b border-border/40 bg-background/80 backdrop-blur-xl md:hidden">
+          <SidebarTrigger className="ml-3 flex gap-1 items-center justify-start">
+            <span className="font-heading text-lg font-semibold">IPIKK</span>
           </SidebarTrigger>
-          <span className="font-heading text-sm font-semibold">EduStock</span>
         </header>
         <main className="flex-1 pb-25">{children}</main>
       </div>
