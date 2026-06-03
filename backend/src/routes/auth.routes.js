@@ -42,13 +42,15 @@ router.post("/logout", authMiddleware, async (req, res) => {
   res.clearCookie("accessToken", {
     httpOnly: true,
     secure: true,
-    sameSite: "none",
+    sameSite: "lax",
+    path: "/"
   });
 
   res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: true,
-    sameSite: "none",
+    sameSite: "lax",
+    path: "/"
   });
 
   return res.json({

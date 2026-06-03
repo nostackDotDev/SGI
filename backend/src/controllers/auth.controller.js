@@ -38,18 +38,18 @@ export async function loginController(req, res) {
     // Access token - short-lived (1 hour)
     res.cookie("accessToken", result.accessToken, {
       httpOnly: true,
-      // secure: process.env.NODE_ENV === "production",
       secure: true,
-      sameSite: "none",
+      sameSite: "lax",
+      path: "/",
       maxAge: 60 * 60 * 1000, // 1 hour
     });
 
     // Refresh token - long-lived (7 days)
     res.cookie("refreshToken", result.refreshToken, {
       httpOnly: true,
-      // secure: process.env.NODE_ENV === "production",
       secure: true,
-      sameSite: "none",
+      sameSite: "lax",
+      path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
@@ -91,15 +91,15 @@ export async function refreshController(req, res) {
       // Refresh token invalid or expired, clear cookies
       res.clearCookie("accessToken", {
         httpOnly: true,
-        // secure: process.env.NODE_ENV === "production",
         secure: true,
-        sameSite: "none",
+        sameSite: "lax",
+        path: "/",
       });
       res.clearCookie("refreshToken", {
         httpOnly: true,
-        // secure: process.env.NODE_ENV === "production",
         secure: true,
-        sameSite: "none",
+        sameSite: "lax",
+        path: "/",
       });
 
       return res.status(401).json({
@@ -112,17 +112,17 @@ export async function refreshController(req, res) {
     // Set new tokens in cookies
     res.cookie("accessToken", result.accessToken, {
       httpOnly: true,
-      // secure: process.env.NODE_ENV === "production",
       secure: true,
-      sameSite: "none",
+      sameSite: "lax",
+      path: "/",
       maxAge: 60 * 60 * 1000, // 1 hour
     });
 
     res.cookie("refreshToken", result.refreshToken, {
       httpOnly: true,
-      // secure: process.env.NODE_ENV === "production",
       secure: true,
-      sameSite: "none",
+      sameSite: "lax",
+      path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
